@@ -16,7 +16,8 @@
     "dev:lib": "pnpm --filter electron-ipc run dev",
     "typecheck": "pnpm -r run typecheck",
     "spell": "cspell \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "pre-commit": "pnpm exec lint-staged"
   },
   "keywords": [
     "electron",

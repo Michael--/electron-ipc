@@ -10,8 +10,8 @@
     "preview": "electron-vite preview",
     "clean": "rm -rf dist out *.tsbuildinfo",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,html,css}\"",
     "generate:api": "electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api-generated.ts --contract=send:ITestBroadcastContracts",
     "package": "electron-builder",
@@ -24,6 +24,9 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
     "@vitest/ui": "^1.0.4",
     "electron": "^28.0.0",
     "electron-builder": "^24.9.1",
@@ -33,7 +36,9 @@
     "vitest": "^1.0.4"
   },
   "dependencies": {
-    "electron-ipc": "workspace:*"
+    "electron-ipc": "workspace:*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "build": {
     "appId": "com.example.electron-ipc-test",

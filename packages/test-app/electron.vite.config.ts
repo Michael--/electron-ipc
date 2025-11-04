@@ -1,3 +1,4 @@
+import react from '@vitejs/plugin-react'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import { resolve } from 'path'
 
@@ -26,10 +27,12 @@ export default defineConfig({
   },
   renderer: {
     root: resolve(__dirname, 'public'),
+    plugins: [react()],
     build: {
       outDir: 'dist/renderer',
       sourcemap: true,
       minify: false,
+      emptyOutDir: true,
       rollupOptions: {
         input: resolve(__dirname, 'public/index.html'),
       },

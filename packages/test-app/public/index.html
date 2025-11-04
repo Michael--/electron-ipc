@@ -8,61 +8,9 @@
       content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'"
     />
     <title>Electron IPC Test App</title>
-    <style>
-      body {
-        margin: 0;
-        padding: 20px;
-        font-family:
-          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-          sans-serif;
-        background: #1e1e1e;
-        color: #d4d4d4;
-      }
-
-      .container {
-        max-width: 1000px;
-        margin: 0 auto;
-      }
-
-      h1 {
-        color: #61dafb;
-      }
-
-      .info {
-        background: #2d2d2d;
-        padding: 20px;
-        border-radius: 8px;
-        margin: 20px 0;
-      }
-
-      code {
-        background: #1e1e1e;
-        padding: 2px 6px;
-        border-radius: 3px;
-        color: #ce9178;
-      }
-    </style>
   </head>
   <body>
-    <div class="container">
-      <h1>🚀 Electron IPC Test Application</h1>
-
-      <div class="info">
-        <h2>Status</h2>
-        <p>This is the test environment for the <code>electron-ipc</code> library.</p>
-        <p>The library will generate type-safe IPC communication code that can be tested here.</p>
-      </div>
-
-      <div class="info">
-        <h2>Next Steps</h2>
-        <ul>
-          <li>Add your IPC channel definitions</li>
-          <li>Generate the IPC code using electron-ipc</li>
-          <li>Test the communication in this app</li>
-        </ul>
-      </div>
-    </div>
-
-    <script type="module" src="../src/renderer/index.ts"></script>
+    <div id="root"></div>
+    <script type="module" src="./renderer.tsx"></script>
   </body>
 </html>
