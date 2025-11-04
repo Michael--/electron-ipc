@@ -52,16 +52,41 @@ function Status() {
   )
 }
 
+function QuitProgram() {
+  const onClick = () => {
+    window.api.sendQuit()
+  }
+  return <button onClick={onClick}>Quit Application</button>
+}
+
+function AddNumbersDemo() {
+  const [result, setResult] = useState<number | null>(null)
+
+  const onCalculate = async () => {
+    const res = await window.api.invokeAddNumbers({ a: Math.random(), b: Math.random() })
+    setResult(res)
+  }
+  return (
+    <div className="info">
+      <h2>Add Numbers Demo by invoke main process</h2>
+      <button onClick={onCalculate}>Calculate Random Sum</button>
+      {result !== null && <p>Result: {result}</p>}
+    </div>
+  )
+}
+
 /**
  * Main React App component
  */
 export function App() {
   return (
     <div className="container">
+      <QuitProgram />
       <h1>🚀 Electron IPC Test Application</h1>
       <Status />
       <AboutReceiver />
       <PingReceiver />
+      <AddNumbersDemo />
     </div>
   )
 }

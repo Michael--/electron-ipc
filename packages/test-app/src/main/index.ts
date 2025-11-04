@@ -1,6 +1,44 @@
 import { app, BrowserWindow } from 'electron'
+import {
+  AbstractRegisterEvent,
+  AbstractRegisterHandler,
+  IPCEventType,
+  IPCHandlerType,
+} from 'electron-ipc'
 import * as path from 'path'
-import { mainBroadcast } from './ipc-api'
+import { EventContracts, InvokeContracts, mainBroadcast } from './ipc-api'
+
+let eventHandlerInitialized = false
+
+function initializeEventHandler() {
+  // check if already initialized
+  if (eventHandlerInitialized) return
+  eventHandlerInitialized = true
+
+  // implement all handler
+  class RegisterHandler extends AbstractRegisterHandler {
+    handlers: IPCHandlerType<InvokeContracts> = {
+      AddNumbers: async (_event, v) => {
+        // console.log(`AddNumbers: ${v.a} + ${v.b}`)
+        return v.a + v.b
+      },
+    }
+  }
+
+  // implement all events
+  class RegisterEvent extends AbstractRegisterEvent {
+    events: IPCEventType<EventContracts> = {
+      Quit: (_event, _v) => {
+        console.warn(`Quit`)
+        app.quit()
+      },
+    }
+  }
+
+  // register handler and events
+  RegisterHandler.register()
+  RegisterEvent.register()
+}
 
 /**
  * Main process entry point
@@ -18,6 +56,7 @@ function createWindow(): void {
       contextIsolation: true,
     },
   })
+  initializeEventHandler()
 
   // Load the index.html from dist/renderer
   mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))

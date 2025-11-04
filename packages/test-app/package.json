@@ -13,7 +13,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,html,css}\"",
-    "generate:api": "electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api-generated.ts --contract=send:ITestBroadcastContracts",
+    "generate:api": "electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api-generated.ts --contract=invoke:InvokeContracts --contract=event:EventContracts --contract=send:IBroadcastContracts",
     "package": "electron-builder",
     "package:mac": "electron-builder --mac",
     "package:win": "electron-builder --win",
