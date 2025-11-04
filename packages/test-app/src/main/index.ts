@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 import * as path from 'path'
+import { mainBroadcast } from './ipc-api'
 
 /**
  * Main process entry point
@@ -18,13 +19,24 @@ function createWindow(): void {
     },
   })
 
-  // Load the index.html
-  mainWindow.loadFile(path.join(__dirname, '../../public/index.html'))
+  // Load the index.html from dist/renderer
+  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
 
   // Open DevTools in development
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools()
   }
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    // Example: Send 'About' event to renderer after load
+    // send this event every second for demo purposes
+    setInterval(() => {
+      if (mainWindow) {
+        console.log("Sending 'About' event to renderer")
+        mainBroadcast('About', mainWindow, undefined)
+      }
+    }, 1000)
+  })
 
   mainWindow.on('closed', () => {
     mainWindow = null

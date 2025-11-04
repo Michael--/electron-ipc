@@ -6,6 +6,8 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       outDir: 'dist/main',
+      sourcemap: true,
+      minify: false,
       lib: {
         entry: resolve(__dirname, 'src/main/index.ts'),
       },
@@ -15,19 +17,21 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       outDir: 'dist/preload',
+      sourcemap: true,
+      minify: false,
       lib: {
         entry: resolve(__dirname, 'src/preload/index.ts'),
       },
     },
   },
   renderer: {
-    root: '.',
+    root: resolve(__dirname, 'public'),
     build: {
       outDir: 'dist/renderer',
+      sourcemap: true,
+      minify: false,
       rollupOptions: {
-        input: {
-          index: resolve(__dirname, 'public/index.html'),
-        },
+        input: resolve(__dirname, 'public/index.html'),
       },
     },
   },

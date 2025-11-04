@@ -2,6 +2,18 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug Renderer Process",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9223,
+      "webRoot": "${workspaceFolder}/packages/test-app",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "../../../*": "${workspaceFolder}/packages/test-app/*"
+      },
+      "timeout": 30000
+    },
+    {
       "name": "Debug Main Process",
       "type": "node",
       "request": "launch",
@@ -10,47 +22,23 @@
       "windows": {
         "runtimeExecutable": "${workspaceFolder}/packages/test-app/node_modules/.bin/electron.cmd"
       },
-      "args": [".", "--remote-debugging-port=9223"],
+      "args": ["${workspaceFolder}/packages/test-app/dist/main/index.js", "--remote-debugging-port=9223"],
       "outputCapture": "std",
-      "preLaunchTask": "npm: build - packages/test-app"
-    },
-    {
-      "name": "Debug Renderer Process",
-      "type": "chrome",
-      "request": "attach",
-      "port": 9223,
-      "webRoot": "${workspaceFolder}/packages/test-app",
-      "timeout": 30000
-    },
-    {
-      "name": "Debug All (Main + Renderer)",
-      "type": "node",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/packages/test-app",
-      "runtimeExecutable": "${workspaceFolder}/packages/test-app/node_modules/.bin/electron",
-      "windows": {
-        "runtimeExecutable": "${workspaceFolder}/packages/test-app/node_modules/.bin/electron.cmd"
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/packages/test-app/dist/**/*.js"
+      ],
+      "sourceMapPathOverrides": {
+        "../../*": "${workspaceFolder}/packages/test-app/*"
       },
-      "args": [".", "--remote-debugging-port=9223"],
-      "outputCapture": "std",
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/packages/test-app/**",
+        "!**/node_modules/**"
+      ],
       "preLaunchTask": "npm: build - packages/test-app",
-      "serverReadyAction": {
-        "action": "debugWithChrome",
-        "pattern": "Debugger listening on ws://([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+):([0-9]+)",
-        "uriFormat": "ws://%s:%s",
-        "webRoot": "${workspaceFolder}/packages/test-app"
-      }
-    },
-    {
-      "name": "Run Test App (Dev Mode)",
-      "type": "node",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/packages/test-app",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["run", "dev"],
-      "outputCapture": "std",
+      "skipFiles": ["<node_internals>/**"],
       "console": "integratedTerminal"
-    }
+    },
   ],
   "compounds": [
     {
@@ -61,6 +49,6 @@
         "group": "electron",
         "order": 1
       }
-    }
+    },
   ]
 }
