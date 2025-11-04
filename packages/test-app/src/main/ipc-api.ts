@@ -6,6 +6,13 @@ import { createBroadcastFor, IBroadcastContract } from 'electron-ipc'
  */
 export interface ITestBroadcastContracts {
   /**
+   * Ping event to check connectivity or responsiveness.
+   * @type {object}
+   * @property {number} payload - A numeric payload representing the ping count or identifier.
+   */
+  Ping: IBroadcastContract<number>
+
+  /**
    * Event triggered for 'About' dialog or information.
    * @type {object}
    * @property {void} payload - No payload, used to trigger the display of 'About' information.

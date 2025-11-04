@@ -30,10 +30,11 @@ function createWindow(): void {
   mainWindow.webContents.on('did-finish-load', () => {
     // Example: Send 'About' event to renderer after load
     // send this event every second for demo purposes
+    let pingCount = 0
     setInterval(() => {
       if (mainWindow) {
-        console.log("Sending 'About' event to renderer")
-        mainBroadcast('About', mainWindow, undefined)
+        console.log(`Sending 'Ping' event to renderer ${pingCount}`)
+        mainBroadcast('Ping', mainWindow, pingCount++)
       }
     }, 1000)
   })

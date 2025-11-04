@@ -14,6 +14,10 @@ if (window.api) {
     // eslint-disable-next-line no-console
     console.log('Received About event from main process')
   })
+  window.api.onPing((payload) => {
+    // eslint-disable-next-line no-console
+    console.log(`Received Ping event from main process with payload: ${payload}`)
+  })
 }
 
 export {}

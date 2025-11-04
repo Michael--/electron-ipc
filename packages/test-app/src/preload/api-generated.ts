@@ -13,6 +13,9 @@ const onITestBroadcastContracts = <K extends keyof ITestBroadcastContracts>(
 }
 
 const ITestBroadcastContractsApi = {
+  onPing: (callback: (content: ITestBroadcastContracts['Ping']['payload']) => void) => {
+    return onITestBroadcastContracts('Ping', callback)
+  },
   onAbout: (callback: (content: ITestBroadcastContracts['About']['payload']) => void) => {
     return onITestBroadcastContracts('About', callback)
   },
