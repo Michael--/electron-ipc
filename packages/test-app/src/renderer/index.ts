@@ -4,9 +4,19 @@
  * This demonstrates usage of the electron-ipc generated API
  */
 
-console.log("Renderer process started");
+// eslint-disable-next-line no-console
+console.log('Renderer process started');
 
 // Example usage of exposed API
+declare global {
+  interface Window {
+    electronAPI?: {
+      ping: () => Promise<unknown>;
+    };
+  }
+}
+
 if (window.electronAPI) {
-  console.log("Electron API is available");
+  // eslint-disable-next-line no-console
+  console.log('Electron API is available');
 }

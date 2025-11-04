@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { VERSION } from '../index';
+import { describe, expect, it } from 'vitest';
+import { VERSION } from './index';
 
 describe('electron-ipc', () => {
   it('should export VERSION', () => {

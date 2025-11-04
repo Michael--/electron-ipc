@@ -7,6 +7,7 @@
     "vitest",
     "pnpm",
     "tsconfig",
+    "tsparser",
     "outdir",
     "sourcemap",
     "esmoduleinterop",
@@ -21,7 +22,8 @@
     "browserview",
     "webcontents",
     "devtools",
-    "externalize"
+    "externalize",
+    "publishability"
   ],
   "flagWords": [],
   "ignorePaths": [
@@ -36,8 +38,5 @@
     ".git",
     "*.tsbuildinfo"
   ],
-  "ignoreRegExpList": [
-    "/\\b[a-f0-9]{32,}\\b/gi",
-    "/\\b[A-Z]{2,}_[A-Z_]+\\b/g"
-  ]
+  "ignoreRegExpList": ["/\\b[a-f0-9]{32,}\\b/gi", "/\\b[A-Z]{2,}_[A-Z_]+\\b/g"]
 }

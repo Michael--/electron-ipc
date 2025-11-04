@@ -2,6 +2,7 @@
   "name": "electron-ipc-workspace",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Monorepo for electron-ipc library and test application",
   "packageManager": "pnpm@8.15.0",
   "scripts": {
@@ -38,6 +39,7 @@
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.0.1",
+    "globals": "^15.15.0",
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
     "prettier": "^3.1.1",

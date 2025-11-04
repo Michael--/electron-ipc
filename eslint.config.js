@@ -3,6 +3,7 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 import prettier from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
+import globals from 'globals';
 
 export default [
   {
@@ -23,7 +24,10 @@ export default [
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        project: ['./tsconfig.json', './packages/*/tsconfig.json'],
+      },
+      globals: {
+        ...globals.node,
+        ...globals.browser,
       },
     },
     plugins: {
@@ -43,6 +47,7 @@ export default [
       '@typescript-eslint/no-non-null-assertion': 'warn',
       'prettier/prettier': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-undef': 'off',
     },
   },
 ];
