@@ -6,9 +6,9 @@
       "type": "node",
       "request": "launch",
       "cwd": "${workspaceFolder}/packages/test-app",
-      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+      "runtimeExecutable": "${workspaceFolder}/packages/test-app/node_modules/.bin/electron",
       "windows": {
-        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
+        "runtimeExecutable": "${workspaceFolder}/packages/test-app/node_modules/.bin/electron.cmd"
       },
       "args": [".", "--remote-debugging-port=9223"],
       "outputCapture": "std",
@@ -27,9 +27,9 @@
       "type": "node",
       "request": "launch",
       "cwd": "${workspaceFolder}/packages/test-app",
-      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+      "runtimeExecutable": "${workspaceFolder}/packages/test-app/node_modules/.bin/electron",
       "windows": {
-        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
+        "runtimeExecutable": "${workspaceFolder}/packages/test-app/node_modules/.bin/electron.cmd"
       },
       "args": [".", "--remote-debugging-port=9223"],
       "outputCapture": "std",
