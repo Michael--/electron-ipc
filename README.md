@@ -5,11 +5,13 @@ A TypeScript code generator for type-safe Electron IPC communication, with an in
 ## 📦 Packages
 
 ### `packages/electron-ipc`
+
 The main library - a TypeScript code generator that creates type-safe IPC communication code for Electron applications.
 
 **Status:** 🚧 Under active development
 
 ### `packages/test-app`
+
 A full Electron application that serves as a test environment and reference implementation for the `electron-ipc` library.
 
 ## 🚀 Getting Started
