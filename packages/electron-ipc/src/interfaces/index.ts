@@ -5,8 +5,5 @@
  * that define the IPC communication contracts.
  */
 
-// Placeholder - will be filled with actual interfaces later
-export interface IpcChannel {
-  name: string;
-  // More properties to be added
-}
+// Export generator
+export * from './ipc-contracts';
