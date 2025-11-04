@@ -1,0 +1,29 @@
+{
+  "name": "electron-ipc-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for electron-ipc library and test application",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "clean": "npm run clean --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "keywords": [
+    "electron",
+    "ipc",
+    "typescript",
+    "generator"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
