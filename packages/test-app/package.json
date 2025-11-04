@@ -13,6 +13,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,html,css}\"",
+    "generate:api": "electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api-generated.ts --contract=send:ITestBroadcastContracts",
     "package": "electron-builder",
     "package:mac": "electron-builder --mac",
     "package:win": "electron-builder --win",
@@ -32,7 +33,7 @@
     "vitest": "^1.0.4"
   },
   "dependencies": {
-    "electron-ipc": "file:../electron-ipc"
+    "electron-ipc": "workspace:*"
   },
   "build": {
     "appId": "com.example.electron-ipc-test",

@@ -8,17 +8,25 @@ export default defineConfig({
       insertTypesEntry: true,
       outDir: 'dist',
       include: ['src/**/*'],
+      exclude: ['src/bin/**/*', 'src/generator/generate-api.ts'],
     }),
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      name: 'ElectronIPC',
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        'bin/generate-api': resolve(__dirname, 'src/bin/generate-api.ts'),
+      },
       formats: ['es', 'cjs'],
-      fileName: (format) => `index.${format === 'es' ? 'mjs' : 'cjs'}`,
+      fileName: (format, entryName) => {
+        if (entryName.includes('bin/')) {
+          return `${entryName}.js`
+        }
+        return `${entryName}.${format === 'es' ? 'mjs' : 'cjs'}`
+      },
     },
     rollupOptions: {
-      external: ['electron'],
+      external: ['electron', 'fs', 'path', 'ts-morph'],
     },
     sourcemap: true,
     outDir: 'dist',

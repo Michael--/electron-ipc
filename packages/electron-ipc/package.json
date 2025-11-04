@@ -2,8 +2,12 @@
   "name": "electron-ipc",
   "version": "0.1.0",
   "description": "TypeScript code generator for type-safe Electron IPC communication",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "bin": {
+    "electron-ipc-generate": "dist/bin/generate-api.js"
+  },
   "files": [
     "dist",
     "README.md",

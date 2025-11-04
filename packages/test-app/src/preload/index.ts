@@ -1,12 +1,10 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge } from 'electron'
+import { api } from './api-generated'
 
 /**
  * Preload script - runs in isolated context
  *
- * This is where we'll expose the generated IPC API to the renderer
+ * This is where we expose the generated IPC API to the renderer
  */
 
-contextBridge.exposeInMainWorld('electronAPI', {
-  // Placeholder - generated IPC methods will be added here
-  ping: () => ipcRenderer.invoke('ping'),
-})
+contextBridge.exposeInMainWorld('electronAPI', api)
