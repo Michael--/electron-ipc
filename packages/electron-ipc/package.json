@@ -1,0 +1,52 @@
+{
+  "name": "electron-ipc",
+  "version": "0.1.0",
+  "description": "TypeScript code generator for type-safe Electron IPC communication",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "watch": "tsc -b --watch",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "electron",
+    "ipc",
+    "typescript",
+    "generator",
+    "type-safe",
+    "code-generation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/electron-ipc.git",
+    "directory": "packages/electron-ipc"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/electron-ipc/issues"
+  },
+  "homepage": "https://github.com/yourusername/electron-ipc#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "electron": ">=28.0.0"
+  },
+  "peerDependenciesMeta": {
+    "electron": {
+      "optional": true
+    }
+  }
+}
