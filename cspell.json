@@ -1,0 +1,43 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "electron",
+    "vite",
+    "vitest",
+    "pnpm",
+    "tsconfig",
+    "outdir",
+    "sourcemap",
+    "esmoduleinterop",
+    "buildinfo",
+    "prepublishonly",
+    "typecheck",
+    "commitlint",
+    "preload",
+    "ipcrenderer",
+    "contextbridge",
+    "electronapi",
+    "browserview",
+    "webcontents",
+    "devtools",
+    "externalize"
+  ],
+  "flagWords": [],
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    "out",
+    "build",
+    "coverage",
+    "*.log",
+    "pnpm-lock.yaml",
+    "package-lock.json",
+    ".git",
+    "*.tsbuildinfo"
+  ],
+  "ignoreRegExpList": [
+    "/\\b[a-f0-9]{32,}\\b/gi",
+    "/\\b[A-Z]{2,}_[A-Z_]+\\b/g"
+  ]
+}

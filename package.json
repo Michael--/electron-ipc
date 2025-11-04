@@ -3,16 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "description": "Monorepo for electron-ipc library and test application",
-  "workspaces": [
-    "packages/*"
-  ],
+  "packageManager": "pnpm@8.15.0",
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "clean": "npm run clean --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
-    "dev": "npm run dev -w packages/test-app",
-    "dev:lib": "npm run watch -w packages/electron-ipc",
-    "postinstall": "npm run build --workspaces --if-present"
+    "build": "pnpm -r run build",
+    "clean": "pnpm -r run clean",
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "dev": "pnpm --filter test-app run dev",
+    "dev:lib": "pnpm --filter electron-ipc run dev",
+    "typecheck": "pnpm -r run typecheck",
+    "spell": "cspell \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "prepare": "husky"
   },
   "keywords": [
     "electron",
@@ -24,9 +27,21 @@
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "pnpm": ">=8.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.3"
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "cspell": "^8.0.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4"
   }
 }

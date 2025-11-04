@@ -10,10 +10,17 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc -b",
+    "build": "vite build",
+    "dev": "vite build --watch",
     "clean": "rm -rf dist *.tsbuildinfo",
-    "watch": "tsc -b --watch",
-    "prepublishOnly": "npm run clean && npm run build"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json}\"",
+    "prepublishOnly": "pnpm run clean && pnpm run build"
   },
   "keywords": [
     "electron",
@@ -39,7 +46,11 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
-    "typescript": "^5.3.3"
+    "@vitest/ui": "^1.0.4",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.8",
+    "vite-plugin-dts": "^3.7.0",
+    "vitest": "^1.0.4"
   },
   "peerDependencies": {
     "electron": ">=28.0.0"
