@@ -44,7 +44,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron';
+import { BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron'
 
 /**
  * Enforces a structure match between a given type `T` and a specified `Structure`.
@@ -59,7 +59,7 @@ type EnforceStructure<T, Structure> = T extends Structure
   ? Exclude<keyof Structure, keyof T> extends never
     ? T
     : never
-  : never;
+  : never
 
 /**
  * Represents a generic interface for IPC invocation contracts, specifying a structured contract
@@ -70,8 +70,8 @@ type EnforceStructure<T, Structure> = T extends Structure
  * @typeparam TResponse - The type of the data sent as a response from the main process back to the renderer.
  */
 export interface IInvokeContract<TRequest, TResponse> {
-  request: TRequest;
-  response: TResponse;
+  request: TRequest
+  response: TResponse
 }
 
 /**
@@ -84,8 +84,8 @@ export interface IInvokeContract<TRequest, TResponse> {
 export type GenericInvokeContract<T> = {
   [P in keyof T]: T[P] extends IInvokeContract<infer Req, infer Res>
     ? EnforceStructure<T[P], IInvokeContract<Req, Res>>
-    : never;
-};
+    : never
+}
 
 /**
  * Utility type for extracting the request type from a specified IInvokeContract.
@@ -96,7 +96,7 @@ export type GenericInvokeContract<T> = {
  * @returns The request type of the specified contract.
  */
 export type RequestType<T extends GenericInvokeContract<T>, K extends keyof T> =
-  T[K] extends IInvokeContract<infer Req, any> ? Req : never;
+  T[K] extends IInvokeContract<infer Req, any> ? Req : never
 
 /**
  * Utility type for extracting the response type from a specified IInvokeContract.
@@ -107,7 +107,7 @@ export type RequestType<T extends GenericInvokeContract<T>, K extends keyof T> =
  * @returns The response type of the specified contract.
  */
 export type ResponseType<T extends GenericInvokeContract<T>, K extends keyof T> =
-  T[K] extends IInvokeContract<any, infer Res> ? Res : never;
+  T[K] extends IInvokeContract<any, infer Res> ? Res : never
 
 /**
  * Handles IPC communication by setting up a listener for the specified channel.
@@ -126,8 +126,8 @@ function handle<T extends GenericInvokeContract<T>, K extends keyof T>(
     args: RequestType<T, K>
   ) => Promise<ResponseType<T, K>> | ResponseType<T, K>
 ): void {
-  ipcMain.removeHandler(channel as string);
-  ipcMain.handle(channel as string, listener);
+  ipcMain.removeHandler(channel as string)
+  ipcMain.handle(channel as string, listener)
 }
 
 /**
@@ -140,7 +140,7 @@ function handle<T extends GenericInvokeContract<T>, K extends keyof T>(
 type IPCHandler<T extends GenericInvokeContract<T>, K extends keyof T> = (
   event: IpcMainInvokeEvent,
   request: RequestType<T, K>
-) => Promise<ResponseType<T, K>> | ResponseType<T, K>;
+) => Promise<ResponseType<T, K>> | ResponseType<T, K>
 
 /**
  * Maps IPC contract keys to their respective handler functions, ensuring type-safe IPC handling.
@@ -149,8 +149,8 @@ type IPCHandler<T extends GenericInvokeContract<T>, K extends keyof T> = (
  * @typeparam T - The contract type being handled.
  */
 export type IPCHandlerType<T extends GenericInvokeContract<T>> = {
-  [K in keyof T]: IPCHandler<T, K>;
-};
+  [K in keyof T]: IPCHandler<T, K>
+}
 
 /**
  * An abstract class for registering IPC handlers. It maintains a registry of handler instances
@@ -160,23 +160,23 @@ export type IPCHandlerType<T extends GenericInvokeContract<T>> = {
  * @class AbstractRegisterHandler
  */
 export abstract class AbstractRegisterHandler {
-  private static instances: Record<string, AbstractRegisterHandler> = {};
+  private static instances: Record<string, AbstractRegisterHandler> = {}
 
   /**
    * Abstract property that subclasses must implement, defining the IPC handlers.
    */
-  abstract handlers: IPCHandlerType<any>;
+  abstract handlers: IPCHandlerType<any>
 
   /**
    * Registers an instance of the handler class, ensuring only one instance per class name.
    */
   static register(this: { new (): AbstractRegisterHandler }) {
-    const className = this.name;
+    const className = this.name
     if (AbstractRegisterHandler.instances[className] == null) {
-      AbstractRegisterHandler.instances[className] = new this();
+      AbstractRegisterHandler.instances[className] = new this()
     }
-    const instance = AbstractRegisterHandler.instances[className];
-    instance.registerHandler();
+    const instance = AbstractRegisterHandler.instances[className]
+    instance.registerHandler()
   }
 
   /**
@@ -185,7 +185,7 @@ export abstract class AbstractRegisterHandler {
    */
   private registerHandler() {
     for (const [channel, handler] of Object.entries(this.handlers)) {
-      handle(channel as never, handler);
+      handle(channel as never, handler)
     }
   }
 }
@@ -199,7 +199,7 @@ export abstract class AbstractRegisterHandler {
  * @typeparam TRequest - The type of the data sent from the renderer to the main process.
  */
 export interface IRendererEventContract<TRequest> {
-  request: TRequest;
+  request: TRequest
 }
 
 /**
@@ -213,8 +213,8 @@ export interface IRendererEventContract<TRequest> {
 export type GenericRendererEventContract<T> = {
   [P in keyof T]: T[P] extends IRendererEventContract<infer Req>
     ? EnforceStructure<T[P], IRendererEventContract<Req>>
-    : never;
-};
+    : never
+}
 
 /**
  * Utility type for extracting the request type from a specified IPCEventContract.
@@ -227,7 +227,7 @@ export type GenericRendererEventContract<T> = {
  * @returns The request type of the specified contract.
  */
 export type EventType<T extends GenericRendererEventContract<T>, K extends keyof T> =
-  T[K] extends IRendererEventContract<infer Req> ? Req : never;
+  T[K] extends IRendererEventContract<infer Req> ? Req : never
 
 /**
  * Sets up a listener for IPC events on the specified channel. This function facilitates the removal of any
@@ -244,8 +244,8 @@ function on<T extends GenericRendererEventContract<T>, K extends keyof T>(
   channel: K,
   listener: (event: IpcMainInvokeEvent, args: EventType<T, K>) => void
 ): void {
-  ipcMain.removeHandler(channel as string);
-  ipcMain.on(channel as string, listener);
+  ipcMain.removeHandler(channel as string)
+  ipcMain.on(channel as string, listener)
 }
 
 /**
@@ -260,7 +260,7 @@ function on<T extends GenericRendererEventContract<T>, K extends keyof T>(
 type IPCEvent<T extends GenericRendererEventContract<T>, K extends keyof T> = (
   event: IpcMainInvokeEvent,
   request: EventType<T, K>
-) => void;
+) => void
 
 /**
  * Maps IPC event contract keys to their respective handler functions, ensuring type-safe handling
@@ -271,8 +271,8 @@ type IPCEvent<T extends GenericRendererEventContract<T>, K extends keyof T> = (
  * @typeparam T - The event contract type being handled.
  */
 export type IPCEventType<T extends GenericRendererEventContract<T>> = {
-  [K in keyof T]: IPCEvent<T, K>;
-};
+  [K in keyof T]: IPCEvent<T, K>
+}
 
 /**
  * An abstract class for registering IPC event handlers. It maintains a registry of event handler instances
@@ -283,24 +283,24 @@ export type IPCEventType<T extends GenericRendererEventContract<T>> = {
  * @class AbstractRegisterEvent
  */
 export abstract class AbstractRegisterEvent {
-  private static instances: Record<string, AbstractRegisterEvent> = {};
+  private static instances: Record<string, AbstractRegisterEvent> = {}
 
   /**
    * Abstract property that subclasses must implement, defining the IPC events to be handled.
    */
-  abstract events: IPCEventType<any>;
+  abstract events: IPCEventType<any>
 
   /**
    * Registers an instance of the event handler class, ensuring that only one instance per class name
    * is created and registered. This method facilitates the singleton pattern for handler instances.
    */
   static register(this: { new (): AbstractRegisterEvent }) {
-    const className = this.name;
+    const className = this.name
     if (AbstractRegisterEvent.instances[className] == null) {
-      AbstractRegisterEvent.instances[className] = new this();
+      AbstractRegisterEvent.instances[className] = new this()
     }
-    const instance = AbstractRegisterEvent.instances[className];
-    instance.registerHandler();
+    const instance = AbstractRegisterEvent.instances[className]
+    instance.registerHandler()
   }
 
   /**
@@ -310,7 +310,7 @@ export abstract class AbstractRegisterEvent {
    */
   private registerHandler() {
     for (const [channel, handler] of Object.entries(this.events)) {
-      on(channel as never, handler as never);
+      on(channel as never, handler as never)
     }
   }
 }
@@ -324,7 +324,7 @@ export abstract class AbstractRegisterEvent {
  * @typeparam TRequest - The type of the data (payload) sent from the main process to the renderer.
  */
 export interface IBroadcastContract<TRequest> {
-  payload: TRequest;
+  payload: TRequest
 }
 
 /**
@@ -345,7 +345,7 @@ export function createBroadcastFor<T>() {
     payload: T[K] extends { payload: infer P } ? P : never // Ensure payload compatibility
   ): void => {
     if (!mainWindow.isDestroyed()) {
-      mainWindow.webContents.send(channel as string, payload);
+      mainWindow.webContents.send(channel as string, payload)
     }
-  };
+  }
 }

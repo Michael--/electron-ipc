@@ -6,4 +6,4 @@
  */
 
 // Export generator
-export * from './ipc-contracts';
+export * from './ipc-contracts'

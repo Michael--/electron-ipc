@@ -1,11 +1,11 @@
-import { app, BrowserWindow } from 'electron';
-import * as path from 'path';
+import { app, BrowserWindow } from 'electron'
+import * as path from 'path'
 
 /**
  * Main process entry point
  */
 
-let mainWindow: BrowserWindow | null = null;
+let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -16,33 +16,33 @@ function createWindow(): void {
       nodeIntegration: false,
       contextIsolation: true,
     },
-  });
+  })
 
   // Load the index.html
-  mainWindow.loadFile(path.join(__dirname, '../../public/index.html'));
+  mainWindow.loadFile(path.join(__dirname, '../../public/index.html'))
 
   // Open DevTools in development
   if (process.env.NODE_ENV === 'development') {
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools()
   }
 
   mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+    mainWindow = null
+  })
 }
 
 app.whenReady().then(() => {
-  createWindow();
+  createWindow()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      createWindow()
     }
-  });
-});
+  })
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit();
+    app.quit()
   }
-});
+})

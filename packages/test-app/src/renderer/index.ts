@@ -8,18 +8,18 @@
 declare global {
   interface Window {
     electronAPI?: {
-      ping: () => Promise<unknown>;
-    };
+      ping: () => Promise<unknown>
+    }
   }
 }
 
 // eslint-disable-next-line no-console
-console.log('Renderer process started');
+console.log('Renderer process started')
 
 // Example usage of exposed API
 if (window.electronAPI) {
   // eslint-disable-next-line no-console
-  console.log('Electron API is available');
+  console.log('Electron API is available')
 }
 
-export {};
+export {}

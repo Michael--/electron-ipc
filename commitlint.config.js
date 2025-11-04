@@ -22,6 +22,6 @@ const config = {
     'subject-empty': [2, 'never'],
     'type-empty': [2, 'never'],
   },
-};
+}
 
-export default config;
+export default config

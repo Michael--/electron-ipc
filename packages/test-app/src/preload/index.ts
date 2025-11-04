@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron'
 
 /**
  * Preload script - runs in isolated context
@@ -9,4 +9,4 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('electronAPI', {
   // Placeholder - generated IPC methods will be added here
   ping: () => ipcRenderer.invoke('ping'),
-});
+})
