@@ -101,7 +101,7 @@ export type IBroadcastContracts = GenericBroadcastContract<{
 }>
 
 // Main process - send to renderer
-export const mainBroadcast = createBroadcastFor<IBroadcastContracts>()
+export const mainBroadcast = createBroadcast<IBroadcastContracts>()
 mainBroadcast('Ping', mainWindow, 42)
 
 // Renderer process - listen

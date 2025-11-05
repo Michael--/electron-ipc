@@ -33,7 +33,7 @@
  *
  *    - Utilize the send contract as needed:
  *      create a broadcast function for your contract:
- *      export const broadcast = createBroadcastFor<IBroadcastContracts>()
+ *      export const broadcast = createBroadcast<IBroadcastContracts>()
  *      broadcast("Status", mainWindow, "Ready");
  *
  * 4) Access from the renderer process, assuming the API is published at `window.api`:
@@ -365,7 +365,7 @@ export type PayloadType<T extends GenericBroadcastContract<T>, K extends keyof T
  * @returns A function that can be used to send IPC messages for the specified contract types. This function takes a channel name, a BrowserWindow instance, and a payload as arguments. It sends the payload to the specified channel if the BrowserWindow instance is not destroyed.
  * @template T A generic parameter representing the set of all possible IPC send contracts for which the broadcast function is being created. This parameter does not need to extend any specific type, offering flexibility in defining IPC contracts.
  */
-export function createBroadcastFor<T>() {
+export function createBroadcast<T>() {
   return <K extends keyof T>(
     channel: K,
     mainWindow: BrowserWindow,

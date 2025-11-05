@@ -1,5 +1,4 @@
 import {
-  createBroadcastFor,
   GenericBroadcastContract,
   GenericInvokeContract,
   GenericRendererEventContract,
@@ -55,8 +54,3 @@ export type BroadcastContracts = GenericBroadcastContract<{
    */
   About: IBroadcastContract<void>
 }>
-
-// ----------------------------------------------------------------------------
-// send: type safe handler
-// add type safe accessing to ITestBroadcastContracts
-export const mainBroadcast = createBroadcastFor<BroadcastContracts>()

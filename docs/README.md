@@ -87,7 +87,7 @@ Create IPC contracts in your main process (`src/main/ipc-api.ts`):
 
 ```typescript
 import {
-  createBroadcastFor,
+  createBroadcast,
   GenericBroadcastContract,
   GenericInvokeContract,
   GenericRendererEventContract,
@@ -115,7 +115,7 @@ export type IBroadcastContracts = GenericBroadcastContract<{
 }>
 
 // Create broadcast helper
-export const mainBroadcast = createBroadcastFor<IBroadcastContracts>()
+export const mainBroadcast = createBroadcast<IBroadcastContracts>()
 ```
 
 ### 2. Generate API

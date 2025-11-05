@@ -2,13 +2,17 @@ import { app, BrowserWindow } from 'electron'
 import {
   AbstractRegisterEvent,
   AbstractRegisterHandler,
+  createBroadcast,
   IPCEventType,
   IPCHandlerType,
 } from 'electron-ipc'
 import * as path from 'path'
-import { EventContracts, InvokeContracts, mainBroadcast } from './ipc-api'
+import { BroadcastContracts, EventContracts, InvokeContracts } from './ipc-api'
 
 let eventHandlerInitialized = false
+
+/// create type safe accessing to BroadcastContracts
+const mainBroadcast = createBroadcast<BroadcastContracts>()
 
 function initializeEventHandler() {
   // check if already initialized
