@@ -159,7 +159,11 @@ function printUsage() {
 /**
  * Processes all contracts and generates the IPC API code
  */
-function processContracts(sourceFile: SourceFile, contractNames: IContract[], importPath: string) {
+export function processContracts(
+  sourceFile: SourceFile,
+  contractNames: IContract[],
+  importPath: string
+) {
   const processDeclarations = (
     contract: string,
     api: ApiFunc,
@@ -218,7 +222,7 @@ function processContracts(sourceFile: SourceFile, contractNames: IContract[], im
 /**
  * Generates main process broadcast API code
  */
-function generateMainBroadcastApi(
+export function generateMainBroadcastApi(
   contractName: string,
   importPath: string,
   sourceFile: SourceFile
@@ -295,7 +299,7 @@ function generateMainBroadcastApi(
 /**
  * Main entry point - parses CLI arguments and generates IPC API code
  */
-function main() {
+export function main() {
   const project = new Project()
 
   const args = process.argv.slice(2)
@@ -362,5 +366,3 @@ function main() {
     process.exit(1)
   }
 }
-
-main()

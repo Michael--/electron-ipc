@@ -5,4 +5,6 @@
  * This file is bundled separately and made executable
  */
 
-import '../generator/generate-api'
+import { main } from '../generator/generate-api'
+
+main()
