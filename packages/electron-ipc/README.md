@@ -20,9 +20,14 @@ npm install electron-ipc
 
 Documentation will be added as the API stabilizes.
 
-## Development
+## Assets
 
-This package is part of a monorepo. See the root README for development instructions.
+This package includes logo assets for branding and documentation:
+
+- `assets/logo-light.svg` - Light theme logo (transparent background)
+- `assets/logo-dark.svg` - Dark theme logo (dark background)
+
+Both logos are available in SVG format and can be used in documentation, websites, or any other branding materials.
 
 ## License
 

@@ -2,6 +2,7 @@
   "name": "electron-ipc",
   "version": "0.1.0",
   "description": "TypeScript code generator for type-safe Electron IPC communication",
+  "logo": "./assets/logo-light.svg",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -10,6 +11,7 @@
   },
   "files": [
     "dist",
+    "assets",
     "README.md",
     "LICENSE"
   ],
