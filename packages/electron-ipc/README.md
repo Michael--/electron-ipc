@@ -1,5 +1,9 @@
 # electron-ipc
 
+<p align="center">
+  <img src="./assets/logo-light.svg" width="200" alt="Electron IPC Logo">
+</p>
+
 TypeScript code generator for type-safe Electron IPC communication.
 
 ## Overview
