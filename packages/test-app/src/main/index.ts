@@ -5,6 +5,7 @@ import {
   IPCEventType,
   IPCHandlerType,
 } from 'electron-ipc'
+import * as fs from 'fs'
 import * as path from 'path'
 import { mainBroadcast } from './broadcast-generated'
 import { EventContracts, InvokeContracts } from './ipc-api'
@@ -26,10 +27,22 @@ function initializeEventHandler() {
         // console.log(`AddNumbers: ${v.a} + ${v.b}`)
         return v.a + v.b
       },
-      GetAppInfo: async () => ({
-        name: app.getName(),
-        version: app.getVersion(),
-      }),
+      GetAppInfo: async () => {
+        try {
+          const packageJsonPath = path.join(process.cwd(), 'package.json')
+          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
+          return {
+            name: packageJson.name,
+            version: packageJson.version,
+          }
+        } catch (error) {
+          // Fallback to app methods if package.json can't be read
+          return {
+            name: app.getName(),
+            version: app.getVersion(),
+          }
+        }
+      },
     }
   }
 
