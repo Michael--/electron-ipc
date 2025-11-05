@@ -96,12 +96,17 @@ window.api.Quit()
 
 ```typescript
 // Contract definition
-export type IBroadcastContracts = GenericBroadcastContract<{
+export type BroadcastContracts = GenericBroadcastContract<{
   Ping: IBroadcastContract<number>
 }>
 
-// Main process - send to renderer
-export const mainBroadcast = createBroadcast<IBroadcastContracts>()
+// Option 1: Generated main broadcast API (recommended)
+import { mainBroadcast } from './broadcast-generated'
+mainBroadcast.Ping(mainWindow, 42)
+
+// Option 2: Runtime broadcast helper (alternative)
+import { createBroadcast } from 'electron-ipc'
+const mainBroadcast = createBroadcast<BroadcastContracts>()
 mainBroadcast('Ping', mainWindow, 42)
 
 // Renderer process - listen

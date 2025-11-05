@@ -109,16 +109,13 @@ export type EventContracts = GenericRendererEventContract<{
 }>
 
 // Broadcast: Main sends to renderer (one-way)
-export type IBroadcastContracts = GenericBroadcastContract<{
+export type BroadcastContracts = GenericBroadcastContract<{
   Ping: IBroadcastContract<number>
   About: IBroadcastContract<void>
 }>
 
-// Create broadcast helper (runtime-generated - less convenient)
-// const mainBroadcast = createBroadcast<BroadcastContracts>()
-
-// Import generated main broadcast API (more convenient)
-import { mainBroadcast } from './broadcast-generated'
+// Optional: Create runtime broadcast helper (if not using generated API)
+// export const mainBroadcast = createBroadcast<BroadcastContracts>()
 ```
 
 ### 2. Generate API
@@ -179,7 +176,7 @@ import {
   IPCHandlerType,
   IPCEventType,
 } from 'electron-ipc'
-import { InvokeContracts, EventContracts, mainBroadcast } from './ipc-api'
+import { InvokeContracts, EventContracts, BroadcastContracts } from './ipc-api'
 
 // Implement invoke handlers (request/response)
 class RegisterHandler extends AbstractRegisterHandler {
@@ -209,10 +206,19 @@ class RegisterEvent extends AbstractRegisterEvent {
 RegisterHandler.register()
 RegisterEvent.register()
 
-// Send broadcasts to renderer (main → renderer)
+// Option 1: Use generated main broadcast API (recommended)
+import { mainBroadcast } from './broadcast-generated'
 mainBroadcast.Ping(mainWindow, 42) // with payload
 mainBroadcast.About(mainWindow) // void payload omitted
+
+// Option 2: Use runtime-generated broadcast helper (alternative)
+import { createBroadcast } from 'electron-ipc'
+const mainBroadcast = createBroadcast<BroadcastContracts>()
+mainBroadcast('Ping', mainWindow, 42)
+mainBroadcast('About', mainWindow, undefined)
 ```
+
+**Note:** The generated broadcast API (`--main-broadcast-output`) is optional but recommended for consistency with the renderer API. Both approaches are type-safe.
 
 ## CLI Usage
 
@@ -235,8 +241,11 @@ electron-ipc-generate \
 - `--invoke=<name>` - Type name for invoke contracts (Renderer ↔ Main, request/response)
 - `--event=<name>` - Type name for event contracts (Renderer → Main, no response)
 - `--send=<name>` - Type name for send/broadcast contracts (Main → Renderer, one-way)
+- `--main-broadcast-output=<path>` - **Optional:** Path where the main process broadcast API will be saved
 
 **Note:** At least one contract type must be specified. If multiple contracts of the same type are specified, the last one wins.
+
+The `--main-broadcast-output` option is optional. If omitted, you can use the runtime `createBroadcast()` helper instead.
 
 ## Benefits
 
