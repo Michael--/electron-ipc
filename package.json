@@ -17,7 +17,8 @@
     "typecheck": "pnpm -r run typecheck",
     "spell": "cspell \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky",
-    "pre-commit": "pnpm exec lint-staged"
+    "pre-commit": "pnpm exec lint-staged",
+    "pack-electron-ipc": "cd packages/electron-ipc && pnpm pack"
   },
   "keywords": [
     "electron",
