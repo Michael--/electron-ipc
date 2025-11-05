@@ -1,36 +1,15 @@
 /* eslint-disable no-console */
-import fs from 'fs'
-import path from 'path'
+import * as fs from 'fs'
+import * as path from 'path'
 import { Project, SourceFile } from 'ts-morph'
-
-const header = `
-import { ipcRenderer } from "electron"`
-const invokeContracts = (contract: string, importPath: string) => `
-import { ${contract} } from "${importPath}"
-
-// This function takes the channel and request, infers the types, and calls ipcRenderer.invoke with the correct types enforced.
-const invoke${contract} = <K extends keyof ${contract}>(channel: K, request: ${contract}[K]["request"]): Promise<${contract}[K]["response"]> => {
-   return ipcRenderer.invoke(channel as string, request) as Promise<${contract}[K]["response"]>
-}
-`
-
-const eventContracts = (contract: string, importPath: string) => `
-import { ${contract} } from "${importPath}"
-
-// This function takes the channel and request, infers the types, and calls ipcRenderer.send with the correct types enforced.
-const send${contract} = <K extends keyof ${contract}>(channel: K, request: ${contract}[K]["request"]): void => {
-   ipcRenderer.send(channel as string, request)
-}
-`
-
-const sendContracts = (contract: string, importPath: string) => `
-import { ${contract} } from "${importPath}"
-
-// This function takes the channel and request, infers the types, and calls ipcRenderer.on with the correct types enforced.
-const on${contract} = <K extends keyof ${contract}>(channel: K, callback: (payload: ${contract}[K]["payload"]) => void): void => {
-   ipcRenderer.on(channel as string, (_event, payload: ${contract}[K]["payload"]) => callback(payload))
-}
-`
+import {
+  createApiExport,
+  createApiMethod,
+  createFileHeader,
+  eventContracts,
+  invokeContracts,
+  sendContracts,
+} from './templates'
 
 let output = ''
 let space = 0
@@ -43,30 +22,72 @@ const add = (props: { v?: string; indent?: boolean; cr?: false }) => {
   if (props.indent === true) space += 3
 }
 
+const addBlob = (blob: string) => {
+  blob.split('\n').forEach((line) => add({ v: line }))
+}
+
+/**
+ * Contract configuration for code generation
+ */
+interface IContract {
+  type: 'invoke' | 'event' | 'send'
+  name: string
+}
+
+/**
+ * Configuration for different contract types
+ */
+const CONTRACT_CONFIG = {
+  invoke: {
+    template: invokeContracts,
+    methodPrefix: 'invoke',
+    paramType: 'request' as const,
+    returnType: 'promise' as const,
+    searchType: 'type' as const,
+  },
+  event: {
+    template: eventContracts,
+    methodPrefix: 'send',
+    paramType: 'request' as const,
+    returnType: 'void' as const,
+    searchType: 'type' as const,
+  },
+  send: {
+    template: sendContracts,
+    methodPrefix: 'on',
+    paramType: 'payload' as const,
+    returnType: 'void' as const,
+    searchType: 'interface' as const,
+  },
+} as const
+
 type ApiFunc = (ifaceName: string, prop: string) => void
 
+/**
+ * Generates API method code for invoke contracts
+ */
 function invokeApi(contract: string, propName: string) {
-  add({
-    v: `invoke${propName}: (request: ${contract}["${propName}"]["request"]) => {`,
-    indent: true,
-  })
-  add({ v: `return invoke${contract}("${propName}", request)` })
-  add({ v: `},`, indent: false })
+  const method = createApiMethod('invoke', propName, contract, 'request', 'promise')
+  add({ v: method, indent: true })
+  add({ indent: false })
 }
 
+/**
+ * Generates API method code for event contracts
+ */
 function eventApi(contract: string, propName: string) {
-  add({ v: `send${propName}: (request: ${contract}["${propName}"]["request"]) => {`, indent: true })
-  add({ v: `return send${contract}("${propName}", request)` })
-  add({ v: `},`, indent: false })
+  const method = createApiMethod('send', propName, contract, 'request', 'void')
+  add({ v: method, indent: true })
+  add({ indent: false })
 }
 
+/**
+ * Generates API method code for send/broadcast contracts
+ */
 function sendApi(contract: string, propName: string) {
-  add({
-    v: `on${propName}: (callback: (content: ${contract}["${propName}"]["payload"]) => void) => {`,
-    indent: true,
-  })
-  add({ v: `return on${contract}("${propName}", callback)` })
-  add({ v: `},`, indent: false })
+  const method = createApiMethod('on', propName, contract, 'payload', 'void')
+  add({ v: method, indent: true })
+  add({ indent: false })
 }
 
 function processProperties(props: {
@@ -97,147 +118,137 @@ function processProperties(props: {
   add({ v: '}', indent: false })
 }
 
+/**
+ * Finds exported type aliases matching the given typename pattern
+ */
 function getTypeAliasesOf(sourceFile: SourceFile, typename: string) {
   return sourceFile.getTypeAliases().filter((e) => e.isExported() && e.getName().includes(typename))
 }
 
+/**
+ * Finds exported interfaces matching the exact typename
+ */
 function getInterfacesOf(sourceFile: SourceFile, typename: string) {
   return sourceFile.getInterfaces().filter((e) => e.isExported() && e.getName() === typename)
 }
 
-interface IContract {
-  type: string
-  name: string
-}
-
+/**
+ * Prints CLI usage instructions
+ */
 function printUsage() {
+  console.log(`Usage: electron-ipc-generate --input=<path> --output=<path> [options]`)
+  console.log(`\nRequired:`)
+  console.log(`  --input=<path>   Path to the TypeScript file containing IPC contracts`)
+  console.log(`  --output=<path>  Path where the generated code will be saved`)
+  console.log(`\nContract Options (at least one required):`)
+  console.log(`  --invoke=<name>  Type name for invoke contracts (Renderer ↔ Main)`)
+  console.log(`  --event=<name>   Type name for event contracts (Renderer → Main)`)
+  console.log(`  --send=<name>    Type name for send/broadcast contracts (Main → Renderer)`)
+  console.log(`\nExample:`)
   console.log(
-    `Usage: node [scriptName].js --input=[inputPath] --output=[outputPath] --contract=[type:name]`
+    `  electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api.ts --invoke=InvokeContracts --event=EventContracts --send=BroadcastContracts`
   )
-  console.log(`Parameters:`)
-  console.log(`  --input: Path to the TypeScript file containing the IPC contracts.`)
-  console.log(`  --output: Path where the generated code will be saved.`)
-  console.log(
-    `  --contract: Specifies the contract type (invoke|event|send) and name (the type name of your contract).`
-  )
-  console.log(`              Can be used multiple times for multiple contracts.`)
-  console.log(`Example:`)
-  console.log(
-    `  node [scriptName].js --input=./src/main/ipc-api.ts --output=./src/preload/api-generated.ts --contract=invoke:IPCInvokeContracts`
-  )
+  console.log(`\nNote: If multiple contracts of the same type are specified, the last one wins.`)
 }
 
-// Function to process contracts
+/**
+ * Processes all contracts and generates the IPC API code
+ */
 function processContracts(sourceFile: SourceFile, contractNames: IContract[], importPath: string) {
-  // search for a contract if designed as a type
-  const processTypes = (props: { contract: string; api: ApiFunc; definitions: string }) => {
-    const alias = getTypeAliasesOf(sourceFile, props.contract)
-    alias.forEach((typeAlias) => {
-      const name = typeAlias.getName()
-      const typeAliases = typeAlias.getType()
-      const propNames = typeAliases.getProperties().map((prop) => prop.getName())
-      processProperties({ ...props, ifaceName: name, propNames: propNames })
-    })
-    return alias.length
-  }
-
-  // search for a contract if designed as an interface
-  const processInterfaces = (props: { contract: string; api: ApiFunc; definitions: string }) => {
-    const alias = getInterfacesOf(sourceFile, props.contract)
-    alias.forEach((iFace) => {
-      const name = iFace.getName()
-      const propNames = iFace.getProperties().map((prop) => prop.getName())
-      processProperties({ ...props, ifaceName: name, propNames: propNames })
-    })
-    return alias.length
-  }
-
-  header.split('\n').forEach((v) => add({ v }))
-
-  // TODO: the names of the contracts to be inspect could be a param, or fiddle out by its declaration (derived from ...)
-  contractNames.forEach(({ type, name }) => {
-    let n = 0
-    switch (type) {
-      case 'invoke':
-        n = processTypes({
-          contract: name,
-          api: invokeApi,
-          definitions: invokeContracts(name, importPath),
-        })
-        break
-      case 'event':
-        n = processTypes({
-          contract: name,
-          api: eventApi,
-          definitions: eventContracts(name, importPath),
-        })
-        break
-      case 'send':
-        n = processInterfaces({
-          contract: name,
-          api: sendApi,
-          definitions: sendContracts(name, importPath),
-        })
-        break
-      default:
-        console.error(`Unknown contract type: ${type}, must of of "invoke, event, send"`)
-        process.exit(1)
+  const processDeclarations = (
+    contract: string,
+    api: ApiFunc,
+    searchType: 'type' | 'interface'
+  ) => {
+    if (searchType === 'type') {
+      const declarations = getTypeAliasesOf(sourceFile, contract)
+      declarations.forEach((decl) => {
+        const name = decl.getName()
+        const propNames = decl
+          .getType()
+          .getProperties()
+          .map((p) => p.getName())
+        processProperties({ ifaceName: name, propNames, contract, api, definitions: '' })
+      })
+      return declarations.length
+    } else {
+      const declarations = getInterfacesOf(sourceFile, contract)
+      declarations.forEach((decl) => {
+        const name = decl.getName()
+        const propNames = decl.getProperties().map((p) => p.getName())
+        processProperties({ ifaceName: name, propNames, contract, api, definitions: '' })
+      })
+      return declarations.length
     }
-    if (n === 0) {
+  }
+
+  addBlob(createFileHeader())
+
+  contractNames.forEach(({ type, name }) => {
+    const config = CONTRACT_CONFIG[type]
+    if (!config) {
+      console.error(`Unknown contract type: ${type}, must be "invoke", "event", or "send"`)
+      process.exit(1)
+    }
+
+    addBlob(config.template(name, importPath))
+
+    const found = processDeclarations(
+      name,
+      type === 'invoke' ? invokeApi : type === 'event' ? eventApi : sendApi,
+      config.searchType
+    )
+
+    if (found === 0) {
       console.error(`Nothing found for "${type}:${name}" : Type does not exist or is empty`)
       printUsage()
       process.exit(1)
     }
   })
 
-  // TODO: the api name could be a param
-  add({ v: '' })
-  add({ v: 'export const api = {', indent: true })
-  generatedApiNames.forEach((e) => {
-    add({ v: `...${e},` })
-  })
-  add({ v: '}', indent: false })
-  add({ v: 'export type ApiType = typeof api' })
-
+  addBlob(createApiExport(generatedApiNames))
   return output
 }
 
+/**
+ * Main entry point - parses CLI arguments and generates IPC API code
+ */
 function main() {
-  // Initialize project and source files
-  const project = new Project({
-    compilerOptions: {
-      // following was an old option, may need to be changed, but currently not necessary anymore, script result is now OK anyway
-      //target: ts.ScriptTarget.ES5,
-      //module: ts.ModuleKind.CommonJS,
-    },
-  })
+  const project = new Project()
 
-  const args = process.argv.slice(2) // Removes the first two elements
+  const args = process.argv.slice(2)
 
   const inputPathArg = args.find((arg) => arg.startsWith('--input='))
   const outputPathArg = args.find((arg) => arg.startsWith('--output='))
-  const contractArgs = args.filter((arg) => arg.startsWith('--contract='))
 
-  if (inputPathArg == null || outputPathArg == null || contractArgs.length === 0) {
-    console.error('Error: --input, --output, and at least one --contract must be defined.')
+  // New simplified contract syntax: --invoke=Name, --event=Name, --send=Name
+  const invokeArg = args.filter((arg) => arg.startsWith('--invoke=')).pop()
+  const eventArg = args.filter((arg) => arg.startsWith('--event=')).pop()
+  const sendArg = args.filter((arg) => arg.startsWith('--send=')).pop()
+
+  if (inputPathArg == null || outputPathArg == null) {
+    console.error('Error: --input and --output must be defined.')
+    printUsage()
+    process.exit(1)
+  }
+
+  const contractNames: IContract[] = []
+  if (invokeArg) contractNames.push({ type: 'invoke', name: invokeArg.split('=')[1] })
+  if (eventArg) contractNames.push({ type: 'event', name: eventArg.split('=')[1] })
+  if (sendArg) contractNames.push({ type: 'send', name: sendArg.split('=')[1] })
+
+  if (contractNames.length === 0) {
+    console.error('Error: At least one contract (--invoke, --event, or --send) must be defined.')
     printUsage()
     process.exit(1)
   }
 
   const inputPath = inputPathArg.split('=')[1]
   const outputPath = outputPathArg.split('=')[1]
-  const contractNames: IContract[] = contractArgs.map((arg) => {
-    const [type, name] = arg.split('=')[1].split(':')
-    return { type, name }
-  })
 
-  // Calculate the relative typescript import path and format the import path, ensuring correct parent directory notation and removing file extension
   const relativePath = path.relative(path.dirname(outputPath), path.dirname(inputPath))
   const importPath = `${relativePath.replace(/\\/g, '/')}/ipc-api`
-    .replace(/^\.\.\//, '../')
-    .replace(/\.ts$/, '')
 
-  // read the file where the API is declared
   const resolvedInputPath = path.resolve(process.cwd(), inputPath)
   try {
     const sourceFile = project.addSourceFileAtPath(resolvedInputPath)
@@ -245,7 +256,6 @@ function main() {
 
     const code = processContracts(sourceFile, contractNames, importPath)
 
-    // Write the generated code to a file
     const resolvedOutputPath = path.resolve(process.cwd(), outputPath)
     fs.writeFileSync(resolvedOutputPath, code, 'utf8')
     console.log(`Generated code written to ${resolvedOutputPath}`)

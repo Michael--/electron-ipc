@@ -5,4 +5,4 @@
  * This file is bundled separately and made executable
  */
 
-import '../generator/generate-api.js'
+import '../generator/generate-api'
