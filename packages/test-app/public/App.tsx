@@ -75,6 +75,43 @@ function AddNumbersDemo() {
   )
 }
 
+function AppInfoDemo() {
+  const [appInfo, setAppInfo] = useState<{ name: string; version: string } | null>(null)
+
+  const onGetInfo = async () => {
+    const info = await window.api.invokeGetAppInfo()
+    setAppInfo(info)
+  }
+
+  return (
+    <div className="info">
+      <h2>Get App Info (Invoke without parameters)</h2>
+      <button onClick={onGetInfo}>Get App Info</button>
+      {appInfo && (
+        <p>
+          {appInfo.name} v{appInfo.version}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function LogMessageDemo() {
+  const onLog = (level: 'info' | 'warn' | 'error') => {
+    window.api.sendLogMessage({ level, message: `Test ${level} message from renderer` })
+  }
+
+  return (
+    <div className="info">
+      <h2>Log Message (Event with payload)</h2>
+      <button onClick={() => onLog('info')}>Log Info</button>
+      <button onClick={() => onLog('warn')}>Log Warning</button>
+      <button onClick={() => onLog('error')}>Log Error</button>
+      <p style={{ fontSize: '0.9em', color: '#666' }}>Check the console for logged messages</p>
+    </div>
+  )
+}
+
 /**
  * Main React App component
  */
@@ -87,6 +124,8 @@ export function App() {
       <AboutReceiver />
       <PingReceiver />
       <AddNumbersDemo />
+      <AppInfoDemo />
+      <LogMessageDemo />
     </div>
   )
 }

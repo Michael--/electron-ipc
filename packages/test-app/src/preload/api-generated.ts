@@ -27,6 +27,11 @@ const InvokeContractsApi = {
   ): Promise<InvokeContracts['AddNumbers']['response']> => {
     return invokeInvokeContracts('AddNumbers', request)
   },
+  invokeGetAppInfo: (
+    request: InvokeContracts['GetAppInfo']['request']
+  ): Promise<InvokeContracts['GetAppInfo']['response']> => {
+    return invokeInvokeContracts('GetAppInfo', request)
+  },
 }
 
 import { EventContracts } from '../main/ipc-api'
@@ -42,6 +47,9 @@ const sendEventContracts = <K extends keyof EventContracts>(
 const EventContractsApi = {
   sendQuit: (request: EventContracts['Quit']['request']) => {
     return sendEventContracts('Quit', request)
+  },
+  sendLogMessage: (request: EventContracts['LogMessage']['request']) => {
+    return sendEventContracts('LogMessage', request)
   },
 }
 

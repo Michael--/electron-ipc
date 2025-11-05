@@ -26,6 +26,10 @@ function initializeEventHandler() {
         // console.log(`AddNumbers: ${v.a} + ${v.b}`)
         return v.a + v.b
       },
+      GetAppInfo: async () => ({
+        name: app.getName(),
+        version: app.getVersion(),
+      }),
     }
   }
 
@@ -35,6 +39,14 @@ function initializeEventHandler() {
       Quit: (_event, _v) => {
         console.warn(`Quit`)
         app.quit()
+      },
+      LogMessage: (_event, v) => {
+        // eslint-disable-next-line no-console
+        if (v.level === 'error') console.error(`[Renderer] ${v.message}`)
+        // eslint-disable-next-line no-console
+        else if (v.level === 'warn') console.warn(`[Renderer] ${v.message}`)
+        // eslint-disable-next-line no-console
+        else console.log(`[Renderer] ${v.message}`)
       },
     }
   }

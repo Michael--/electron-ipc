@@ -20,6 +20,12 @@ export type InvokeContracts = GenericInvokeContract<{
    * @returns {number} - The sum of the two numbers.
    */
   AddNumbers: IInvokeContract<{ a: number; b: number }, number>
+
+  /**
+   * GetAppInfo retrieves application metadata without any request parameters.
+   * @returns {object} Application information including name and version.
+   */
+  GetAppInfo: IInvokeContract<void, { name: string; version: string }>
 }>
 
 /**
@@ -33,6 +39,13 @@ export type EventContracts = GenericRendererEventContract<{
    * @property {void} request - No request data.
    */
   Quit: IRendererEventContract<void>
+
+  /**
+   * Logs a message in the main process console.
+   * @type {object}
+   * @property {string} request - The message to log.
+   */
+  LogMessage: IRendererEventContract<{ level: 'info' | 'warn' | 'error'; message: string }>
 }>
 
 /**
