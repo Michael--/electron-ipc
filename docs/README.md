@@ -25,38 +25,59 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 
 The generator supports three types of IPC communication:
 
-### 1. Invoke (Request/Response)
+### 1. Invoke (Renderer ↔ Main, Request/Response)
 
-Main process handles requests and returns responses:
+Renderer calls main process and waits for response:
 
 ```typescript
-interface IInvokeContracts {
-  getAppVersion: () => string
-  readFile: (path: string) => Promise<string>
+export type InvokeContracts = GenericInvokeContract<{
+  GetVersion: IInvokeContract<void, string>
+  AddNumbers: IInvokeContract<{ a: number; b: number }, number>
+}>
+```
+
+**Why these wrapper types?** `GenericInvokeContract` and `IInvokeContract` enforce a strict structure with `request` and `response` properties. This structured format is required so the generator can reliably parse and generate type-safe code. You cannot deviate from this pattern - it ensures the generator knows exactly what types to extract.
+
+**Generated method names:** The generator prefixes invoke methods with `invoke`:
+
+- `AddNumbers` → `window.api.invokeAddNumbers(params)`
+- `GetVersion` → `window.api.invokeGetVersion()`
+
+### 2. Event (Renderer → Main)
+
+Renderer sends events to main process without expecting a response:
+
+```typescript
+export type EventContracts = GenericRendererEventContract<{
+  Quit: IRendererEventContract<void>
+  LogMessage: IRendererEventContract<string>
+}>
+```
+
+**Why these wrapper types?** `GenericRendererEventContract` and `IRendererEventContract` enforce the structure with a `request` property. This is necessary for the generator to extract the payload type correctly.
+
+**Generated method names:** The generator prefixes event methods with `send`:
+
+- `Quit` → `window.api.sendQuit()`
+- `LogMessage` → `window.api.sendLogMessage(message)`
+
+### 3. Broadcast (Main → Renderer)
+
+Main process sends data/events to renderer (one-way only):
+
+```typescript
+export interface IBroadcastContracts {
+  Ping: IBroadcastContract<number>
+  About: IBroadcastContract<void>
 }
 ```
 
-### 2. Event (Main → Renderer)
+**Why these wrapper types?** `IBroadcastContract` enforces the structure with a `payload` property. This allows the generator to create properly typed callback handlers.
 
-Main process sends events to renderer:
+**Generated method names:** The generator prefixes broadcast listeners with `on`:
 
-```typescript
-interface IEventContracts {
-  onAppReady: () => void
-  onUpdate: (version: string) => void
-}
-```
-
-### 3. Send/Broadcast (Renderer → Main or Main → Renderer)
-
-Bi-directional communication without response:
-
-```typescript
-interface ISendContracts {
-  logMessage: (message: string) => void
-  userAction: (action: string, data: unknown) => void
-}
-```
+- `Ping` → `window.api.onPing((count) => ...)`
+- `About` → `window.api.onAbout(() => ...)`
 
 ## Workflow
 
@@ -65,25 +86,35 @@ interface ISendContracts {
 Create IPC contracts in your main process (`src/main/ipc-api.ts`):
 
 ```typescript
-import { createInvokeFor, createEventFor, createBroadcastFor } from 'electron-ipc'
+import {
+  createBroadcastFor,
+  GenericInvokeContract,
+  GenericRendererEventContract,
+  IBroadcastContract,
+  IInvokeContract,
+  IRendererEventContract,
+} from 'electron-ipc'
 
-interface IAppInvokeContracts {
-  getVersion: () => string
-  saveFile: (path: string, content: string) => Promise<void>
+// Invoke: Renderer calls main and gets response
+export type InvokeContracts = GenericInvokeContract<{
+  AddNumbers: IInvokeContract<{ a: number; b: number }, number>
+  GetVersion: IInvokeContract<void, string>
+}>
+
+// Event: Renderer sends events to main
+export type EventContracts = GenericRendererEventContract<{
+  Quit: IRendererEventContract<void>
+  LogMessage: IRendererEventContract<string>
+}>
+
+// Broadcast: Main sends to renderer (one-way)
+export interface IBroadcastContracts {
+  Ping: IBroadcastContract<number>
+  About: IBroadcastContract<void>
 }
 
-interface IAppEventContracts {
-  onReady: () => void
-  onError: (error: string) => void
-}
-
-interface IAppSendContracts {
-  userClick: (x: number, y: number) => void
-}
-
-export const mainInvoke = createInvokeFor<IAppInvokeContracts>()
-export const mainEvent = createEventFor<IAppEventContracts>()
-export const mainSend = createBroadcastFor<IAppSendContracts>()
+// Create broadcast helper
+export const mainBroadcast = createBroadcastFor<IBroadcastContracts>()
 ```
 
 ### 2. Generate API
@@ -112,39 +143,71 @@ contextBridge.exposeInMainWorld('api', api)
 Access the API with full TypeScript support (`src/renderer/App.tsx`):
 
 ```typescript
-// Invoke
-const version = await window.api.getVersion()
-await window.api.saveFile('/path/to/file', 'content')
+// Invoke: Call main and await response (prefixed with 'invoke')
+const result = await window.api.invokeAddNumbers({ a: 5, b: 3 }) // result = 8
+const version = await window.api.invokeGetVersion()
 
-// Listen to events
-window.api.onReady(() => console.log('App ready'))
-window.api.onError((error) => console.error(error))
+// Event: Send to main (prefixed with 'send')
+window.api.sendQuit()
+window.api.sendLogMessage('User clicked button')
 
-// Send messages
-window.api.userClick(100, 200)
+// Broadcast: Listen to events from main (prefixed with 'on')
+window.api.onPing((count) => console.log(`Ping ${count}`))
+window.api.onAbout(() => console.log('About dialog'))
 ```
+
+**Note:** The generator automatically adds prefixes to method names:
+
+- Invoke contracts → `invoke` prefix
+- Event contracts → `send` prefix
+- Broadcast contracts → `on` prefix
+
+This prevents naming conflicts and makes the API usage self-documenting.
 
 ### 5. Implement Handlers in Main
 
 Handle IPC calls in main process (`src/main/index.ts`):
 
 ```typescript
-import { mainInvoke, mainEvent, mainSend } from './ipc-api'
+import {
+  AbstractRegisterHandler,
+  AbstractRegisterEvent,
+  IPCHandlerType,
+  IPCEventType,
+} from 'electron-ipc'
+import { InvokeContracts, EventContracts, mainBroadcast } from './ipc-api'
 
-// Register invoke handlers
-mainInvoke.handle('getVersion', () => app.getVersion())
-mainInvoke.handle('saveFile', async (path, content) => {
-  await fs.writeFile(path, content)
-})
+// Implement invoke handlers (request/response)
+class RegisterHandler extends AbstractRegisterHandler {
+  handlers: IPCHandlerType<InvokeContracts> = {
+    AddNumbers: async (_event, params) => {
+      return params.a + params.b
+    },
+    GetVersion: async () => {
+      return app.getVersion()
+    },
+  }
+}
 
-// Send events to renderer
-mainEvent.emit('onReady')
-mainEvent.emit('onError', 'Something went wrong')
+// Implement event handlers (renderer → main)
+class RegisterEvent extends AbstractRegisterEvent {
+  events: IPCEventType<EventContracts> = {
+    Quit: () => {
+      app.quit()
+    },
+    LogMessage: (_event, message) => {
+      console.log(`Renderer: ${message}`)
+    },
+  }
+}
 
-// Listen to renderer messages
-mainSend.listen('userClick', (x, y) => {
-  console.log(`User clicked at ${x}, ${y}`)
-})
+// Register all handlers
+RegisterHandler.register()
+RegisterEvent.register()
+
+// Send broadcasts to renderer (main → renderer)
+mainBroadcast('Ping', mainWindow, 42)
+mainBroadcast('About', mainWindow, undefined)
 ```
 
 ## CLI Usage
@@ -155,9 +218,9 @@ The generator is available as a CLI tool:
 electron-ipc-generate \
   --input ./src/main/ipc-api.ts \
   --output ./src/preload/api-generated.ts \
-  --contract invoke:IAppInvokeContracts \
-  --contract event:IAppEventContracts \
-  --contract send:IAppSendContracts
+  --contract invoke:InvokeContracts \
+  --contract event:EventContracts \
+  --contract send:IBroadcastContracts
 ```
 
 ### CLI Options
@@ -165,9 +228,9 @@ electron-ipc-generate \
 - `--input` - Path to file containing IPC contract definitions
 - `--output` - Path where generated API code will be written
 - `--contract` - Contract to process (format: `type:InterfaceName`)
-  - `invoke:InterfaceName` - Request/response pattern
-  - `event:InterfaceName` - Main → Renderer events
-  - `send:InterfaceName` - Bidirectional messaging
+  - `invoke:InterfaceName` - Request/response pattern (Renderer ↔ Main)
+  - `event:InterfaceName` - Renderer → Main events (no response)
+  - `send:InterfaceName` - Main → Renderer broadcasts (one-way)
 
 ## Benefits
 
@@ -183,17 +246,17 @@ electron-ipc-generate \
 Change this contract:
 
 ```typescript
-interface IInvokeContracts {
-  AddNumbers: (params: { a: number; b: number }) => number
-}
+export type InvokeContracts = GenericInvokeContract<{
+  AddNumbers: IInvokeContract<{ a: number; b: number }, number>
+}>
 ```
 
 To this:
 
 ```typescript
-interface IInvokeContracts {
-  AddNumbers: (params: { x: number; y: number }) => number // Changed a,b → x,y
-}
+export type InvokeContracts = GenericInvokeContract<{
+  AddNumbers: IInvokeContract<{ x: number; y: number }, number> // Changed a,b → x,y
+}>
 ```
 
 TypeScript **immediately** shows compile errors in your handler implementation:

@@ -2,6 +2,53 @@
 
 ## Code Generator Design
 
+### Why Contract Helper Types?
+
+The generator uses structured wrapper types (`GenericInvokeContract`, `IInvokeContract`, etc.) instead of simple function signatures for a critical reason: **reliable code generation**.
+
+These helper types enforce a specific structure with named properties:
+
+- `IInvokeContract<Request, Response>` → `{ request: Request, response: Response }`
+- `IRendererEventContract<Payload>` → `{ request: Payload }`
+- `IBroadcastContract<Payload>` → `{ payload: Payload }`
+
+**Why this is necessary:**
+
+1. **Predictable AST Structure** - The generator can reliably parse TypeScript AST nodes
+2. **Type Extraction** - Request/response types are consistently accessible
+3. **No Ambiguity** - Cannot deviate from the pattern, ensuring generator compatibility
+4. **Future-Proof** - Additional metadata can be added without breaking changes
+
+Without these wrappers, the generator would have to handle countless variations of function signatures, making reliable type extraction impossible.
+
+### Method Name Prefixes
+
+The generator automatically adds prefixes to method names based on contract type:
+
+| Contract Type | Prefix   | Example                             |
+| ------------- | -------- | ----------------------------------- |
+| Invoke        | `invoke` | `AddNumbers` → `invokeAddNumbers()` |
+| Event         | `send`   | `Quit` → `sendQuit()`               |
+| Broadcast     | `on`     | `Ping` → `onPing(callback)`         |
+
+**Benefits:**
+
+- **Self-Documenting** - Method name reveals communication pattern
+- **No Naming Conflicts** - Different contract types can use same base name
+- **Consistent API** - Predictable naming across all generated methods
+
+Example:
+
+```typescript
+// Contract definition
+export type InvokeContracts = GenericInvokeContract<{
+  GetUser: IInvokeContract<number, User>
+}>
+
+// Generated API (automatic 'invoke' prefix)
+const user = await window.api.invokeGetUser(123)
+```
+
 ### Generator Pipeline
 
 1. **Parse TypeScript** - Use ts-morph to analyze IPC contract interfaces
@@ -13,41 +60,47 @@
 
 For each contract type, the generator creates:
 
-#### Invoke Contracts (Request/Response)
+#### Invoke Contracts (Renderer ↔ Main, Request/Response)
 
 ```typescript
-// Main process
-mainInvoke.handle('methodName', (arg1, arg2) => {
-  return result
-})
+// Main process - register handler
+class RegisterHandler extends AbstractRegisterHandler {
+  handlers: IPCHandlerType<InvokeContracts> = {
+    AddNumbers: async (_event, params) => {
+      return params.a + params.b
+    },
+  }
+}
+RegisterHandler.register()
 
-// Renderer process
-const result = await window.api.methodName(arg1, arg2)
+// Renderer process - call and await
+const result = await window.api.AddNumbers({ a: 5, b: 3 })
 ```
 
-#### Event Contracts (Main → Renderer)
+#### Event Contracts (Renderer → Main)
 
 ```typescript
-// Main process
-mainEvent.emit('eventName', payload)
+// Main process - listen to events
+class RegisterEvent extends AbstractRegisterEvent {
+  events: IPCEventType<EventContracts> = {
+    Quit: () => app.quit(),
+  }
+}
+RegisterEvent.register()
 
-// Renderer process
-window.api.onEventName((payload) => {
-  // Handle event
-})
+// Renderer process - send event
+window.api.Quit()
 ```
 
-#### Send Contracts (Bidirectional)
+#### Broadcast Contracts (Main → Renderer, one-way)
 
 ```typescript
-// Main process
-mainSend.listen('messageName', (payload) => {
-  // Handle message
-})
-mainSend.send('messageName', payload) // Broadcast to all windows
+// Main process - send to renderer
+export const mainBroadcast = createBroadcastFor<IBroadcastContracts>()
+mainBroadcast('Ping', mainWindow, 42)
 
-// Renderer process
-window.api.messageName(payload) // Send to main
+// Renderer process - listen
+window.api.onPing((count) => console.log(`Ping ${count}`))
 ```
 
 ### Type Safety Mechanism
@@ -64,29 +117,45 @@ The generator ensures **compile-time type safety** through:
 
 Example:
 
+````typescript
+Example:
+
 ```typescript
 // Contract definition
-interface IInvokeContracts {
-  GetUser: (id: number) => Promise<User>
-}
+export type InvokeContracts = GenericInvokeContract<{
+  GetUser: IInvokeContract<number, User>
+}>
 
 // Handler implementation
 class RegisterHandler extends AbstractRegisterHandler {
-  handlers: IPCHandlerType<IInvokeContracts> = {
+  handlers: IPCHandlerType<InvokeContracts> = {
     GetUser: async (_event, id) => {
       // TypeScript knows 'id' is number
-      // Return type must be Promise<User> or compile error
+      // Return type must be User or compile error
       return fetchUser(id)
     },
   }
 }
+RegisterHandler.register()
 
 // Renderer usage
 const user = await window.api.GetUser(123)
 // TypeScript knows 'user' is User type
 // Passing wrong type → immediate compile error
-await window.api.GetUser('123') // ❌ Error: Argument of type 'string' is not assignable to parameter of type 'number'
-```
+await window.api.GetUser("123") // ❌ Error: Argument of type 'string' is not assignable to parameter of type 'number'
+````
+
+This compile-time validation extends to:
+
+- Parameter types and order
+- Return types (including Promise wrapping)
+- Optional vs required parameters
+- Broadcast payloads
+- Event callback signatures
+
+### AST Transformation
+
+````
 
 This compile-time validation extends to:
 
@@ -168,7 +237,7 @@ mainInvoke.handle('saveFile', (path, content) => {
   }
   // Process request
 })
-```
+````
 
 ### CSP (Content Security Policy)
 
