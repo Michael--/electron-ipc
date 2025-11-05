@@ -42,7 +42,7 @@ const CONTRACT_CONFIG = {
     template: invokeContracts,
     methodPrefix: 'invoke',
     paramType: 'request' as const,
-    returnType: 'promise' as const,
+    returnType: 'invoke' as const,
     searchType: 'type' as const,
   },
   event: {
@@ -56,7 +56,7 @@ const CONTRACT_CONFIG = {
     template: sendContracts,
     methodPrefix: 'on',
     paramType: 'payload' as const,
-    returnType: 'void' as const,
+    returnType: 'callback' as const,
     searchType: 'type' as const,
   },
 } as const
@@ -67,7 +67,7 @@ type ApiFunc = (ifaceName: string, prop: string) => void
  * Generates API method code for invoke contracts
  */
 function invokeApi(contract: string, propName: string) {
-  const method = createApiMethod('invoke', propName, contract, 'request', 'promise')
+  const method = createApiMethod('invoke', propName, contract, 'request', 'invoke')
   add({ v: method, indent: true })
   add({ indent: false })
 }
@@ -85,7 +85,7 @@ function eventApi(contract: string, propName: string) {
  * Generates API method code for send/broadcast contracts
  */
 function sendApi(contract: string, propName: string) {
-  const method = createApiMethod('on', propName, contract, 'payload', 'void')
+  const method = createApiMethod('on', propName, contract, 'payload', 'callback')
   add({ v: method, indent: true })
   add({ indent: false })
 }
@@ -119,10 +119,10 @@ function processProperties(props: {
 }
 
 /**
- * Finds exported type aliases matching the given typename pattern
+ * Finds exported type aliases matching the exact typename
  */
 function getTypeAliasesOf(sourceFile: SourceFile, typename: string) {
-  return sourceFile.getTypeAliases().filter((e) => e.isExported() && e.getName().includes(typename))
+  return sourceFile.getTypeAliases().filter((e) => e.isExported() && e.getName() === typename)
 }
 
 /**

@@ -22,8 +22,10 @@ const invokeInvokeContracts = <K extends keyof InvokeContracts>(
 }
 
 const InvokeContractsApi = {
-  invokeAddNumbers: (callback: (request: InvokeContracts['AddNumbers']['request']) => void) => {
-    return invokeInvokeContracts('AddNumbers', callback)
+  invokeAddNumbers: (
+    request: InvokeContracts['AddNumbers']['request']
+  ): Promise<InvokeContracts['AddNumbers']['response']> => {
+    return invokeInvokeContracts('AddNumbers', request)
   },
 }
 
@@ -46,7 +48,7 @@ const EventContractsApi = {
 import { BroadcastContracts } from '../main/ipc-api'
 
 // This function takes the channel and request, infers the types, and calls ipcRenderer.on with the correct types enforced.
-const onIBroadcastContracts = <K extends keyof BroadcastContracts>(
+const onBroadcastContracts = <K extends keyof BroadcastContracts>(
   channel: K,
   callback: (payload: BroadcastContracts[K]['payload']) => void
 ): void => {
@@ -55,18 +57,18 @@ const onIBroadcastContracts = <K extends keyof BroadcastContracts>(
   )
 }
 
-const IBroadcastContractsApi = {
-  onPing: (content: BroadcastContracts['Ping']['payload']) => {
-    return onIBroadcastContracts('Ping', content)
+const BroadcastContractsApi = {
+  onPing: (callback: (content: BroadcastContracts['Ping']['payload']) => void) => {
+    return onBroadcastContracts('Ping', callback)
   },
-  onAbout: (content: BroadcastContracts['About']['payload']) => {
-    return onIBroadcastContracts('About', content)
+  onAbout: (callback: (content: BroadcastContracts['About']['payload']) => void) => {
+    return onBroadcastContracts('About', callback)
   },
 }
 
 export const api = {
   ...InvokeContractsApi,
   ...EventContractsApi,
-  ...IBroadcastContractsApi,
+  ...BroadcastContractsApi,
 }
 export type ApiType = typeof api

@@ -221,7 +221,7 @@ electron-ipc-generate \
   --output ./src/preload/api-generated.ts \
   --invoke InvokeContracts \
   --event EventContracts \
-  --send IBroadcastContracts
+  --send BroadcastContracts
 ```
 
 ### CLI Options

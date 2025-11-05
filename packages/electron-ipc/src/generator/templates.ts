@@ -75,13 +75,19 @@ export const createApiMethod = (
   propName: string,
   contract: string,
   paramType: 'request' | 'payload',
-  returnType: 'promise' | 'void'
+  returnType: 'promise' | 'void' | 'callback' | 'invoke'
 ) => {
   const param = paramType === 'request' ? 'request' : 'content'
   const typeAnnotation = `${contract}["${propName}"]["${paramType}"]`
 
   if (returnType === 'void') {
     return `${prefix}${propName}: (${param}: ${typeAnnotation}) => {
+   return ${prefix}${contract}("${propName}", ${param})
+},`
+  }
+
+  if (returnType === 'invoke') {
+    return `${prefix}${propName}: (${param}: ${typeAnnotation}): Promise<${contract}["${propName}"]["response"]> => {
    return ${prefix}${contract}("${propName}", ${param})
 },`
   }
