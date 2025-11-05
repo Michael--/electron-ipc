@@ -19,7 +19,7 @@
  * 1) API Definitions
  *    export type IPCInvokeContracts = GenericInvokeContract<{ HelloEcho: IInvokeContract<string, string> }>;
  *    export type IPCEventContracts = GenericRendererEventContract<{ Message: IRendererEventContract<string> }>;
- *    export interface IBroadcastContracts { Status: IBroadcastContract<string>; }
+ *    export type IBroadcastContracts = GenericBroadcastContract<{ Status: IBroadcastContract<string> }>;
  *
  * 2) Execute the adjusted script
  *    - Adjustments include the source path of the API definition, the destination path of the generated API, and the names of your API contracts.
@@ -326,6 +326,33 @@ export abstract class AbstractRegisterEvent {
 export interface IBroadcastContract<TRequest> {
   payload: TRequest
 }
+
+/**
+ * Represents a generic mapping of IPC broadcast contracts, enforcing a specific structure on each contract.
+ * This type iterates over keys of `T` and applies `IBroadcastContract` structure enforcement, ensuring that
+ * each property adheres to the IBroadcastContract interface.
+ *
+ * @type {GenericBroadcastContract}
+ * @typeparam T - A type representing a collection of IPC broadcast contracts.
+ */
+export type GenericBroadcastContract<T> = {
+  [P in keyof T]: T[P] extends IBroadcastContract<infer Req>
+    ? EnforceStructure<T[P], IBroadcastContract<Req>>
+    : never
+}
+
+/**
+ * Utility type for extracting the payload type from a specified IBroadcastContract.
+ * This type facilitates the extraction of the payload type that's sent from the main process to the renderer,
+ * allowing for type-safe handling of IPC broadcasts.
+ *
+ * @type {PayloadType}
+ * @typeparam T - The target broadcast contract type.
+ * @typeparam K - The key of the contract to extract the payload type from.
+ * @returns The payload type of the specified contract.
+ */
+export type PayloadType<T extends GenericBroadcastContract<T>, K extends keyof T> =
+  T[K] extends IBroadcastContract<infer Req> ? Req : never
 
 /**
  * Creates a specialized broadcast function tailored to a specific set of IPC send contract interfaces.

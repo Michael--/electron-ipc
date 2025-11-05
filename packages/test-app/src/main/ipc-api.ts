@@ -1,5 +1,6 @@
 import {
   createBroadcastFor,
+  GenericBroadcastContract,
   GenericInvokeContract,
   GenericRendererEventContract,
   IBroadcastContract,
@@ -36,10 +37,10 @@ export type EventContracts = GenericRendererEventContract<{
 }>
 
 /**
- * IBroadcastContracts: Defines unidirectional IPC contracts for data/events sent from main to renderer process.
- * @interface
+ * BroadcastContracts: Defines unidirectional IPC contracts for data/events sent from main to renderer process.
+ * @type
  */
-export interface IBroadcastContracts {
+export type BroadcastContracts = GenericBroadcastContract<{
   /**
    * Ping event to check connectivity or responsiveness.
    * @type {object}
@@ -53,9 +54,9 @@ export interface IBroadcastContracts {
    * @property {void} payload - No payload, used to trigger the display of 'About' information.
    */
   About: IBroadcastContract<void>
-}
+}>
 
 // ----------------------------------------------------------------------------
 // send: type safe handler
 // add type safe accessing to ITestBroadcastContracts
-export const mainBroadcast = createBroadcastFor<IBroadcastContracts>()
+export const mainBroadcast = createBroadcastFor<BroadcastContracts>()

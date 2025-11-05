@@ -57,7 +57,7 @@ const CONTRACT_CONFIG = {
     methodPrefix: 'on',
     paramType: 'payload' as const,
     returnType: 'void' as const,
-    searchType: 'interface' as const,
+    searchType: 'type' as const,
   },
 } as const
 
