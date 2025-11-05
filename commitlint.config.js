@@ -21,6 +21,7 @@ const config = {
     'subject-case': [2, 'never', ['upper-case']],
     'subject-empty': [2, 'never'],
     'type-empty': [2, 'never'],
+    'body-max-line-length': [0], // Deactivate  100-character limit for body lines
   },
 }
 
