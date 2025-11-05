@@ -16,7 +16,7 @@ import { BroadcastContracts } from '../main/ipc-api'
  * Main process broadcast API for sending messages to renderer
  */
 export const mainBroadcast = {
-  Ping: (mainWindow: BrowserWindow, payload?: BroadcastContracts['Ping']['payload']): void => {
+  Ping: (mainWindow: BrowserWindow, payload: BroadcastContracts['Ping']['payload']): void => {
     if (!mainWindow.isDestroyed()) {
       mainWindow.webContents.send('Ping', payload)
     }

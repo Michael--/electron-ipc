@@ -11,7 +11,7 @@ import { EventContracts, InvokeContracts } from './ipc-api'
 
 let eventHandlerInitialized = false
 
-/// create type safe accessing to BroadcastContracts
+/// create type safe accessing to BroadcastContracts, this is the alternative way to send broadcast events
 // const mainBroadcast = createBroadcast<BroadcastContracts>()
 
 function initializeEventHandler() {

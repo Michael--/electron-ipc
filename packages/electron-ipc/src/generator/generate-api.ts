@@ -255,11 +255,31 @@ function generateMainBroadcastApi(
 
     propNames.forEach((propName, index) => {
       const payloadType = `${contractName}["${propName}"]["payload"]`
-      const method = `${propName}: (mainWindow: BrowserWindow, payload?: ${payloadType}): void => {
+
+      // Check if payload type is void to make it optional
+      const prop = decl.getType().getProperty(propName)
+      const propType = prop?.getTypeAtLocation(decl)
+      const payloadProp = propType?.getProperty('payload')
+      const payloadTypeDef = payloadProp?.getTypeAtLocation(decl)
+      const isVoidPayload = payloadTypeDef?.getText() === 'void'
+
+      let method: string
+      if (isVoidPayload) {
+        // For void payload, make parameter optional
+        method = `${propName}: (mainWindow: BrowserWindow, payload?: ${payloadType}): void => {
     if (!mainWindow.isDestroyed()) {
       mainWindow.webContents.send('${propName}', payload)
     }
   }`
+      } else {
+        // For non-void payload, make parameter required
+        method = `${propName}: (mainWindow: BrowserWindow, payload: ${payloadType}): void => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('${propName}', payload)
+    }
+  }`
+      }
+
       add({ v: method, indent: true })
       if (index < propNames.length - 1) {
         add({ v: ',', indent: true })
