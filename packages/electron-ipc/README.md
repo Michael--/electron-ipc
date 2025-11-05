@@ -2,10 +2,6 @@
 
 TypeScript code generator for type-safe Electron IPC communication.
 
-## Status
-
-🚧 **Under Development** - This library is currently in active development.
-
 ## Overview
 
 This library provides a code generation approach to create type-safe IPC communication between Electron's main and renderer processes.
@@ -61,10 +57,10 @@ npx electron-ipc-generate \
 
 ### 3. Setup Preload Script
 
-In your preload script (e.g., `src/preload/index.ts`), expose the API to the renderer:
+In your preload script (e.g., `src/preload/index.ts`), expose the generated API to the renderer process:
 
 ```typescript
-import { exposeApi, ApiType } from './api-generated'
+import { ApiType, exposeApi } from './api-generated'
 
 declare global {
   interface Window {
@@ -74,6 +70,8 @@ declare global {
 
 exposeApi()
 ```
+
+The `exposeApi()` function uses Electron's `contextBridge` to securely expose the type-safe API to the renderer process. The `ApiType` provides full TypeScript IntelliSense for `window.api`.
 
 ### 4. Use in Renderer
 
@@ -92,15 +90,93 @@ window.api.onPing((count) => console.log('Ping:', count))
 
 ### 5. Handle in Main Process
 
-Use the generated broadcast API in your main process:
+Implement handlers for invoke contracts and events in your main process (e.g., `src/main/index.ts`):
 
 ```typescript
-import { broadcastPing, broadcastAbout } from './broadcast-generated'
+import {
+  AbstractRegisterHandler,
+  AbstractRegisterEvent,
+  IPCHandlerType,
+  IPCEventType,
+} from 'electron-ipc'
+import { InvokeContracts, EventContracts } from './ipc-api'
 
-// Send broadcasts to renderer
-broadcastPing(42)
-broadcastAbout()
+// Implement invoke handlers (request-response)
+class RegisterHandler extends AbstractRegisterHandler {
+  handlers: IPCHandlerType<InvokeContracts> = {
+    AddNumbers: async (_event, params) => {
+      return params.a + params.b
+    },
+    GetAppInfo: async () => {
+      return {
+        name: app.getName(),
+        version: app.getVersion(),
+      }
+    },
+  }
+}
+
+// Implement event handlers (renderer → main)
+class RegisterEvent extends AbstractRegisterEvent {
+  events: IPCEventType<EventContracts> = {
+    Quit: () => {
+      app.quit()
+    },
+    LogMessage: (_event, payload) => {
+      if (payload.level === 'error') console.error(payload.message)
+      else if (payload.level === 'warn') console.warn(payload.message)
+      else console.log(payload.message)
+    },
+  }
+}
+
+// Register all handlers and events
+RegisterHandler.register()
+RegisterEvent.register()
 ```
+
+**Sending broadcasts from main to renderer:**
+
+Use the generated broadcast API to send events to the renderer process:
+
+```typescript
+import { mainBroadcast } from './broadcast-generated'
+
+// Send broadcasts to specific window
+mainBroadcast.Ping(mainWindow, 42)
+mainBroadcast.About(mainWindow)
+```
+
+The generated `mainBroadcast` object provides type-safe methods for each broadcast contract. Each method takes the target `BrowserWindow` as the first parameter, followed by the payload (if any).
+
+## Features
+
+✅ **Full Type Safety** - Compile-time validation across all IPC communication  
+✅ **Auto-Generated API** - No manual IPC boilerplate code required  
+✅ **IntelliSense Support** - Auto-completion in all processes (main, preload, renderer)  
+✅ **Three Communication Patterns** - Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer)  
+✅ **Context Bridge Integration** - Secure IPC through Electron's `contextBridge`  
+✅ **TypeScript Strict Mode** - Designed for maximum type safety
+
+## CLI Options
+
+The generator supports the following command-line options:
+
+- `--input=<path>` - Path to file containing IPC contract definitions
+- `--output=<path>` - Path where generated preload API code will be written
+- `--invoke=<name>` - Type name for invoke contracts (request-response)
+- `--event=<name>` - Type name for event contracts (renderer → main)
+- `--send=<name>` - Type name for broadcast contracts (main → renderer)
+- `--main-broadcast-output=<path>` - Path where main process broadcast API will be generated
+
+At least one contract type (`--invoke`, `--event`, or `--send`) must be specified.
+
+## Documentation
+
+For detailed documentation, architecture, and advanced usage, see:
+
+- [Project Documentation](https://github.com/Michael--/electron-ipc/tree/main/docs)
+- [Architecture Guide](https://github.com/Michael--/electron-ipc/blob/main/docs/ARCHITECTURE.md)
 
 ## Assets
 

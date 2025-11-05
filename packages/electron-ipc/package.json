@@ -41,13 +41,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/electron-ipc.git",
+    "url": "https://github.com/Michael--/electron-ipc.git",
     "directory": "packages/electron-ipc"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/electron-ipc/issues"
+    "url": "https://github.com/Michael--/electron-ipc/issues"
   },
-  "homepage": "https://github.com/yourusername/electron-ipc#readme",
+  "homepage": "https://github.com/Michael--/electron-ipc#readme",
   "engines": {
     "node": ">=18.0.0"
   },
