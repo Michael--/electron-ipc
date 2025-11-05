@@ -8,8 +8,5 @@
 // Export interfaces
 export * from './interfaces'
 
-// Export generator
-export * from './generator'
-
 // Version info
 export const VERSION = '0.1.0'
