@@ -5,22 +5,122 @@ body {
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background: #1e1e1e;
   color: #d4d4d4;
+  line-height: 1.5;
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 900px;
   margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #404040;
 }
 
 h1 {
   color: #61dafb;
+  margin-bottom: 8px;
+  font-size: 2em;
 }
 
-.info {
+.subtitle {
+  color: #888;
+  font-size: 0.9em;
+  margin: 0;
+}
+
+.section {
+  margin-bottom: 25px;
+}
+
+.section-title {
+  color: #61dafb;
+  font-size: 1.2em;
+  margin-bottom: 12px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #404040;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.demo-card {
   background: #2d2d2d;
-  padding: 20px;
-  border-radius: 8px;
-  margin: 20px 0;
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid #404040;
+}
+
+.demo-card.broadcast {
+  border-left: 3px solid #4ade80;
+}
+
+.demo-card.invoke {
+  border-left: 3px solid #60a5fa;
+}
+
+.demo-card.event {
+  border-left: 3px solid #f87171;
+}
+
+.demo-title {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #d4d4d4;
+}
+
+.demo-description {
+  font-size: 0.85em;
+  color: #888;
+  margin: 0 0 12px 0;
+}
+
+.demo-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.demo-result {
+  margin-top: 8px;
+  padding: 8px;
+  background: #1e1e1e;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #ce9178;
+}
+
+button {
+  background: #404040;
+  color: #d4d4d4;
+  border: 1px solid #555;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: #555;
+  border-color: #777;
+}
+
+button.primary {
+  background: #61dafb;
+  color: #1e1e1e;
+  border-color: #61dafb;
+}
+
+button.primary:hover {
+  background: #4fa8d1;
 }
 
 code {
@@ -28,4 +128,14 @@ code {
   padding: 2px 6px;
   border-radius: 3px;
   color: #ce9178;
+  font-size: 0.9em;
+}
+
+.footer {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #404040;
+  text-align: center;
+  font-size: 0.8em;
+  color: #666;
 }

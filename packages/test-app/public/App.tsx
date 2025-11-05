@@ -11,52 +11,38 @@ function PingReceiver() {
   }, [])
 
   return (
-    <div className="info">
-      <h2>Ping Counter</h2>
-      <p>Received Ping events from main process: {counter}</p>
+    <div className="demo-card broadcast">
+      <h3 className="demo-title">📡 Ping Counter</h3>
+      <p className="demo-description">Broadcast from main process with numeric payload</p>
+      <div className="demo-result">Received: {counter} pings</div>
     </div>
   )
 }
 
 function AboutReceiver() {
-  const [showAbout, setShowAbout] = useState(false)
+  const [triggered, setTriggered] = useState(false)
+
   useEffect(() => {
     if (!window.api) return
     window.api.onAbout(() => {
-      setShowAbout(true)
+      setTriggered(true)
     })
   }, [])
 
   return (
-    <>
-      {showAbout && (
-        <div className="info">
-          <h2>About</h2>
-          <p>This is a test application for the electron-ipc library.</p>
-          <button onClick={() => setShowAbout(false)}>Close</button>
+    <div className="demo-card broadcast">
+      <h3 className="demo-title">ℹ️ About Dialog</h3>
+      <p className="demo-description">Broadcast from main process without payload</p>
+      <div className="demo-result">
+        {triggered ? 'About dialog triggered!' : 'Waiting for trigger...'}
+      </div>
+      {triggered && (
+        <div className="demo-controls">
+          <button onClick={() => setTriggered(false)}>Reset</button>
         </div>
       )}
-    </>
-  )
-}
-
-function Status() {
-  return (
-    <div className="info">
-      <h2>Status</h2>
-      <p>
-        This is the test environment for the <code>electron-ipc</code> library.
-      </p>
-      <p>The library will generate type-safe IPC communication code that can be tested here.</p>
     </div>
   )
-}
-
-function QuitProgram() {
-  const onClick = () => {
-    window.api.sendQuit()
-  }
-  return <button onClick={onClick}>Quit Application</button>
 }
 
 function AddNumbersDemo() {
@@ -66,11 +52,15 @@ function AddNumbersDemo() {
     const res = await window.api.invokeAddNumbers({ a: Math.random(), b: Math.random() })
     setResult(res)
   }
+
   return (
-    <div className="info">
-      <h2>Add Numbers Demo by invoke main process</h2>
-      <button onClick={onCalculate}>Calculate Random Sum</button>
-      {result !== null && <p>Result: {result}</p>}
+    <div className="demo-card invoke">
+      <h3 className="demo-title">🔢 Add Numbers</h3>
+      <p className="demo-description">Invoke with request/response payload</p>
+      <div className="demo-controls">
+        <button onClick={onCalculate}>Calculate</button>
+      </div>
+      {result !== null && <div className="demo-result">Result: {result.toFixed(4)}</div>}
     </div>
   )
 }
@@ -84,13 +74,16 @@ function AppInfoDemo() {
   }
 
   return (
-    <div className="info">
-      <h2>Get App Info (Invoke without parameters)</h2>
-      <button onClick={onGetInfo}>Get App Info</button>
+    <div className="demo-card invoke">
+      <h3 className="demo-title">📱 Get App Info</h3>
+      <p className="demo-description">Invoke without request parameters</p>
+      <div className="demo-controls">
+        <button onClick={onGetInfo}>Get Info</button>
+      </div>
       {appInfo && (
-        <p>
+        <div className="demo-result">
           {appInfo.name} v{appInfo.version}
-        </p>
+        </div>
       )}
     </div>
   )
@@ -102,12 +95,35 @@ function LogMessageDemo() {
   }
 
   return (
-    <div className="info">
-      <h2>Log Message (Event with payload)</h2>
-      <button onClick={() => onLog('info')}>Log Info</button>
-      <button onClick={() => onLog('warn')}>Log Warning</button>
-      <button onClick={() => onLog('error')}>Log Error</button>
-      <p style={{ fontSize: '0.9em', color: '#666' }}>Check the console for logged messages</p>
+    <div className="demo-card event">
+      <h3 className="demo-title">📝 Log Message</h3>
+      <p className="demo-description">Event with structured payload</p>
+      <div className="demo-controls">
+        <button onClick={() => onLog('info')}>Info</button>
+        <button onClick={() => onLog('warn')}>Warn</button>
+        <button onClick={() => onLog('error')}>Error</button>
+      </div>
+      <div className="demo-result" style={{ fontSize: '0.8em' }}>
+        Check console for logged messages
+      </div>
+    </div>
+  )
+}
+
+function QuitProgram() {
+  const onClick = () => {
+    window.api.sendQuit()
+  }
+
+  return (
+    <div className="demo-card event">
+      <h3 className="demo-title">🚪 Quit Application</h3>
+      <p className="demo-description">Event without payload</p>
+      <div className="demo-controls">
+        <button className="primary" onClick={onClick}>
+          Quit
+        </button>
+      </div>
     </div>
   )
 }
@@ -118,14 +134,43 @@ function LogMessageDemo() {
 export function App() {
   return (
     <div className="container">
-      <QuitProgram />
-      <h1>🚀 Electron IPC Test Application</h1>
-      <Status />
-      <AboutReceiver />
-      <PingReceiver />
-      <AddNumbersDemo />
-      <AppInfoDemo />
-      <LogMessageDemo />
+      <header className="header">
+        <h1>🚀 Electron IPC Test</h1>
+        <p className="subtitle">
+          Type-safe IPC communication examples for the <code>electron-ipc</code> library
+        </p>
+      </header>
+
+      <section className="section">
+        <h2 className="section-title">📡 Broadcast (Main → Renderer)</h2>
+        <div className="demo-grid">
+          <PingReceiver />
+          <AboutReceiver />
+        </div>
+      </section>
+
+      <section className="section">
+        <h2 className="section-title">🔄 Invoke (Renderer ↔ Main)</h2>
+        <div className="demo-grid">
+          <AddNumbersDemo />
+          <AppInfoDemo />
+        </div>
+      </section>
+
+      <section className="section">
+        <h2 className="section-title">📤 Event (Renderer → Main)</h2>
+        <div className="demo-grid">
+          <QuitProgram />
+          <LogMessageDemo />
+        </div>
+      </section>
+
+      <footer className="footer">
+        <p>
+          Built with <code>electron-ipc</code> • All communication is type-safe and validated at
+          compile time
+        </p>
+      </footer>
     </div>
   )
 }
