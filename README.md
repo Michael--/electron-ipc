@@ -1,6 +1,12 @@
-# Electron IPC Monorepo
+# Electron IPC Code Generator
 
-A TypeScript code generator for type-safe Electron IPC communication, with an integrated test application.
+Type-safe IPC communication generator for Electron applications.
+
+## Overview
+
+This monorepo contains a TypeScript code generator that creates type-safe IPC (Inter-Process Communication) APIs for Electron applications. It eliminates boilerplate code and ensures type safety across main, preload, and renderer processes.
+
+**The Key Benefit:** When you change an IPC contract interface, TypeScript immediately shows compile errors everywhere the contract is used incorrectly - before you even run the code. No runtime surprises!
 
 ## 📦 Packages
 
@@ -18,32 +24,23 @@ A full Electron application that serves as a test environment and reference impl
 
 ### Prerequisites
 
-- Node.js >= 18.0.0
-- npm >= 9.0.0
+- Node.js ≥18.0.0
+- pnpm ≥8.15.0
 
 ### Installation
 
 ```bash
-# Install all dependencies
-npm install
-```
+# Install dependencies
+pnpm install
 
-This will install dependencies for all packages and build the workspace.
+# Build packages
+pnpm run build
 
-### Development
+# Run tests
+pnpm run test
 
-```bash
-# Build all packages
-npm run build
-
-# Clean all build outputs
-npm run clean
-
-# Run the test app
-npm run dev
-
-# Watch mode for the library (in separate terminal)
-npm run dev:lib
+# Start test app
+pnpm run dev
 ```
 
 ### Working on Individual Packages
@@ -51,12 +48,12 @@ npm run dev:lib
 ```bash
 # electron-ipc library
 cd packages/electron-ipc
-npm run build
-npm run watch
+pnpm run build
+pnpm run watch
 
 # test-app
 cd packages/test-app
-npm run dev
+pnpm run dev
 ```
 
 ## 📁 Project Structure
@@ -64,35 +61,62 @@ npm run dev
 ```
 electron-ipc/
 ├── packages/
-│   ├── electron-ipc/        # The publishable library
+│   ├── electron-ipc/        # Generator library (publishable)
 │   │   ├── src/
 │   │   │   ├── generator/   # Code generation logic
 │   │   │   ├── interfaces/  # TypeScript interfaces
 │   │   │   └── index.ts
-│   │   └── package.json
 │   │
-│   └── test-app/            # Electron test application
+│   └── test-app/            # Electron test environment
 │       ├── src/
 │       │   ├── main/        # Main process
-│       │   ├── renderer/    # Renderer process
-│       │   └── preload/     # Preload scripts
+│       │   ├── preload/     # Preload scripts
+│       │   └── renderer/    # React UI
 │       └── package.json
 │
-├── package.json             # Root workspace config
+├── docs/                    # Detailed documentation
+├── package.json             # Workspace root
 └── tsconfig.json            # Base TypeScript config
 ```
 
-## 🎯 Goals
+## 🎯 Benefits
 
-- **Type Safety:** Generate fully type-safe IPC communication code
-- **Developer Experience:** Reduce boilerplate and prevent runtime errors
-- **Testability:** Provide a real-world test environment
-- **Publishability:** Clean, reusable library ready for npm/GitHub
+✅ **Compile-Time Type Safety** - Change a contract interface → TypeScript shows errors immediately in all usages  
+✅ **No Runtime Surprises** - Catch signature mismatches before running the app  
+✅ **IntelliSense Everywhere** - Auto-completion in main, preload, and renderer processes  
+✅ **Refactoring Support** - Rename/change contracts → TypeScript guides you to fix all usages  
+✅ **Zero Boilerplate** - Auto-generated IPC wrappers and type definitions  
+✅ **Single Source of Truth** - IPC contracts defined once, validated everywhere
+
+## 📚 Documentation
+
+For detailed usage, API reference, and examples, see [`docs/README.md`](docs/README.md) and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## 🛠 Technology Stack
+
+- **TypeScript** - Strict mode, ES2022
+- **Vite** - Build tool for library
+- **electron-vite** - Build tool for Electron app
+- **React** - UI framework for test app
+- **Vitest** - Testing framework
+- **ESLint** - Code linting (flat config)
+- **Prettier** - Code formatting (no semicolons)
+- **Husky** - Git hooks
+- **ts-morph** - TypeScript AST manipulation
+
+## 🤝 Contributing
+
+1. Create feature branch
+2. Make changes
+3. Run `pnpm run lint` and `pnpm run test`
+4. Commit with conventional commit format:
+   - `feat:` new feature
+   - `fix:` bug fix
+   - `docs:` documentation
+   - `refactor:` code refactoring
+   - `test:` testing
+   - `chore:` maintenance
 
 ## 📝 License
 
 MIT
-
-## 🤝 Contributing
-
-This project is in early development. Documentation and contribution guidelines will be added as the API stabilizes.
