@@ -114,8 +114,11 @@ export type IBroadcastContracts = GenericBroadcastContract<{
   About: IBroadcastContract<void>
 }>
 
-// Create broadcast helper
-export const mainBroadcast = createBroadcast<IBroadcastContracts>()
+// Create broadcast helper (runtime-generated - less convenient)
+// const mainBroadcast = createBroadcast<BroadcastContracts>()
+
+// Import generated main broadcast API (more convenient)
+import { mainBroadcast } from './broadcast-generated'
 ```
 
 ### 2. Generate API
@@ -207,8 +210,8 @@ RegisterHandler.register()
 RegisterEvent.register()
 
 // Send broadcasts to renderer (main → renderer)
-mainBroadcast('Ping', mainWindow, 42)
-mainBroadcast('About', mainWindow, undefined)
+mainBroadcast.Ping(mainWindow, 42) // with payload
+mainBroadcast.About(mainWindow) // void payload omitted
 ```
 
 ## CLI Usage
@@ -221,7 +224,8 @@ electron-ipc-generate \
   --output ./src/preload/api-generated.ts \
   --invoke InvokeContracts \
   --event EventContracts \
-  --send BroadcastContracts
+  --send BroadcastContracts \
+  --main-broadcast-output ./src/main/broadcast-generated.ts
 ```
 
 ### CLI Options

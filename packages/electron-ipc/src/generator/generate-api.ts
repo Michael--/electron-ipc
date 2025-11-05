@@ -6,6 +6,7 @@ import {
   createApiExport,
   createApiMethod,
   createFileHeader,
+  createMainFileHeader,
   eventContracts,
   invokeContracts,
   sendContracts,
@@ -144,9 +145,13 @@ function printUsage() {
   console.log(`  --invoke=<name>  Type name for invoke contracts (Renderer ↔ Main)`)
   console.log(`  --event=<name>   Type name for event contracts (Renderer → Main)`)
   console.log(`  --send=<name>    Type name for send/broadcast contracts (Main → Renderer)`)
+  console.log(`\nOptional:`)
+  console.log(
+    `  --main-broadcast-output=<path>  Path where the main process broadcast API will be saved`
+  )
   console.log(`\nExample:`)
   console.log(
-    `  electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api.ts --invoke=InvokeContracts --event=EventContracts --send=BroadcastContracts`
+    `  electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api.ts --invoke=InvokeContracts --event=EventContracts --send=BroadcastContracts --main-broadcast-output=./src/main/broadcast-api.ts`
   )
   console.log(`\nNote: If multiple contracts of the same type are specified, the last one wins.`)
 }
@@ -211,6 +216,63 @@ function processContracts(sourceFile: SourceFile, contractNames: IContract[], im
 }
 
 /**
+ * Generates main process broadcast API code
+ */
+function generateMainBroadcastApi(
+  contractName: string,
+  importPath: string,
+  sourceFile: SourceFile
+): string {
+  const output: string[] = []
+  const add = (v: string | { v: string; indent?: boolean }) => {
+    if (typeof v === 'string') {
+      output.push(v)
+    } else {
+      const indentStr = v.indent ? '  ' : ''
+      output.push(`${indentStr}${v.v}`)
+    }
+  }
+
+  add(createMainFileHeader())
+
+  add(`import { BrowserWindow } from 'electron'`)
+  add(`import { ${contractName} } from '${importPath}'`)
+  add('')
+
+  add('/**')
+  add(' * Main process broadcast API for sending messages to renderer')
+  add(' */')
+  add(`export const mainBroadcast = {`)
+
+  // Get the broadcast contract properties
+  const declarations = getTypeAliasesOf(sourceFile, contractName)
+  if (declarations.length > 0) {
+    const decl = declarations[0]
+    const propNames = decl
+      .getType()
+      .getProperties()
+      .map((p) => p.getName())
+
+    propNames.forEach((propName, index) => {
+      const payloadType = `${contractName}["${propName}"]["payload"]`
+      const method = `${propName}: (mainWindow: BrowserWindow, payload?: ${payloadType}): void => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('${propName}', payload)
+    }
+  }`
+      add({ v: method, indent: true })
+      if (index < propNames.length - 1) {
+        add({ v: ',', indent: true })
+      }
+    })
+  }
+
+  add('} as const')
+
+  return output.join('\n')
+}
+
+/**
  * Main entry point - parses CLI arguments and generates IPC API code
  */
 function main() {
@@ -220,6 +282,7 @@ function main() {
 
   const inputPathArg = args.find((arg) => arg.startsWith('--input='))
   const outputPathArg = args.find((arg) => arg.startsWith('--output='))
+  const mainBroadcastOutputArg = args.find((arg) => arg.startsWith('--main-broadcast-output='))
 
   // New simplified contract syntax: --invoke=Name, --event=Name, --send=Name
   const invokeArg = args.filter((arg) => arg.startsWith('--invoke=')).pop()
@@ -245,6 +308,7 @@ function main() {
 
   const inputPath = inputPathArg.split('=')[1]
   const outputPath = outputPathArg.split('=')[1]
+  const mainBroadcastOutputPath = mainBroadcastOutputArg?.split('=')[1]
 
   const relativePath = path.relative(path.dirname(outputPath), path.dirname(inputPath))
   const importPath = `${relativePath.replace(/\\/g, '/')}/ipc-api`
@@ -259,6 +323,19 @@ function main() {
     const resolvedOutputPath = path.resolve(process.cwd(), outputPath)
     fs.writeFileSync(resolvedOutputPath, code, 'utf8')
     console.log(`Generated code written to ${resolvedOutputPath}`)
+
+    // Generate main broadcast API if requested
+    if (mainBroadcastOutputPath && sendArg) {
+      const broadcastContractName = sendArg.split('=')[1]
+      const mainBroadcastCode = generateMainBroadcastApi(
+        broadcastContractName,
+        importPath,
+        sourceFile
+      )
+      const resolvedMainBroadcastPath = path.resolve(process.cwd(), mainBroadcastOutputPath)
+      fs.writeFileSync(resolvedMainBroadcastPath, mainBroadcastCode, 'utf8')
+      console.log(`Generated main broadcast API written to ${resolvedMainBroadcastPath}`)
+    }
   } catch (error) {
     console.error(`Error processing files: ${JSON.stringify(error)}`)
     printUsage()

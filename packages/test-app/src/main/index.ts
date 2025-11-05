@@ -2,17 +2,17 @@ import { app, BrowserWindow } from 'electron'
 import {
   AbstractRegisterEvent,
   AbstractRegisterHandler,
-  createBroadcast,
   IPCEventType,
   IPCHandlerType,
 } from 'electron-ipc'
 import * as path from 'path'
-import { BroadcastContracts, EventContracts, InvokeContracts } from './ipc-api'
+import { mainBroadcast } from './broadcast-generated'
+import { EventContracts, InvokeContracts } from './ipc-api'
 
 let eventHandlerInitialized = false
 
 /// create type safe accessing to BroadcastContracts
-const mainBroadcast = createBroadcast<BroadcastContracts>()
+// const mainBroadcast = createBroadcast<BroadcastContracts>()
 
 function initializeEventHandler() {
   // check if already initialized
@@ -73,14 +73,14 @@ function createWindow(): void {
   mainWindow.webContents.on('did-finish-load', () => {
     // Example: Send 'About' event to renderer after load
     if (mainWindow) {
-      mainBroadcast('About', mainWindow, undefined)
+      mainBroadcast.About(mainWindow)
     }
 
     // send ping event every second for demo purposes
     let pingCount = 0
     setInterval(() => {
       if (mainWindow) {
-        mainBroadcast('Ping', mainWindow, pingCount++)
+        mainBroadcast.Ping(mainWindow, pingCount++)
       }
     }, 1000)
   })
