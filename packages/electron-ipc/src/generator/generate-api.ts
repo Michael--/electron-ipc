@@ -5,6 +5,7 @@ import { Project, SourceFile } from 'ts-morph'
 import {
   createApiExport,
   createApiMethod,
+  createExposeApi,
   createFileHeader,
   createMainFileHeader,
   eventContracts,
@@ -216,6 +217,7 @@ export function processContracts(
   })
 
   addBlob(createApiExport(generatedApiNames))
+  addBlob(createExposeApi())
   return output
 }
 

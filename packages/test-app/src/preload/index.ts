@@ -1,5 +1,4 @@
-import { contextBridge } from 'electron'
-import { api, ApiType } from './api-generated'
+import { ApiType, exposeApi } from './api-generated'
 
 /**
  * Preload script - runs in isolated context
@@ -13,15 +12,4 @@ declare global {
   }
 }
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
-if (process.contextIsolated) {
-  try {
-    contextBridge.exposeInMainWorld('api', api)
-  } catch (error) {
-    console.error(error)
-  }
-} else {
-  window.api = api
-}
+exposeApi()

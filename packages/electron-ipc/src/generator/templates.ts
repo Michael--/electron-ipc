@@ -111,6 +111,44 @@ export type ApiType = typeof api
 `
 
 /**
+ * Generates the exposeApi function for preload scripts
+ * @returns Function to expose the API via contextBridge
+ */
+export const createExposeApi = () => `
+/**
+ * Exposes the generated IPC API to the renderer process via contextBridge
+ * Handles context isolation automatically
+ *
+ * Usage in preload script:
+ * \`\`\`typescript
+ * import { exposeApi, ApiType } from './api-generated'
+ *
+ * declare global {
+ *   interface Window {
+ *     api: ApiType
+ *   }
+ * }
+ *
+ * exposeApi()
+ * \`\`\`
+ */
+export const exposeApi = () => {
+  // Use \`contextBridge\` APIs to expose Electron APIs to
+  // renderer only if context isolation is enabled, otherwise
+  // just add to the DOM global.
+  if (process.contextIsolated) {
+    try {
+      require('electron').contextBridge.exposeInMainWorld('api', api)
+    } catch (error) {
+      console.error(error)
+    }
+  } else {
+    ;(globalThis as any).api = api
+  }
+}
+`
+
+/**
  * Creates the file header for generated Main Process files
  * @returns File header with auto-generation warning and lint/prettier ignores
  */
