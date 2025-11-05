@@ -1,5 +1,9 @@
 # Electron IPC Code Generator
 
+<p align="center">
+  <img src="packages/electron-ipc/assets/logo-light.svg" width="200" alt="Electron IPC Logo">
+</p>
+
 Type-safe IPC communication generator for Electron applications.
 
 ## Overview
