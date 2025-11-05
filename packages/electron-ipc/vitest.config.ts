@@ -7,7 +7,16 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'dist/', '**/*.config.{ts,js}', '**/*.test.ts', '**/*.spec.ts'],
+      exclude: [
+        'node_modules/',
+        'dist/',
+        '**/*.config.{ts,js}',
+        '**/*.test.ts',
+        '**/*.spec.ts',
+        'src/index.ts',
+        'src/bin/generate-api.ts',
+        'src/interfaces/index.ts',
+      ],
     },
   },
 })
