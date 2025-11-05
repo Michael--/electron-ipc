@@ -8,9 +8,9 @@ The generator uses structured wrapper types (`GenericInvokeContract`, `IInvokeCo
 
 These helper types enforce a specific structure with named properties:
 
-- `IInvokeContract<Request, Response>` → `{ request: Request, response: Response }`
-- `IRendererEventContract<Payload>` → `{ request: Payload }`
-- `IBroadcastContract<Payload>` → `{ payload: Payload }`
+- `GenericInvokeContract<T>` + `IInvokeContract<Request, Response>` → `{ request: Request, response: Response }`
+- `GenericRendererEventContract<T>` + `IRendererEventContract<Payload>` → `{ request: Payload }`
+- `GenericBroadcastContract<T>` + `IBroadcastContract<Payload>` → `{ payload: Payload }`
 
 **Why this is necessary:**
 
@@ -95,6 +95,11 @@ window.api.Quit()
 #### Broadcast Contracts (Main → Renderer, one-way)
 
 ```typescript
+// Contract definition
+export type IBroadcastContracts = GenericBroadcastContract<{
+  Ping: IBroadcastContract<number>
+}>
+
 // Main process - send to renderer
 export const mainBroadcast = createBroadcastFor<IBroadcastContracts>()
 mainBroadcast('Ping', mainWindow, 42)

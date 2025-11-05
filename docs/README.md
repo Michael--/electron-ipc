@@ -66,13 +66,13 @@ export type EventContracts = GenericRendererEventContract<{
 Main process sends data/events to renderer (one-way only):
 
 ```typescript
-export interface IBroadcastContracts {
+export type IBroadcastContracts = GenericBroadcastContract<{
   Ping: IBroadcastContract<number>
   About: IBroadcastContract<void>
-}
+}>
 ```
 
-**Why these wrapper types?** `IBroadcastContract` enforces the structure with a `payload` property. This allows the generator to create properly typed callback handlers.
+**Why these wrapper types?** `GenericBroadcastContract` and `IBroadcastContract` enforce the structure with a `payload` property. This structured format is required so the generator can reliably parse and generate type-safe code, just like the other contract types.
 
 **Generated method names:** The generator prefixes broadcast listeners with `on`:
 
@@ -88,6 +88,7 @@ Create IPC contracts in your main process (`src/main/ipc-api.ts`):
 ```typescript
 import {
   createBroadcastFor,
+  GenericBroadcastContract,
   GenericInvokeContract,
   GenericRendererEventContract,
   IBroadcastContract,
@@ -108,10 +109,10 @@ export type EventContracts = GenericRendererEventContract<{
 }>
 
 // Broadcast: Main sends to renderer (one-way)
-export interface IBroadcastContracts {
+export type IBroadcastContracts = GenericBroadcastContract<{
   Ping: IBroadcastContract<number>
   About: IBroadcastContract<void>
-}
+}>
 
 // Create broadcast helper
 export const mainBroadcast = createBroadcastFor<IBroadcastContracts>()
@@ -218,19 +219,20 @@ The generator is available as a CLI tool:
 electron-ipc-generate \
   --input ./src/main/ipc-api.ts \
   --output ./src/preload/api-generated.ts \
-  --contract invoke:InvokeContracts \
-  --contract event:EventContracts \
-  --contract send:IBroadcastContracts
+  --invoke InvokeContracts \
+  --event EventContracts \
+  --send IBroadcastContracts
 ```
 
 ### CLI Options
 
-- `--input` - Path to file containing IPC contract definitions
-- `--output` - Path where generated API code will be written
-- `--contract` - Contract to process (format: `type:InterfaceName`)
-  - `invoke:InterfaceName` - Request/response pattern (Renderer ↔ Main)
-  - `event:InterfaceName` - Renderer → Main events (no response)
-  - `send:InterfaceName` - Main → Renderer broadcasts (one-way)
+- `--input=<path>` - Path to file containing IPC contract definitions
+- `--output=<path>` - Path where generated API code will be written
+- `--invoke=<name>` - Type name for invoke contracts (Renderer ↔ Main, request/response)
+- `--event=<name>` - Type name for event contracts (Renderer → Main, no response)
+- `--send=<name>` - Type name for send/broadcast contracts (Main → Renderer, one-way)
+
+**Note:** At least one contract type must be specified. If multiple contracts of the same type are specified, the last one wins.
 
 ## Benefits
 
