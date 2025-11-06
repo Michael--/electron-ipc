@@ -20,7 +20,7 @@
     "package:linux": "electron-builder --linux"
   },
   "keywords": [],
-  "author": "",
+  "author": "Michael Rieck (Michael--) <mr@number10.de>",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.10.0",
