@@ -8,7 +8,7 @@ export default defineConfig({
       insertTypesEntry: true,
       outDir: 'dist',
       include: ['src/**/*'],
-      exclude: ['src/bin/**/*', 'src/generator/generate-api.ts'],
+      exclude: ['src/bin/**/*', '**/*.test.ts'],
     }),
   ],
   build: {
