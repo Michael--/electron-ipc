@@ -141,13 +141,17 @@ code {
 }
 
 .stream-output {
-  max-height: 300px;
+  max-height: 200px;
+  min-height: 80px;
+  height: 200px;
   overflow-y: auto;
+  overflow-x: hidden;
   background: #252525;
   border: 1px solid #404040;
   border-radius: 4px;
   padding: 8px;
   margin-top: 8px;
+  scroll-behavior: smooth;
 }
 
 .stream-output em {

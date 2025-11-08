@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 function PingReceiver() {
   const [counter, setCounter] = useState(0)
@@ -70,6 +70,14 @@ function StreamDataDemo() {
   const [messages, setMessages] = useState<string[]>([])
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const outputRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight
+    }
+  }, [messages])
 
   const handleStartStream = () => {
     if (!window.api) return
@@ -105,7 +113,7 @@ function StreamDataDemo() {
         </button>
       </div>
       {error && <div className="demo-error">Error: {error}</div>}
-      <div className="demo-result stream-output">
+      <div className="demo-result stream-output" ref={outputRef}>
         {messages.length === 0 && !isStreaming && <em>No messages yet</em>}
         {messages.map((msg, idx) => (
           <div key={idx} className="stream-message">
@@ -182,13 +190,21 @@ function QuitProgram() {
 
 function StreamUploadDemo() {
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadedChunks, setUploadedChunks] = useState(0)
+  const [uploadMessages, setUploadMessages] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+  const outputRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight
+    }
+  }, [uploadMessages])
 
   const handleStartUpload = async () => {
     if (!window.api) return
 
-    setUploadedChunks(0)
+    setUploadMessages([])
     setError(null)
     setIsUploading(true)
 
@@ -201,13 +217,14 @@ function StreamUploadDemo() {
         const encoder = new TextEncoder()
         const chunk = encoder.encode(text)
         await writer.write(chunk)
-        setUploadedChunks(i)
+        setUploadMessages((prev) => [...prev, `✓ Uploaded chunk ${i}/10`])
 
         // Wait 1 second before next chunk
         await new Promise((resolve) => setTimeout(resolve, 1000))
       }
 
       await writer.close()
+      setUploadMessages((prev) => [...prev, '✅ Upload complete!'])
       setIsUploading(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload error')
@@ -225,14 +242,13 @@ function StreamUploadDemo() {
         </button>
       </div>
       {error && <div className="demo-error">Error: {error}</div>}
-      <div className="demo-result">
-        {uploadedChunks > 0 && (
-          <div className="stream-output">
-            Uploaded {uploadedChunks}/10 chunks
-            {isUploading && ' (in progress...)'}
-            {!isUploading && uploadedChunks === 10 && ' ✓ Complete'}
+      <div className="demo-result stream-output" ref={outputRef}>
+        {uploadMessages.length === 0 && !isUploading && <em>No uploads yet</em>}
+        {uploadMessages.map((msg, idx) => (
+          <div key={idx} className="stream-message">
+            {msg}
           </div>
-        )}
+        ))}
       </div>
     </div>
   )
@@ -242,6 +258,14 @@ function StreamDownloadDemo() {
   const [logs, setLogs] = useState<string[]>([])
   const [isDownloading, setIsDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const outputRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll to bottom when new logs arrive
+  useEffect(() => {
+    if (outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight
+    }
+  }, [logs])
 
   const handleStartDownload = () => {
     if (!window.api) return
@@ -274,7 +298,7 @@ function StreamDownloadDemo() {
         </button>
       </div>
       {error && <div className="demo-error">Error: {error}</div>}
-      <div className="demo-result stream-output">
+      <div className="demo-result stream-output" ref={outputRef}>
         {logs.length === 0 && !isDownloading && <em>No logs yet</em>}
         {logs.map((log, idx) => (
           <div key={idx} className="stream-message">
