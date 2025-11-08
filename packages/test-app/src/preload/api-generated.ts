@@ -166,6 +166,9 @@ const StreamDownloadContractsApi = {
    downloadDownloadLogs: (callback: (content: StreamDownloadContracts["DownloadLogs"]["payload"]) => void, onEnd?: () => void, onError?: (err: any) => void): void => {
    return downloadStreamDownloadContracts("DownloadLogs", callback, onEnd, onError)
 },
+   downloadStreamVideo: (callback: (content: StreamDownloadContracts["StreamVideo"]["payload"]) => void, onEnd?: () => void, onError?: (err: any) => void): void => {
+   return downloadStreamDownloadContracts("StreamVideo", callback, onEnd, onError)
+},
 }
 
 export const api = {

@@ -145,6 +145,87 @@ function initializeEventHandler() {
           },
         })
       },
+      StreamVideo: () => {
+        const url =
+          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+        // eslint-disable-next-line no-console
+        console.log(`[StreamVideo] Fetching video from: ${url}`)
+
+        // Return ReadableStream directly (not Promise)
+        return new globalThis.ReadableStream({
+          async start(controller) {
+            try {
+              const response = await fetch(url)
+              if (!response.ok || !response.body) {
+                controller.error(
+                  new Error(`Failed to fetch video: ${response.status} ${response.statusText}`)
+                )
+                return
+              }
+
+              const contentLength = response.headers.get('content-length')
+              // eslint-disable-next-line no-console
+              console.log(`[StreamVideo] Response OK, streaming ${contentLength} bytes`)
+
+              const reader = response.body.getReader()
+              const chunkSize = 256 * 1024 // 256KB chunks for better MP4 compatibility
+              let buffer: Uint8Array[] = []
+              let bufferSize = 0
+
+              // eslint-disable-next-line no-constant-condition
+              while (true) {
+                const { done, value } = await reader.read()
+
+                if (done) {
+                  // Send remaining buffered data
+                  if (bufferSize > 0) {
+                    const combined = new Uint8Array(bufferSize)
+                    let offset = 0
+                    for (const chunk of buffer) {
+                      combined.set(chunk, offset)
+                      offset += chunk.length
+                    }
+                    controller.enqueue(combined)
+                    // eslint-disable-next-line no-console
+                    console.log(`[StreamVideo] Sent final chunk: ${combined.length} bytes`)
+                  }
+
+                  // eslint-disable-next-line no-console
+                  console.log('[StreamVideo] Stream complete')
+                  controller.close()
+                  break
+                }
+
+                // Buffer chunks until we reach target size
+                buffer.push(value)
+                bufferSize += value.length
+
+                if (bufferSize >= chunkSize) {
+                  // Combine buffered chunks
+                  const combined = new Uint8Array(bufferSize)
+                  let offset = 0
+                  for (const chunk of buffer) {
+                    combined.set(chunk, offset)
+                    offset += chunk.length
+                  }
+
+                  controller.enqueue(combined)
+                  // eslint-disable-next-line no-console
+                  console.log(`[StreamVideo] Sent chunk: ${combined.length} bytes`)
+
+                  // Reset buffer
+                  buffer = []
+                  bufferSize = 0
+                }
+              }
+            } catch (err) {
+              // eslint-disable-next-line no-console
+              console.error('[StreamVideo] Error:', err)
+              controller.error(err)
+            }
+          },
+        })
+      },
     }
   }
 

@@ -109,4 +109,11 @@ export type StreamDownloadContracts = {
    * @property {string} data - Each chunk of log data.
    */
   DownloadLogs: IStreamDownloadContract<string>
+
+  /**
+   * StreamVideo downloads and streams video data via main process.
+   * @type {object}
+   * @property {Uint8Array} data - Video data chunks.
+   */
+  StreamVideo: IStreamDownloadContract<Uint8Array>
 }
