@@ -2,6 +2,9 @@ import {
   GenericBroadcastContract,
   GenericInvokeContract,
   GenericRendererEventContract,
+  GenericStreamDownloadContract,
+  GenericStreamInvokeContract,
+  GenericStreamUploadContract,
   IBroadcastContract,
   IInvokeContract,
   IRendererEventContract,
@@ -75,7 +78,7 @@ export type BroadcastContracts = GenericBroadcastContract<{
  * StreamInvokeContracts: Defines bidirectional IPC contracts where the response is a stream.
  * @interface
  */
-export type StreamInvokeContracts = {
+export type StreamInvokeContracts = GenericStreamInvokeContract<{
   /**
    * GetLargeData streams large data from main to renderer.
    * @type {object}
@@ -83,13 +86,13 @@ export type StreamInvokeContracts = {
    * @property {string} stream - Each chunk of data.
    */
   GetLargeData: IStreamInvokeContract<{ id: string }, string>
-}
+}>
 
 /**
  * StreamUploadContracts: Defines unidirectional IPC contracts for streaming data from renderer to main.
  * @interface
  */
-export type StreamUploadContracts = {
+export type StreamUploadContracts = GenericStreamUploadContract<{
   /**
    * UploadFile streams file data from renderer to main.
    * @type {object}
@@ -97,13 +100,13 @@ export type StreamUploadContracts = {
    * @property {Uint8Array} data - Each chunk of file data.
    */
   UploadFile: IStreamUploadContract<{ fileName: string }, Uint8Array>
-}
+}>
 
 /**
  * StreamDownloadContracts: Defines unidirectional IPC contracts for streaming data from main to renderer.
  * @interface
  */
-export type StreamDownloadContracts = {
+export type StreamDownloadContracts = GenericStreamDownloadContract<{
   /**
    * DownloadLogs streams log data from main to renderer.
    * @type {object}
@@ -119,4 +122,4 @@ export type StreamDownloadContracts = {
    * @property {Uint8Array} data - Video data chunks.
    */
   StreamVideo: IStreamDownloadContract<{ url: string }, Uint8Array>
-}
+}>
