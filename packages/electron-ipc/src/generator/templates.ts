@@ -63,6 +63,7 @@ const on${contract} = <K extends keyof ${contract}>(channel: K, callback: (paylo
 
 /**
  * Generates template for stream invoke contracts (Renderer ↔ Main with stream response)
+ * Uses callback-based API for contextBridge compatibility (only serializable data)
  * @param contract - The contract type name
  * @param importPath - Relative import path to the contract definition
  * @returns Template string for stream invoke contract helper function
@@ -70,22 +71,52 @@ const on${contract} = <K extends keyof ${contract}>(channel: K, callback: (paylo
 export const streamInvokeContracts = (contract: string, importPath: string) => `
 import { ${contract} } from "${importPath}"
 
-// This function starts a stream invoke and returns a ReadableStream for the response.
-const invokeStream${contract} = <K extends keyof ${contract}>(channel: K, request: ${contract}[K]["request"]): ReadableStream<${contract}[K]["stream"]> => {
+/**
+ * Callback handlers for stream invoke operations
+ */
+type StreamCallbacks<TData> = {
+  onData: (chunk: TData) => void
+  onEnd: () => void
+  onError: (error: Error) => void
+}
+
+/**
+ * Starts a stream invoke and handles the response via callbacks.
+ * This approach works with contextBridge as it only transfers serializable data.
+ */
+const invokeStream${contract} = <K extends keyof ${contract}>(
+  channel: K,
+  request: ${contract}[K]["request"],
+  callbacks: StreamCallbacks<${contract}[K]["stream"]>
+): void => {
+   const dataChannel = \`\${channel as string}-data\`
+   const endChannel = \`\${channel as string}-end\`
+   const errorChannel = \`\${channel as string}-error\`
+
+   const dataHandler = (_event: any, chunk: ${contract}[K]["stream"]) => {
+     callbacks.onData(chunk)
+   }
+   const endHandler = () => {
+     callbacks.onEnd()
+     cleanup()
+   }
+   const errorHandler = (_event: any, err: any) => {
+     callbacks.onError(err instanceof Error ? err : new Error(String(err)))
+     cleanup()
+   }
+
+   const cleanup = () => {
+     ipcRenderer.removeListener(dataChannel, dataHandler)
+     ipcRenderer.removeListener(endChannel, endHandler)
+     ipcRenderer.removeListener(errorChannel, errorHandler)
+   }
+
+   ipcRenderer.on(dataChannel, dataHandler)
+   ipcRenderer.on(endChannel, endHandler)
+   ipcRenderer.on(errorChannel, errorHandler)
+
+   // Start the stream
    ipcRenderer.invoke(channel as string, request)
-   return new ReadableStream({
-     start(controller) {
-       ipcRenderer.on(\`\${channel}-data\`, (_event, chunk: ${contract}[K]["stream"]) => {
-         controller.enqueue(chunk)
-       })
-       ipcRenderer.on(\`\${channel}-end\`, () => {
-         controller.close()
-       })
-       ipcRenderer.on(\`\${channel}-error\`, (_event, err) => {
-         controller.error(err)
-       })
-     }
-   })
 }
 `
 
@@ -165,8 +196,8 @@ export const createApiMethod = (
   }
 
   if (returnType === 'stream') {
-    return `${prefix}${propName}: (${param}: ${typeAnnotation}): ReadableStream<${contract}["${propName}"]["stream"]> => {
-   return ${prefix}${contract}("${propName}", ${param})
+    return `${prefix}${propName}: (${param}: ${typeAnnotation}, callbacks: StreamCallbacks<${contract}["${propName}"]["stream"]>): void => {
+   return ${prefix}${contract}("${propName}", ${param}, callbacks)
 },`
   }
 

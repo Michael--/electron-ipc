@@ -63,10 +63,82 @@ const BroadcastContractsApi = {
 },
 }
 
+import { StreamInvokeContracts } from "../main/ipc-api"
+
+// This function starts a stream invoke and returns a ReadableStream for the response.
+const invokeStreamStreamInvokeContracts = <K extends keyof StreamInvokeContracts>(channel: K, request: StreamInvokeContracts[K]["request"]): ReadableStream<StreamInvokeContracts[K]["stream"]> => {
+   ipcRenderer.invoke(channel as string, request)
+   return new ReadableStream({
+     start(controller) {
+       ipcRenderer.on(`${channel}-data`, (_event, chunk: StreamInvokeContracts[K]["stream"]) => {
+         controller.enqueue(chunk)
+       })
+       ipcRenderer.on(`${channel}-end`, () => {
+         controller.close()
+       })
+       ipcRenderer.on(`${channel}-error`, (_event, err) => {
+         controller.error(err)
+       })
+     }
+   })
+}
+
+
+const StreamInvokeContractsApi = {
+   invokeStreamGetLargeData: (request: StreamInvokeContracts["GetLargeData"]["request"]): ReadableStream<StreamInvokeContracts["GetLargeData"]["stream"]> => {
+   return invokeStreamStreamInvokeContracts("GetLargeData", request)
+},
+}
+
+import { StreamUploadContracts } from "../main/ipc-api"
+
+// This function creates a writable stream for uploading data to the main process.
+const uploadStreamUploadContracts = <K extends keyof StreamUploadContracts>(channel: K): WritableStream<StreamUploadContracts[K]["data"]> => {
+   ipcRenderer.send(`${channel}-start`)
+   return new WritableStream({
+     write(chunk: StreamUploadContracts[K]["data"]) {
+       ipcRenderer.send(`${channel}-data`, chunk)
+     },
+     close() {
+       ipcRenderer.send(`${channel}-end`)
+     },
+     abort(err) {
+       ipcRenderer.send(`${channel}-error`, err)
+     }
+   })
+}
+
+
+const StreamUploadContractsApi = {
+   uploadUploadFile: (): WritableStream<StreamUploadContracts["UploadFile"]["data"]> => {
+   return uploadStreamUploadContracts("UploadFile")
+},
+}
+
+import { StreamDownloadContracts } from "../main/ipc-api"
+
+// This function sets up listeners for downloading a stream from the main process.
+const downloadStreamDownloadContracts = <K extends keyof StreamDownloadContracts>(channel: K, callback: (data: StreamDownloadContracts[K]["data"]) => void, onEnd?: () => void, onError?: (err: any) => void): void => {
+   ipcRenderer.on(`${channel}-data`, (_event, data: StreamDownloadContracts[K]["data"]) => callback(data))
+   if (onEnd) ipcRenderer.on(`${channel}-end`, onEnd)
+   if (onError) ipcRenderer.on(`${channel}-error`, (_event, err) => onError(err))
+   ipcRenderer.invoke(channel as string) // Trigger the download
+}
+
+
+const StreamDownloadContractsApi = {
+   downloadDownloadLogs: (callback: (content: StreamDownloadContracts["DownloadLogs"]["payload"]) => void, onEnd?: () => void, onError?: (err: any) => void): void => {
+   return downloadStreamDownloadContracts("DownloadLogs", callback, onEnd, onError)
+},
+}
+
 export const api = {
    ...InvokeContractsApi,
    ...EventContractsApi,
    ...BroadcastContractsApi,
+   ...StreamInvokeContractsApi,
+   ...StreamUploadContractsApi,
+   ...StreamDownloadContractsApi,
 }
 export type ApiType = typeof api
 

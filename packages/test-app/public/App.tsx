@@ -48,19 +48,71 @@ function AboutReceiver() {
 function AddNumbersDemo() {
   const [result, setResult] = useState<number | null>(null)
 
-  const onCalculate = async () => {
-    const res = await window.api.invokeAddNumbers({ a: Math.random(), b: Math.random() })
-    setResult(res)
+  const handleAdd = async () => {
+    if (!window.api) return
+    const sum = await window.api.invokeAddNumbers({ a: 5, b: 3 })
+    setResult(sum)
   }
 
   return (
     <div className="demo-card invoke">
-      <h3 className="demo-title">🔢 Add Numbers</h3>
-      <p className="demo-description">Invoke with request/response payload</p>
+      <h3 className="demo-title">➕ Add Numbers</h3>
+      <p className="demo-description">Invoke with request payload, returns response</p>
       <div className="demo-controls">
-        <button onClick={onCalculate}>Calculate</button>
+        <button onClick={handleAdd}>Add 5 + 3</button>
       </div>
-      {result !== null && <div className="demo-result">Result: {result.toFixed(4)}</div>}
+      {result !== null && <div className="demo-result">Result: {result}</div>}
+    </div>
+  )
+}
+
+function StreamDataDemo() {
+  const [messages, setMessages] = useState<string[]>([])
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleStartStream = () => {
+    if (!window.api) return
+
+    setMessages([])
+    setError(null)
+    setIsStreaming(true)
+
+    window.api.invokeStreamGetLargeData(
+      { id: 'demo-stream' },
+      {
+        onData: (chunk) => {
+          setMessages((prev) => [...prev, chunk])
+        },
+        onEnd: () => {
+          setIsStreaming(false)
+        },
+        onError: (err) => {
+          setError(err.message)
+          setIsStreaming(false)
+        },
+      }
+    )
+  }
+
+  return (
+    <div className="demo-card stream">
+      <h3 className="demo-title">🌊 Stream Data</h3>
+      <p className="demo-description">Request triggers a 10-second data stream from main process</p>
+      <div className="demo-controls">
+        <button onClick={handleStartStream} disabled={isStreaming}>
+          {isStreaming ? 'Streaming...' : 'Start Stream'}
+        </button>
+      </div>
+      {error && <div className="demo-error">Error: {error}</div>}
+      <div className="demo-result stream-output">
+        {messages.length === 0 && !isStreaming && <em>No messages yet</em>}
+        {messages.map((msg, idx) => (
+          <div key={idx} className="stream-message">
+            {msg}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -154,6 +206,13 @@ export function App() {
         <div className="demo-grid">
           <AddNumbersDemo />
           <AppInfoDemo />
+        </div>
+      </section>
+
+      <section className="section">
+        <h2 className="section-title">🌊 Stream Invoke (Renderer ↔ Main Stream)</h2>
+        <div className="demo-grid">
+          <StreamDataDemo />
         </div>
       </section>
 

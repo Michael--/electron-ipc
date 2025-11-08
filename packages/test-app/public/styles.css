@@ -131,6 +131,57 @@ code {
   font-size: 0.9em;
 }
 
+.demo-error {
+  color: #f48771;
+  background: rgba(244, 135, 113, 0.1);
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-top: 8px;
+  font-size: 0.85em;
+}
+
+.stream-output {
+  max-height: 300px;
+  overflow-y: auto;
+  background: #252525;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  padding: 8px;
+  margin-top: 8px;
+}
+
+.stream-output em {
+  color: #888;
+  font-style: italic;
+}
+
+.stream-message {
+  padding: 4px 8px;
+  margin: 2px 0;
+  background: #2d2d2d;
+  border-left: 2px solid #61dafb;
+  border-radius: 2px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .footer {
   margin-top: 30px;
   padding-top: 20px;

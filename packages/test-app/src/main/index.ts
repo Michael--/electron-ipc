@@ -1,6 +1,7 @@
 import {
   AbstractRegisterEvent,
   AbstractRegisterHandler,
+  AbstractRegisterStreamHandler,
   IPCEventType,
   IPCHandlerType,
 } from '@number10/electron-ipc'
@@ -8,7 +9,7 @@ import { app, BrowserWindow } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 import { mainBroadcast } from './broadcast-generated'
-import { EventContracts, InvokeContracts } from './ipc-api'
+import { EventContracts, InvokeContracts, StreamInvokeContracts } from './ipc-api'
 
 let eventHandlerInitialized = false
 
@@ -64,9 +65,33 @@ function initializeEventHandler() {
     }
   }
 
+  // implement stream handlers
+  class RegisterStreamHandler extends AbstractRegisterStreamHandler {
+    handlers: IPCStreamHandlerType<StreamInvokeContracts> = {
+      GetLargeData: (_event, request) => {
+        // Use globalThis.ReadableStream for Web Streams API compatibility
+        return new globalThis.ReadableStream({
+          async start(controller) {
+            // Send 10 messages over 10 seconds
+            for (let i = 1; i <= 10; i++) {
+              const message = `[${new Date().toLocaleTimeString()}] Stream message ${i}/10 for ${request.id}`
+              controller.enqueue(message)
+
+              // Wait 1 second before next message
+              await new Promise((resolve) => setTimeout(resolve, 1000))
+            }
+
+            controller.close()
+          },
+        })
+      },
+    }
+  }
+
   // register handler and events
   RegisterHandler.register()
   RegisterEvent.register()
+  RegisterStreamHandler.register()
 }
 
 /**

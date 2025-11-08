@@ -317,22 +317,32 @@ export abstract class AbstractRegisterStreamHandler {
    */
   private registerHandler() {
     for (const [channel, handler] of Object.entries(this.handlers)) {
-      // Note: Stream handlers need special handling, as they return streams
-      // For now, assume ipcMain.handle can handle ReadableStream responses
       ipcMain.handle(channel as string, async (event, args) => {
         const stream = handler(event, args)
-        // Simulate streaming over IPC by sending chunks
-        const reader = stream.getReader()
-        try {
-          // eslint-disable-next-line no-constant-condition
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-            event.sender.send(`${channel}-data`, value)
+
+        // Check if this is a Web Streams API ReadableStream (has getReader method)
+        if (typeof stream.getReader === 'function') {
+          // Web Streams API
+          const reader = stream.getReader()
+          try {
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              event.sender.send(`${channel}-data`, value)
+            }
+            event.sender.send(`${channel}-end`)
+          } catch (err) {
+            event.sender.send(`${channel}-error`, err)
+          } finally {
+            reader.releaseLock()
           }
-          event.sender.send(`${channel}-end`)
-        } catch (err) {
-          event.sender.send(`${channel}-error`, err)
+        } else {
+          // Fallback: Not a Web Streams API stream
+          event.sender.send(
+            `${channel}-error`,
+            new Error('Handler must return a Web Streams API ReadableStream')
+          )
         }
       })
     }
