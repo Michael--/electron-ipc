@@ -93,9 +93,9 @@ export type StreamUploadContracts = {
   /**
    * UploadFile streams file data from renderer to main.
    * @type {object}
-   * @property {Buffer} data - Each chunk of file data.
+   * @property {Uint8Array} data - Each chunk of file data.
    */
-  UploadFile: IStreamUploadContract<Buffer>
+  UploadFile: IStreamUploadContract<Uint8Array>
 }
 
 /**

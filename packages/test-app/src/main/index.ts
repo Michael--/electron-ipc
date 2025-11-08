@@ -1,7 +1,9 @@
 import {
   AbstractRegisterEvent,
   AbstractRegisterHandler,
+  AbstractRegisterStreamDownload,
   AbstractRegisterStreamHandler,
+  AbstractRegisterStreamUpload,
   IPCEventType,
   IPCHandlerType,
 } from '@number10/electron-ipc'
@@ -88,10 +90,70 @@ function initializeEventHandler() {
     }
   }
 
+  // implement stream upload handlers (Renderer → Main)
+  class RegisterStreamUpload extends AbstractRegisterStreamUpload {
+    handlers: IPCStreamUploadHandlerType<StreamUploadContracts> = {
+      UploadFile: (writable) => {
+        // eslint-disable-next-line no-console
+        console.log('[Upload] Started receiving file chunks')
+
+        const writer = writable.getWriter()
+        let chunkCount = 0
+
+        // Simulate receiving data
+        const interval = setInterval(async () => {
+          chunkCount++
+          const chunk = Buffer.from(`Chunk ${chunkCount}/10`)
+
+          try {
+            await writer.write(chunk)
+            // eslint-disable-next-line no-console
+            console.log(`[Upload] Wrote chunk ${chunkCount}, size: ${chunk.length} bytes`)
+
+            if (chunkCount >= 10) {
+              clearInterval(interval)
+              await writer.close()
+              // eslint-disable-next-line no-console
+              console.log(`[Upload] Completed! Wrote ${chunkCount} chunks`)
+            }
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('[Upload] Error:', err)
+            clearInterval(interval)
+          }
+        }, 1000)
+      },
+    }
+  }
+
+  // implement stream download handlers (Main → Renderer)
+  class RegisterStreamDownload extends AbstractRegisterStreamDownload {
+    handlers: IPCStreamDownloadHandlerType<StreamDownloadContracts> = {
+      DownloadLogs: () => {
+        // Return a ReadableStream that sends 10 log entries over 10 seconds
+        return new globalThis.ReadableStream({
+          async start(controller) {
+            for (let i = 1; i <= 10; i++) {
+              const logEntry = `[${new Date().toLocaleTimeString()}] Log entry ${i}/10 - System operational`
+              controller.enqueue(logEntry)
+
+              // Wait 1 second before next log
+              await new Promise((resolve) => setTimeout(resolve, 1000))
+            }
+
+            controller.close()
+          },
+        })
+      },
+    }
+  }
+
   // register handler and events
   RegisterHandler.register()
   RegisterEvent.register()
   RegisterStreamHandler.register()
+  RegisterStreamUpload.register()
+  RegisterStreamDownload.register()
 }
 
 /**

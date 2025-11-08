@@ -218,7 +218,7 @@ describe('generate-api', () => {
 
       expect(result).toContain('const StreamUploadContractsApi = {')
       expect(result).toContain('uploadUploadFile:')
-      expect(result).toContain('WritableStream')
+      expect(result).toContain('StreamWriter')
     })
 
     it('should generate stream download contracts', () => {

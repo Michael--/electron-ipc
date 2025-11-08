@@ -129,20 +129,26 @@ const invokeStream${contract} = <K extends keyof ${contract}>(
 export const streamUploadContracts = (contract: string, importPath: string) => `
 import { ${contract} } from "${importPath}"
 
-// This function creates a writable stream for uploading data to the main process.
-const upload${contract} = <K extends keyof ${contract}>(channel: K): WritableStream<${contract}[K]["data"]> => {
+type StreamWriter<T> = {
+  write: (chunk: T) => Promise<void>
+  close: () => Promise<void>
+  abort: (reason?: any) => Promise<void>
+}
+
+// This function creates a stream writer for uploading data to the main process.
+const upload${contract} = <K extends keyof ${contract}>(channel: K): StreamWriter<${contract}[K]["data"]> => {
    ipcRenderer.send(\`\${channel}-start\`)
-   return new WritableStream({
-     write(chunk: ${contract}[K]["data"]) {
+   return {
+     write: async (chunk: ${contract}[K]["data"]) => {
        ipcRenderer.send(\`\${channel}-data\`, chunk)
      },
-     close() {
+     close: async () => {
        ipcRenderer.send(\`\${channel}-end\`)
      },
-     abort(err) {
-       ipcRenderer.send(\`\${channel}-error\`, err)
+     abort: async (reason?: any) => {
+       ipcRenderer.send(\`\${channel}-error\`, reason)
      }
-   })
+   }
 }
 `
 
@@ -202,7 +208,7 @@ export const createApiMethod = (
   }
 
   if (returnType === 'upload') {
-    return `${prefix}${propName}: (): WritableStream<${contract}["${propName}"]["data"]> => {
+    return `${prefix}${propName}: (): StreamWriter<${contract}["${propName}"]["data"]> => {
    return ${prefix}${contract}("${propName}")
 },`
   }

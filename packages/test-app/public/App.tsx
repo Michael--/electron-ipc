@@ -180,6 +180,112 @@ function QuitProgram() {
   )
 }
 
+function StreamUploadDemo() {
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadedChunks, setUploadedChunks] = useState(0)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleStartUpload = async () => {
+    if (!window.api) return
+
+    setUploadedChunks(0)
+    setError(null)
+    setIsUploading(true)
+
+    try {
+      const writer = window.api.uploadUploadFile()
+
+      // Upload 10 chunks over 10 seconds
+      for (let i = 1; i <= 10; i++) {
+        const text = `File chunk ${i}/10 - ${new Date().toLocaleTimeString()}`
+        const encoder = new TextEncoder()
+        const chunk = encoder.encode(text)
+        await writer.write(chunk)
+        setUploadedChunks(i)
+
+        // Wait 1 second before next chunk
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+      }
+
+      await writer.close()
+      setIsUploading(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload error')
+      setIsUploading(false)
+    }
+  }
+
+  return (
+    <div className="demo-card stream">
+      <h3 className="demo-title">📤 Stream Upload</h3>
+      <p className="demo-description">Upload file chunks from renderer to main process</p>
+      <div className="demo-controls">
+        <button onClick={handleStartUpload} disabled={isUploading}>
+          {isUploading ? 'Uploading...' : 'Start Upload'}
+        </button>
+      </div>
+      {error && <div className="demo-error">Error: {error}</div>}
+      <div className="demo-result">
+        {uploadedChunks > 0 && (
+          <div className="stream-output">
+            Uploaded {uploadedChunks}/10 chunks
+            {isUploading && ' (in progress...)'}
+            {!isUploading && uploadedChunks === 10 && ' ✓ Complete'}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function StreamDownloadDemo() {
+  const [logs, setLogs] = useState<string[]>([])
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleStartDownload = () => {
+    if (!window.api) return
+
+    setLogs([])
+    setError(null)
+    setIsDownloading(true)
+
+    window.api.downloadDownloadLogs(
+      (logEntry: string) => {
+        setLogs((prev) => [...prev, logEntry])
+      },
+      () => {
+        setIsDownloading(false)
+      },
+      (err: Error) => {
+        setError(err.message)
+        setIsDownloading(false)
+      }
+    )
+  }
+
+  return (
+    <div className="demo-card stream">
+      <h3 className="demo-title">📥 Stream Download</h3>
+      <p className="demo-description">Download log stream from main to renderer process</p>
+      <div className="demo-controls">
+        <button onClick={handleStartDownload} disabled={isDownloading}>
+          {isDownloading ? 'Downloading...' : 'Start Download'}
+        </button>
+      </div>
+      {error && <div className="demo-error">Error: {error}</div>}
+      <div className="demo-result stream-output">
+        {logs.length === 0 && !isDownloading && <em>No logs yet</em>}
+        {logs.map((log, idx) => (
+          <div key={idx} className="stream-message">
+            {log}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /**
  * Main React App component
  */
@@ -213,6 +319,20 @@ export function App() {
         <h2 className="section-title">🌊 Stream Invoke (Renderer ↔ Main Stream)</h2>
         <div className="demo-grid">
           <StreamDataDemo />
+        </div>
+      </section>
+
+      <section className="section">
+        <h2 className="section-title">📤 Stream Upload (Renderer → Main Stream)</h2>
+        <div className="demo-grid">
+          <StreamUploadDemo />
+        </div>
+      </section>
+
+      <section className="section">
+        <h2 className="section-title">📥 Stream Download (Main → Renderer Stream)</h2>
+        <div className="demo-grid">
+          <StreamDownloadDemo />
         </div>
       </section>
 

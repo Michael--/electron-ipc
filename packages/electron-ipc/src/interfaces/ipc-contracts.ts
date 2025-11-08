@@ -50,7 +50,7 @@ import { BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron'
  * Defines types that can be safely serialized across IPC boundaries.
  * Only JSON-compatible types are allowed: primitives, arrays, and plain objects.
  * Excludes: Date, Map, Set, Function, Class instances, undefined in arrays/objects.
- * Includes: Buffer for binary data in Electron IPC.
+ * Includes: Buffer and Uint8Array for binary data in Electron IPC.
  *
  * @type {Serializable}
  */
@@ -60,6 +60,7 @@ export type Serializable =
   | boolean
   | null
   | Buffer
+  | Uint8Array
   | { [key: string]: Serializable }
   | Serializable[]
 

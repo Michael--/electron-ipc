@@ -65,52 +65,88 @@ const BroadcastContractsApi = {
 
 import { StreamInvokeContracts } from "../main/ipc-api"
 
-// This function starts a stream invoke and returns a ReadableStream for the response.
-const invokeStreamStreamInvokeContracts = <K extends keyof StreamInvokeContracts>(channel: K, request: StreamInvokeContracts[K]["request"]): ReadableStream<StreamInvokeContracts[K]["stream"]> => {
+/**
+ * Callback handlers for stream invoke operations
+ */
+type StreamCallbacks<TData> = {
+  onData: (chunk: TData) => void
+  onEnd: () => void
+  onError: (error: Error) => void
+}
+
+/**
+ * Starts a stream invoke and handles the response via callbacks.
+ * This approach works with contextBridge as it only transfers serializable data.
+ */
+const invokeStreamStreamInvokeContracts = <K extends keyof StreamInvokeContracts>(
+  channel: K,
+  request: StreamInvokeContracts[K]["request"],
+  callbacks: StreamCallbacks<StreamInvokeContracts[K]["stream"]>
+): void => {
+   const dataChannel = `${channel as string}-data`
+   const endChannel = `${channel as string}-end`
+   const errorChannel = `${channel as string}-error`
+
+   const dataHandler = (_event: any, chunk: StreamInvokeContracts[K]["stream"]) => {
+     callbacks.onData(chunk)
+   }
+   const endHandler = () => {
+     callbacks.onEnd()
+     cleanup()
+   }
+   const errorHandler = (_event: any, err: any) => {
+     callbacks.onError(err instanceof Error ? err : new Error(String(err)))
+     cleanup()
+   }
+
+   const cleanup = () => {
+     ipcRenderer.removeListener(dataChannel, dataHandler)
+     ipcRenderer.removeListener(endChannel, endHandler)
+     ipcRenderer.removeListener(errorChannel, errorHandler)
+   }
+
+   ipcRenderer.on(dataChannel, dataHandler)
+   ipcRenderer.on(endChannel, endHandler)
+   ipcRenderer.on(errorChannel, errorHandler)
+
+   // Start the stream
    ipcRenderer.invoke(channel as string, request)
-   return new ReadableStream({
-     start(controller) {
-       ipcRenderer.on(`${channel}-data`, (_event, chunk: StreamInvokeContracts[K]["stream"]) => {
-         controller.enqueue(chunk)
-       })
-       ipcRenderer.on(`${channel}-end`, () => {
-         controller.close()
-       })
-       ipcRenderer.on(`${channel}-error`, (_event, err) => {
-         controller.error(err)
-       })
-     }
-   })
 }
 
 
 const StreamInvokeContractsApi = {
-   invokeStreamGetLargeData: (request: StreamInvokeContracts["GetLargeData"]["request"]): ReadableStream<StreamInvokeContracts["GetLargeData"]["stream"]> => {
-   return invokeStreamStreamInvokeContracts("GetLargeData", request)
+   invokeStreamGetLargeData: (request: StreamInvokeContracts["GetLargeData"]["request"], callbacks: StreamCallbacks<StreamInvokeContracts["GetLargeData"]["stream"]>): void => {
+   return invokeStreamStreamInvokeContracts("GetLargeData", request, callbacks)
 },
 }
 
 import { StreamUploadContracts } from "../main/ipc-api"
 
-// This function creates a writable stream for uploading data to the main process.
-const uploadStreamUploadContracts = <K extends keyof StreamUploadContracts>(channel: K): WritableStream<StreamUploadContracts[K]["data"]> => {
+type StreamWriter<T> = {
+  write: (chunk: T) => Promise<void>
+  close: () => Promise<void>
+  abort: (reason?: any) => Promise<void>
+}
+
+// This function creates a stream writer for uploading data to the main process.
+const uploadStreamUploadContracts = <K extends keyof StreamUploadContracts>(channel: K): StreamWriter<StreamUploadContracts[K]["data"]> => {
    ipcRenderer.send(`${channel}-start`)
-   return new WritableStream({
-     write(chunk: StreamUploadContracts[K]["data"]) {
+   return {
+     write: async (chunk: StreamUploadContracts[K]["data"]) => {
        ipcRenderer.send(`${channel}-data`, chunk)
      },
-     close() {
+     close: async () => {
        ipcRenderer.send(`${channel}-end`)
      },
-     abort(err) {
-       ipcRenderer.send(`${channel}-error`, err)
+     abort: async (reason?: any) => {
+       ipcRenderer.send(`${channel}-error`, reason)
      }
-   })
+   }
 }
 
 
 const StreamUploadContractsApi = {
-   uploadUploadFile: (): WritableStream<StreamUploadContracts["UploadFile"]["data"]> => {
+   uploadUploadFile: (): StreamWriter<StreamUploadContracts["UploadFile"]["data"]> => {
    return uploadStreamUploadContracts("UploadFile")
 },
 }
