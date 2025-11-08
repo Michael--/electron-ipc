@@ -136,17 +136,20 @@ type StreamWriter<T> = {
 }
 
 // This function creates a stream writer for uploading data to the main process.
-const upload${contract} = <K extends keyof ${contract}>(channel: K): StreamWriter<${contract}[K]["data"]> => {
-   ipcRenderer.send(\`\${channel}-start\`)
+const upload${contract} = <K extends keyof ${contract}>(
+  channel: K,
+  request: ${contract}[K]["request"]
+): StreamWriter<${contract}[K]["data"]> => {
+   ipcRenderer.send(\`\${channel as string}-start\`, request)
    return {
      write: async (chunk: ${contract}[K]["data"]) => {
-       ipcRenderer.send(\`\${channel}-data\`, chunk)
+       ipcRenderer.send(\`\${channel as string}-data\`, chunk)
      },
      close: async () => {
-       ipcRenderer.send(\`\${channel}-end\`)
+       ipcRenderer.send(\`\${channel as string}-end\`)
      },
      abort: async (reason?: any) => {
-       ipcRenderer.send(\`\${channel}-error\`, reason)
+       ipcRenderer.send(\`\${channel as string}-error\`, reason)
      }
    }
 }
@@ -162,11 +165,17 @@ export const streamDownloadContracts = (contract: string, importPath: string) =>
 import { ${contract} } from "${importPath}"
 
 // This function sets up listeners for downloading a stream from the main process.
-const download${contract} = <K extends keyof ${contract}>(channel: K, callback: (data: ${contract}[K]["data"]) => void, onEnd?: () => void, onError?: (err: any) => void): void => {
-   ipcRenderer.on(\`\${channel}-data\`, (_event, data: ${contract}[K]["data"]) => callback(data))
-   if (onEnd) ipcRenderer.on(\`\${channel}-end\`, onEnd)
-   if (onError) ipcRenderer.on(\`\${channel}-error\`, (_event, err) => onError(err))
-   ipcRenderer.invoke(channel as string) // Trigger the download
+const download${contract} = <K extends keyof ${contract}>(
+  channel: K,
+  request: ${contract}[K]["request"],
+  callback: (data: ${contract}[K]["data"]) => void,
+  onEnd?: () => void,
+  onError?: (err: any) => void
+): void => {
+   ipcRenderer.on(\`\${channel as string}-data\`, (_event, data: ${contract}[K]["data"]) => callback(data))
+   if (onEnd) ipcRenderer.on(\`\${channel as string}-end\`, onEnd)
+   if (onError) ipcRenderer.on(\`\${channel as string}-error\`, (_event, err) => onError(err))
+   ipcRenderer.invoke(channel as string, request) // Trigger the download with request
 }
 `
 
@@ -208,14 +217,14 @@ export const createApiMethod = (
   }
 
   if (returnType === 'upload') {
-    return `${prefix}${propName}: (): StreamWriter<${contract}["${propName}"]["data"]> => {
-   return ${prefix}${contract}("${propName}")
+    return `${prefix}${propName}: (${param}: ${typeAnnotation}): StreamWriter<${contract}["${propName}"]["data"]> => {
+   return ${prefix}${contract}("${propName}", ${param})
 },`
   }
 
   if (returnType === 'download') {
-    return `${prefix}${propName}: (callback: (${param}: ${typeAnnotation}) => void, onEnd?: () => void, onError?: (err: any) => void): void => {
-   return ${prefix}${contract}("${propName}", callback, onEnd, onError)
+    return `${prefix}${propName}: (${param}: ${typeAnnotation}, callback: (data: ${contract}["${propName}"]["data"]) => void, onEnd?: () => void, onError?: (err: any) => void): void => {
+   return ${prefix}${contract}("${propName}", ${param}, callback, onEnd, onError)
 },`
   }
 

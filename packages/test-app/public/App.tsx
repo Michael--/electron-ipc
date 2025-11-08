@@ -209,7 +209,8 @@ function StreamUploadDemo() {
     setIsUploading(true)
 
     try {
-      const writer = window.api.uploadUploadFile()
+      const fileName = 'demo-file.txt'
+      const writer = window.api.uploadUploadFile({ fileName })
 
       // Upload 10 chunks over 10 seconds
       for (let i = 1; i <= 10; i++) {
@@ -217,14 +218,14 @@ function StreamUploadDemo() {
         const encoder = new TextEncoder()
         const chunk = encoder.encode(text)
         await writer.write(chunk)
-        setUploadMessages((prev) => [...prev, `✓ Uploaded chunk ${i}/10`])
+        setUploadMessages((prev) => [...prev, `✓ Uploaded chunk ${i}/10 to ${fileName}`])
 
         // Wait 1 second before next chunk
         await new Promise((resolve) => setTimeout(resolve, 1000))
       }
 
       await writer.close()
-      setUploadMessages((prev) => [...prev, '✅ Upload complete!'])
+      setUploadMessages((prev) => [...prev, `✅ Upload complete: ${fileName}`])
       setIsUploading(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload error')
@@ -258,6 +259,7 @@ function StreamDownloadDemo() {
   const [logs, setLogs] = useState<string[]>([])
   const [isDownloading, setIsDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [logLevel, setLogLevel] = useState<'info' | 'warn' | 'error'>('info')
   const outputRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom when new logs arrive
@@ -275,6 +277,7 @@ function StreamDownloadDemo() {
     setIsDownloading(true)
 
     window.api.downloadDownloadLogs(
+      { level: logLevel },
       (logEntry: string) => {
         setLogs((prev) => [...prev, logEntry])
       },
@@ -293,6 +296,15 @@ function StreamDownloadDemo() {
       <h3 className="demo-title">📥 Stream Download</h3>
       <p className="demo-description">Download log stream from main to renderer process</p>
       <div className="demo-controls">
+        <select
+          value={logLevel}
+          onChange={(e) => setLogLevel(e.target.value as 'info' | 'warn' | 'error')}
+          disabled={isDownloading}
+        >
+          <option value="info">Info</option>
+          <option value="warn">Warning</option>
+          <option value="error">Error</option>
+        </select>
         <button onClick={handleStartDownload} disabled={isDownloading}>
           {isDownloading ? 'Downloading...' : 'Start Download'}
         </button>
@@ -315,13 +327,16 @@ function VideoStreamDemo() {
   const [error, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState<string>('')
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [selectedVideo, setSelectedVideo] = useState<string>(
+    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+  )
   const videoRef = useRef<HTMLVideoElement>(null)
 
   const handleStartStream = () => {
     if (!window.api) return
 
     // eslint-disable-next-line no-console
-    console.log('[VideoStreamDemo] Starting stream...')
+    console.log(`[VideoStreamDemo] Starting stream for: ${selectedVideo}`)
 
     // Cleanup previous video URL
     if (videoUrl) {
@@ -340,6 +355,7 @@ function VideoStreamDemo() {
     console.log('[VideoStreamDemo] Starting download...')
 
     window.api.downloadStreamVideo(
+      { url: selectedVideo },
       (chunk: Uint8Array) => {
         // eslint-disable-next-line no-console
         console.log('[VideoStreamDemo] Received chunk:', chunk.length, 'bytes')
@@ -388,8 +404,23 @@ function VideoStreamDemo() {
       <h3 className="demo-title">🎬 Video Stream</h3>
       <p className="demo-description">Stream video from main process with live playback</p>
       <div className="demo-controls">
+        <select
+          value={selectedVideo}
+          onChange={(e) => setSelectedVideo(e.target.value)}
+          disabled={isStreaming}
+        >
+          <option value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
+            Big Buck Bunny (158MB)
+          </option>
+          <option value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4">
+            Elephants Dream (76MB)
+          </option>
+          <option value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4">
+            For Bigger Blazes (6MB)
+          </option>
+        </select>
         <button onClick={handleStartStream} disabled={isStreaming}>
-          {isStreaming ? 'Downloading...' : 'Stream Big Buck Bunny'}
+          {isStreaming ? 'Downloading...' : 'Stream Video'}
         </button>
       </div>
       {error && <div className="demo-error">Error: {error}</div>}

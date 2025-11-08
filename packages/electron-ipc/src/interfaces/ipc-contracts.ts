@@ -541,13 +541,15 @@ export function createBroadcast<T>() {
 
 /**
  * IStreamUploadContract: A generic interface defining the structure for IPC stream upload contracts.
- * It specifies a contract with a data type for unidirectional streaming from renderer to main process.
- * The data must be a serializable type (JSON-compatible).
+ * It specifies a contract with a request and data type for unidirectional streaming from renderer to main process.
+ * Both request and data must be serializable types (JSON-compatible).
  *
  * @interface IStreamUploadContract
+ * @typeparam TRequest - The type of the request payload sent when initiating the upload (must be Serializable).
  * @typeparam TData - The type of each data chunk sent from renderer to main (must be Serializable).
  */
-export interface IStreamUploadContract<TData extends Serializable> {
+export interface IStreamUploadContract<TRequest extends Serializable, TData extends Serializable> {
+  request: TRequest
   data: TData
 }
 
@@ -558,10 +560,21 @@ export interface IStreamUploadContract<TData extends Serializable> {
  * @typeparam T - A type representing a collection of IPC stream upload contracts.
  */
 export type GenericStreamUploadContract<T> = {
-  [P in keyof T]: T[P] extends IStreamUploadContract<infer Data>
-    ? EnforceStructure<T[P], IStreamUploadContract<Data>>
+  [P in keyof T]: T[P] extends IStreamUploadContract<infer Request, infer Data>
+    ? EnforceStructure<T[P], IStreamUploadContract<Request, Data>>
     : never
 }
+
+/**
+ * Utility type for extracting the request type from a specified IStreamUploadContract.
+ *
+ * @type {UploadRequestType}
+ * @typeparam T - The target upload contract type.
+ * @typeparam K - The key of the contract.
+ * @returns The request type of the specified contract.
+ */
+export type UploadRequestType<T extends GenericStreamUploadContract<T>, K extends keyof T> =
+  T[K] extends IStreamUploadContract<infer Request, any> ? Request : never
 
 /**
  * Utility type for extracting the data type from a specified IStreamUploadContract.
@@ -572,17 +585,22 @@ export type GenericStreamUploadContract<T> = {
  * @returns The data type of the specified contract.
  */
 export type UploadDataType<T extends GenericStreamUploadContract<T>, K extends keyof T> =
-  T[K] extends IStreamUploadContract<infer Data> ? Data : never
+  T[K] extends IStreamUploadContract<any, infer Data> ? Data : never
 
 /**
  * IStreamDownloadContract: A generic interface defining the structure for IPC stream download contracts.
- * It specifies a contract with a data type for unidirectional streaming from main to renderer process.
- * The data must be a serializable type (JSON-compatible).
+ * It specifies a contract with a request and data type for unidirectional streaming from main to renderer process.
+ * Both request and data must be serializable types (JSON-compatible).
  *
  * @interface IStreamDownloadContract
+ * @typeparam TRequest - The type of the request payload sent when initiating the download (must be Serializable).
  * @typeparam TData - The type of each data chunk sent from main to renderer (must be Serializable).
  */
-export interface IStreamDownloadContract<TData extends Serializable> {
+export interface IStreamDownloadContract<
+  TRequest extends Serializable,
+  TData extends Serializable,
+> {
+  request: TRequest
   data: TData
 }
 
@@ -593,10 +611,21 @@ export interface IStreamDownloadContract<TData extends Serializable> {
  * @typeparam T - A type representing a collection of IPC stream download contracts.
  */
 export type GenericStreamDownloadContract<T> = {
-  [P in keyof T]: T[P] extends IStreamDownloadContract<infer Data>
-    ? EnforceStructure<T[P], IStreamDownloadContract<Data>>
+  [P in keyof T]: T[P] extends IStreamDownloadContract<infer Request, infer Data>
+    ? EnforceStructure<T[P], IStreamDownloadContract<Request, Data>>
     : never
 }
+
+/**
+ * Utility type for extracting the request type from a specified IStreamDownloadContract.
+ *
+ * @type {DownloadRequestType}
+ * @typeparam T - The target download contract type.
+ * @typeparam K - The key of the contract.
+ * @returns The request type of the specified contract.
+ */
+export type DownloadRequestType<T extends GenericStreamDownloadContract<T>, K extends keyof T> =
+  T[K] extends IStreamDownloadContract<infer Request, any> ? Request : never
 
 /**
  * Utility type for extracting the data type from a specified IStreamDownloadContract.
@@ -607,7 +636,7 @@ export type GenericStreamDownloadContract<T> = {
  * @returns The data type of the specified contract.
  */
 export type DownloadDataType<T extends GenericStreamDownloadContract<T>, K extends keyof T> =
-  T[K] extends IStreamDownloadContract<infer Data> ? Data : never
+  T[K] extends IStreamDownloadContract<any, infer Data> ? Data : never
 
 /**
  * Defines a handler type for IPC stream upload, receiving a WritableStream from the renderer.
@@ -617,6 +646,7 @@ export type DownloadDataType<T extends GenericStreamDownloadContract<T>, K exten
  * @typeparam K - The key of the contract.
  */
 type IPCStreamUploadHandler<T extends GenericStreamUploadContract<T>, K extends keyof T> = (
+  request: UploadRequestType<T, K>,
   stream: WritableStream<UploadDataType<T, K>>
 ) => void
 
@@ -662,8 +692,8 @@ export abstract class AbstractRegisterStreamUpload {
    */
   private registerHandler() {
     for (const [channel, handler] of Object.entries(this.handlers)) {
-      // Listen for stream start, data, end, error from renderer
-      ipcMain.on(`${channel}-start`, () => {
+      // Listen for stream start with request parameter
+      ipcMain.on(`${channel}-start`, (_event, request) => {
         const writable = new WritableStream({
           write(_chunk) {
             /* handle chunk */
@@ -675,7 +705,7 @@ export abstract class AbstractRegisterStreamUpload {
             /* handle error */
           },
         })
-        handler(writable)
+        handler(request, writable)
       })
       ipcMain.on(`${channel}-data`, (_event, _chunk) => {
         // Send to writable stream
@@ -698,6 +728,7 @@ export abstract class AbstractRegisterStreamUpload {
  * @typeparam K - The key of the contract.
  */
 type IPCStreamDownloadHandler<T extends GenericStreamDownloadContract<T>, K extends keyof T> = (
+  request: DownloadRequestType<T, K>,
   event: IpcMainInvokeEvent
 ) => ReadableStream<DownloadDataType<T, K>>
 
@@ -743,8 +774,8 @@ export abstract class AbstractRegisterStreamDownload {
    */
   private registerHandler() {
     for (const [channel, handler] of Object.entries(this.handlers)) {
-      ipcMain.handle(channel as string, async (event) => {
-        const stream = handler(event)
+      ipcMain.handle(channel as string, async (event, request) => {
+        const stream = handler(request, event)
         const reader = stream.getReader()
         try {
           // eslint-disable-next-line no-constant-condition

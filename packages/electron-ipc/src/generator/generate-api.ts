@@ -138,7 +138,7 @@ function streamUploadApi(contract: string, propName: string) {
  * Generates API method code for stream download contracts
  */
 function streamDownloadApi(contract: string, propName: string) {
-  const method = createApiMethod('download', propName, contract, 'payload', 'download')
+  const method = createApiMethod('download', propName, contract, 'request', 'download')
   add({ v: method, indent: true })
   add({ indent: false })
 }

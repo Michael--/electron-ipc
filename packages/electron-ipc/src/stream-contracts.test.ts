@@ -297,24 +297,26 @@ describe('Stream IPC Contracts', () => {
       vi.clearAllMocks()
     })
 
-    it('should accept valid stream upload contract structure', () => {
+    it('should accept valid stream upload contract structure with request parameter', () => {
       type TestUploadContract = GenericStreamUploadContract<{
-        UploadFile: IStreamUploadContract<Uint8Array>
+        UploadFile: IStreamUploadContract<{ fileName: string }, Uint8Array>
       }>
 
       const contract: TestUploadContract = {
         UploadFile: {
+          request: { fileName: 'test.bin' },
           data: new Uint8Array([1, 2, 3]),
         },
       }
 
+      expect(contract.UploadFile.request.fileName).toBe('test.bin')
       expect(contract.UploadFile.data).toBeInstanceOf(Uint8Array)
       expect(contract.UploadFile.data.length).toBe(3)
     })
 
     it('should register upload handlers via AbstractRegisterStreamUpload', () => {
       type UploadContract = GenericStreamUploadContract<{
-        UploadData: IStreamUploadContract<string>
+        UploadData: IStreamUploadContract<{ id: number }, string>
       }>
 
       class RegisterUpload extends AbstractRegisterStreamUpload {
@@ -337,11 +339,12 @@ describe('Stream IPC Contracts', () => {
 
     it('should support Uint8Array data type', () => {
       type UploadContract = GenericStreamUploadContract<{
-        UploadBinary: IStreamUploadContract<Uint8Array>
+        UploadBinary: IStreamUploadContract<null, Uint8Array>
       }>
 
       const contract: UploadContract = {
         UploadBinary: {
+          request: null,
           data: new Uint8Array([255, 254, 253]),
         },
       }
@@ -356,28 +359,31 @@ describe('Stream IPC Contracts', () => {
       vi.clearAllMocks()
     })
 
-    it('should accept valid stream download contract structure', () => {
+    it('should accept valid stream download contract structure with request parameter', () => {
       type TestDownloadContract = GenericStreamDownloadContract<{
-        DownloadLogs: IStreamDownloadContract<string>
+        DownloadLogs: IStreamDownloadContract<{ level: string }, string>
       }>
 
       const contract: TestDownloadContract = {
         DownloadLogs: {
-          data: 'log entry',
+          request: { level: 'info' },
+          data: 'Log message',
         },
       }
 
-      expect(contract.DownloadLogs.data).toBe('log entry')
+      expect(contract.DownloadLogs.request.level).toBe('info')
+      expect(contract.DownloadLogs.data).toBe('Log message')
     })
 
     it('should register download handlers via AbstractRegisterStreamDownload', () => {
       type DownloadContract = GenericStreamDownloadContract<{
-        GetLogs: IStreamDownloadContract<number>
+        GetLogs: IStreamDownloadContract<{ count: number }, number>
       }>
 
       class RegisterDownload extends AbstractRegisterStreamDownload {
         handlers: IPCStreamDownloadHandlerType<DownloadContract> = {
-          GetLogs: () => {
+          GetLogs: (request) => {
+            expect(request.count).toBe(10)
             return new globalThis.ReadableStream({
               start(controller) {
                 controller.enqueue(42)
@@ -393,17 +399,19 @@ describe('Stream IPC Contracts', () => {
       expect(ipcMain.handle).toHaveBeenCalledWith('GetLogs', expect.any(Function))
     })
 
-    it('should support different data types in download streams', () => {
+    it('should support multiple data types', () => {
       type DownloadContract = GenericStreamDownloadContract<{
-        DownloadNumbers: IStreamDownloadContract<number>
-        DownloadObjects: IStreamDownloadContract<{ id: number; value: string }>
+        DownloadNumbers: IStreamDownloadContract<null, number>
+        DownloadObjects: IStreamDownloadContract<null, { id: number; value: string }>
       }>
 
       const contract: DownloadContract = {
         DownloadNumbers: {
+          request: null,
           data: 123,
         },
         DownloadObjects: {
+          request: null,
           data: { id: 1, value: 'test' },
         },
       }

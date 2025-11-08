@@ -93,9 +93,10 @@ export type StreamUploadContracts = {
   /**
    * UploadFile streams file data from renderer to main.
    * @type {object}
+   * @property {string} request - File name or metadata
    * @property {Uint8Array} data - Each chunk of file data.
    */
-  UploadFile: IStreamUploadContract<Uint8Array>
+  UploadFile: IStreamUploadContract<{ fileName: string }, Uint8Array>
 }
 
 /**
@@ -106,14 +107,16 @@ export type StreamDownloadContracts = {
   /**
    * DownloadLogs streams log data from main to renderer.
    * @type {object}
+   * @property {object} request - Log filter criteria
    * @property {string} data - Each chunk of log data.
    */
-  DownloadLogs: IStreamDownloadContract<string>
+  DownloadLogs: IStreamDownloadContract<{ level?: 'info' | 'warn' | 'error' }, string>
 
   /**
    * StreamVideo downloads and streams video data via main process.
    * @type {object}
+   * @property {object} request - Video URL to download
    * @property {Uint8Array} data - Video data chunks.
    */
-  StreamVideo: IStreamDownloadContract<Uint8Array>
+  StreamVideo: IStreamDownloadContract<{ url: string }, Uint8Array>
 }

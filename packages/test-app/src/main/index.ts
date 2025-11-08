@@ -93,9 +93,9 @@ function initializeEventHandler() {
   // implement stream upload handlers (Renderer → Main)
   class RegisterStreamUpload extends AbstractRegisterStreamUpload {
     handlers: IPCStreamUploadHandlerType<StreamUploadContracts> = {
-      UploadFile: (writable) => {
+      UploadFile: (request, writable) => {
         // eslint-disable-next-line no-console
-        console.log('[Upload] Started receiving file chunks')
+        console.log(`[Upload] Started receiving file: ${request.fileName}`)
 
         const writer = writable.getWriter()
         let chunkCount = 0
@@ -114,7 +114,7 @@ function initializeEventHandler() {
               clearInterval(interval)
               await writer.close()
               // eslint-disable-next-line no-console
-              console.log(`[Upload] Completed! Wrote ${chunkCount} chunks`)
+              console.log(`[Upload] Completed ${request.fileName}! Wrote ${chunkCount} chunks`)
             }
           } catch (err) {
             // eslint-disable-next-line no-console
@@ -129,12 +129,16 @@ function initializeEventHandler() {
   // implement stream download handlers (Main → Renderer)
   class RegisterStreamDownload extends AbstractRegisterStreamDownload {
     handlers: IPCStreamDownloadHandlerType<StreamDownloadContracts> = {
-      DownloadLogs: () => {
+      DownloadLogs: (request) => {
+        const level = request.level || 'info'
+        // eslint-disable-next-line no-console
+        console.log(`[DownloadLogs] Streaming logs with level filter: ${level}`)
+
         // Return a ReadableStream that sends 10 log entries over 10 seconds
         return new globalThis.ReadableStream({
           async start(controller) {
             for (let i = 1; i <= 10; i++) {
-              const logEntry = `[${new Date().toLocaleTimeString()}] Log entry ${i}/10 - System operational`
+              const logEntry = `[${new Date().toLocaleTimeString()}] [${level.toUpperCase()}] Log entry ${i}/10 - System operational`
               controller.enqueue(logEntry)
 
               // Wait 1 second before next log
@@ -145,9 +149,8 @@ function initializeEventHandler() {
           },
         })
       },
-      StreamVideo: () => {
-        const url =
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+      StreamVideo: (request) => {
+        const url = request.url
         // eslint-disable-next-line no-console
         console.log(`[StreamVideo] Fetching video from: ${url}`)
 
