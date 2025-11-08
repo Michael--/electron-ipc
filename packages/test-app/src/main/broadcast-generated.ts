@@ -23,7 +23,7 @@ export const mainBroadcast = {
     }
   }
   ,
-  About: (mainWindow: BrowserWindow, payload: BroadcastContracts["About"]["payload"]): void => {
+  About: (mainWindow: BrowserWindow, payload?: BroadcastContracts["About"]["payload"]): void => {
     if (!mainWindow.isDestroyed()) {
       mainWindow.webContents.send('About', payload)
     }

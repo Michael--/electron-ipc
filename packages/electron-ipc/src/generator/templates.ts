@@ -62,6 +62,78 @@ const on${contract} = <K extends keyof ${contract}>(channel: K, callback: (paylo
 `
 
 /**
+ * Generates template for stream invoke contracts (Renderer ↔ Main with stream response)
+ * @param contract - The contract type name
+ * @param importPath - Relative import path to the contract definition
+ * @returns Template string for stream invoke contract helper function
+ */
+export const streamInvokeContracts = (contract: string, importPath: string) => `
+import { ${contract} } from "${importPath}"
+
+// This function starts a stream invoke and returns a ReadableStream for the response.
+const invokeStream${contract} = <K extends keyof ${contract}>(channel: K, request: ${contract}[K]["request"]): ReadableStream<${contract}[K]["stream"]> => {
+   ipcRenderer.invoke(channel as string, request)
+   return new ReadableStream({
+     start(controller) {
+       ipcRenderer.on(\`\${channel}-data\`, (_event, chunk: ${contract}[K]["stream"]) => {
+         controller.enqueue(chunk)
+       })
+       ipcRenderer.on(\`\${channel}-end\`, () => {
+         controller.close()
+       })
+       ipcRenderer.on(\`\${channel}-error\`, (_event, err) => {
+         controller.error(err)
+       })
+     }
+   })
+}
+`
+
+/**
+ * Generates template for stream upload contracts (Renderer → Main streaming)
+ * @param contract - The contract type name
+ * @param importPath - Relative import path to the contract definition
+ * @returns Template string for stream upload helper function
+ */
+export const streamUploadContracts = (contract: string, importPath: string) => `
+import { ${contract} } from "${importPath}"
+
+// This function creates a writable stream for uploading data to the main process.
+const upload${contract} = <K extends keyof ${contract}>(channel: K): WritableStream<${contract}[K]["data"]> => {
+   ipcRenderer.send(\`\${channel}-start\`)
+   return new WritableStream({
+     write(chunk: ${contract}[K]["data"]) {
+       ipcRenderer.send(\`\${channel}-data\`, chunk)
+     },
+     close() {
+       ipcRenderer.send(\`\${channel}-end\`)
+     },
+     abort(err) {
+       ipcRenderer.send(\`\${channel}-error\`, err)
+     }
+   })
+}
+`
+
+/**
+ * Generates template for stream download contracts (Main → Renderer streaming)
+ * @param contract - The contract type name
+ * @param importPath - Relative import path to the contract definition
+ * @returns Template string for stream download helper function
+ */
+export const streamDownloadContracts = (contract: string, importPath: string) => `
+import { ${contract} } from "${importPath}"
+
+// This function sets up listeners for downloading a stream from the main process.
+const download${contract} = <K extends keyof ${contract}>(channel: K, callback: (data: ${contract}[K]["data"]) => void, onEnd?: () => void, onError?: (err: any) => void): void => {
+   ipcRenderer.on(\`\${channel}-data\`, (_event, data: ${contract}[K]["data"]) => callback(data))
+   if (onEnd) ipcRenderer.on(\`\${channel}-end\`, onEnd)
+   if (onError) ipcRenderer.on(\`\${channel}-error\`, (_event, err) => onError(err))
+   ipcRenderer.invoke(channel as string) // Trigger the download
+}
+`
+
+/**
  * Generates an API method for a specific contract property
  * @param prefix - Method prefix (invoke, send, or on)
  * @param propName - Property/channel name
@@ -75,7 +147,7 @@ export const createApiMethod = (
   propName: string,
   contract: string,
   paramType: 'request' | 'payload',
-  returnType: 'promise' | 'void' | 'callback' | 'invoke'
+  returnType: 'promise' | 'void' | 'callback' | 'invoke' | 'stream' | 'upload' | 'download'
 ) => {
   const param = paramType === 'request' ? 'request' : 'content'
   const typeAnnotation = `${contract}["${propName}"]["${paramType}"]`
@@ -89,6 +161,24 @@ export const createApiMethod = (
   if (returnType === 'invoke') {
     return `${prefix}${propName}: (${param}: ${typeAnnotation}): Promise<${contract}["${propName}"]["response"]> => {
    return ${prefix}${contract}("${propName}", ${param})
+},`
+  }
+
+  if (returnType === 'stream') {
+    return `${prefix}${propName}: (${param}: ${typeAnnotation}): ReadableStream<${contract}["${propName}"]["stream"]> => {
+   return ${prefix}${contract}("${propName}", ${param})
+},`
+  }
+
+  if (returnType === 'upload') {
+    return `${prefix}${propName}: (): WritableStream<${contract}["${propName}"]["data"]> => {
+   return ${prefix}${contract}("${propName}")
+},`
+  }
+
+  if (returnType === 'download') {
+    return `${prefix}${propName}: (callback: (${param}: ${typeAnnotation}) => void, onEnd?: () => void, onError?: (err: any) => void): void => {
+   return ${prefix}${contract}("${propName}", callback, onEnd, onError)
 },`
   }
 

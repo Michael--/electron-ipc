@@ -50,6 +50,7 @@ import { BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron'
  * Defines types that can be safely serialized across IPC boundaries.
  * Only JSON-compatible types are allowed: primitives, arrays, and plain objects.
  * Excludes: Date, Map, Set, Function, Class instances, undefined in arrays/objects.
+ * Includes: Buffer for binary data in Electron IPC.
  *
  * @type {Serializable}
  */
@@ -58,6 +59,7 @@ export type Serializable =
   | number
   | boolean
   | null
+  | Buffer
   | { [key: string]: Serializable }
   | Serializable[]
 
@@ -94,6 +96,22 @@ export interface IInvokeContract<
 }
 
 /**
+ * Represents a generic interface for IPC invocation contracts where the response is a stream.
+ * The request is serializable, but the response is a ReadableStream of serializable data chunks.
+ *
+ * @interface IStreamInvokeContract
+ * @typeparam TRequest - The type of the data sent from the renderer to the main process (must be Serializable).
+ * @typeparam TData - The type of each data chunk in the stream (must be Serializable).
+ */
+export interface IStreamInvokeContract<
+  TRequest extends Serializable | void,
+  TData extends Serializable,
+> {
+  request: TRequest
+  stream: TData
+}
+
+/**
  * Defines a mapping of IPC invocation contracts enforcing a specific structure on each contract.
  * This type iterates over keys of `T` and applies `IInvokeContract` structure enforcement.
  *
@@ -103,6 +121,19 @@ export interface IInvokeContract<
 export type GenericInvokeContract<T> = {
   [P in keyof T]: T[P] extends IInvokeContract<infer Req, infer Res>
     ? EnforceStructure<T[P], IInvokeContract<Req, Res>>
+    : never
+}
+
+/**
+ * Defines a mapping of IPC stream invocation contracts enforcing a specific structure on each contract.
+ * This type iterates over keys of `T` and applies `IStreamInvokeContract` structure enforcement.
+ *
+ * @type {GenericStreamInvokeContract}
+ * @typeparam T - A type representing a collection of IPC stream invocation contracts.
+ */
+export type GenericStreamInvokeContract<T> = {
+  [P in keyof T]: T[P] extends IStreamInvokeContract<infer Req, infer Data>
+    ? EnforceStructure<T[P], IStreamInvokeContract<Req, Data>>
     : never
 }
 
@@ -127,6 +158,28 @@ export type RequestType<T extends GenericInvokeContract<T>, K extends keyof T> =
  */
 export type ResponseType<T extends GenericInvokeContract<T>, K extends keyof T> =
   T[K] extends IInvokeContract<any, infer Res> ? Res : never
+
+/**
+ * Utility type for extracting the request type from a specified IStreamInvokeContract.
+ *
+ * @type {StreamRequestType}
+ * @typeparam T - The target stream contract type.
+ * @typeparam K - The key of the contract to extract the request type from.
+ * @returns The request type of the specified stream contract.
+ */
+export type StreamRequestType<T extends GenericStreamInvokeContract<T>, K extends keyof T> =
+  T[K] extends IStreamInvokeContract<infer Req, any> ? Req : never
+
+/**
+ * Utility type for extracting the data type from a specified IStreamInvokeContract.
+ *
+ * @type {StreamDataType}
+ * @typeparam T - The target stream contract type.
+ * @typeparam K - The key of the contract to extract the data type from.
+ * @returns The data type of the specified stream contract.
+ */
+export type StreamDataType<T extends GenericStreamInvokeContract<T>, K extends keyof T> =
+  T[K] extends IStreamInvokeContract<any, infer Data> ? Data : never
 
 /**
  * Handles IPC communication by setting up a listener for the specified channel.
@@ -172,6 +225,28 @@ export type IPCHandlerType<T extends GenericInvokeContract<T>> = {
 }
 
 /**
+ * Defines a handler type for IPC stream invocation communication, returning a ReadableStream.
+ *
+ * @type {IPCStreamHandler}
+ * @typeparam T - The stream contract type.
+ * @typeparam K - The key of the contract.
+ */
+type IPCStreamHandler<T extends GenericStreamInvokeContract<T>, K extends keyof T> = (
+  event: IpcMainInvokeEvent,
+  request: StreamRequestType<T, K>
+) => ReadableStream<StreamDataType<T, K>>
+
+/**
+ * Maps IPC stream contract keys to their respective handler functions.
+ *
+ * @type {IPCStreamHandlerType}
+ * @typeparam T - The stream contract type being handled.
+ */
+export type IPCStreamHandlerType<T extends GenericStreamInvokeContract<T>> = {
+  [K in keyof T]: IPCStreamHandler<T, K>
+}
+
+/**
  * An abstract class for registering IPC handlers. It maintains a registry of handler instances
  * and provides a mechanism to register handlers for specific IPC channels.
  *
@@ -205,6 +280,61 @@ export abstract class AbstractRegisterHandler {
   private registerHandler() {
     for (const [channel, handler] of Object.entries(this.handlers)) {
       handle(channel as never, handler)
+    }
+  }
+}
+
+/**
+ * An abstract class for registering IPC stream handlers. It maintains a registry of stream handler instances
+ * and provides a mechanism to register handlers for specific IPC stream channels.
+ *
+ * @abstract
+ * @class AbstractRegisterStreamHandler
+ */
+export abstract class AbstractRegisterStreamHandler {
+  private static instances: Record<string, AbstractRegisterStreamHandler> = {}
+
+  /**
+   * Abstract property that subclasses must implement, defining the IPC stream handlers.
+   */
+  abstract handlers: IPCStreamHandlerType<any>
+
+  /**
+   * Registers an instance of the stream handler class, ensuring only one instance per class name.
+   */
+  static register(this: { new (): AbstractRegisterStreamHandler }) {
+    const className = this.name
+    if (AbstractRegisterStreamHandler.instances[className] == null) {
+      AbstractRegisterStreamHandler.instances[className] = new this()
+    }
+    const instance = AbstractRegisterStreamHandler.instances[className]
+    instance.registerHandler()
+  }
+
+  /**
+   * Registers the stream handlers for the IPC channels defined by the subclass.
+   * @private
+   */
+  private registerHandler() {
+    for (const [channel, handler] of Object.entries(this.handlers)) {
+      // Note: Stream handlers need special handling, as they return streams
+      // For now, assume ipcMain.handle can handle ReadableStream responses
+      ipcMain.handle(channel as string, async (event, args) => {
+        const stream = handler(event, args)
+        // Simulate streaming over IPC by sending chunks
+        const reader = stream.getReader()
+        try {
+          // eslint-disable-next-line no-constant-condition
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            event.sender.send(`${channel}-data`, value)
+          }
+          event.sender.send(`${channel}-end`)
+        } catch (err) {
+          event.sender.send(`${channel}-error`, err)
+        }
+      })
     }
   }
 }
@@ -394,6 +524,229 @@ export function createBroadcast<T>() {
   ): void => {
     if (!mainWindow.isDestroyed()) {
       mainWindow.webContents.send(channel as string, payload)
+    }
+  }
+}
+
+/**
+ * IStreamUploadContract: A generic interface defining the structure for IPC stream upload contracts.
+ * It specifies a contract with a data type for unidirectional streaming from renderer to main process.
+ * The data must be a serializable type (JSON-compatible).
+ *
+ * @interface IStreamUploadContract
+ * @typeparam TData - The type of each data chunk sent from renderer to main (must be Serializable).
+ */
+export interface IStreamUploadContract<TData extends Serializable> {
+  data: TData
+}
+
+/**
+ * Represents a generic mapping of IPC stream upload contracts, enforcing a specific structure on each contract.
+ *
+ * @type {GenericStreamUploadContract}
+ * @typeparam T - A type representing a collection of IPC stream upload contracts.
+ */
+export type GenericStreamUploadContract<T> = {
+  [P in keyof T]: T[P] extends IStreamUploadContract<infer Data>
+    ? EnforceStructure<T[P], IStreamUploadContract<Data>>
+    : never
+}
+
+/**
+ * Utility type for extracting the data type from a specified IStreamUploadContract.
+ *
+ * @type {UploadDataType}
+ * @typeparam T - The target upload contract type.
+ * @typeparam K - The key of the contract.
+ * @returns The data type of the specified contract.
+ */
+export type UploadDataType<T extends GenericStreamUploadContract<T>, K extends keyof T> =
+  T[K] extends IStreamUploadContract<infer Data> ? Data : never
+
+/**
+ * IStreamDownloadContract: A generic interface defining the structure for IPC stream download contracts.
+ * It specifies a contract with a data type for unidirectional streaming from main to renderer process.
+ * The data must be a serializable type (JSON-compatible).
+ *
+ * @interface IStreamDownloadContract
+ * @typeparam TData - The type of each data chunk sent from main to renderer (must be Serializable).
+ */
+export interface IStreamDownloadContract<TData extends Serializable> {
+  data: TData
+}
+
+/**
+ * Represents a generic mapping of IPC stream download contracts, enforcing a specific structure on each contract.
+ *
+ * @type {GenericStreamDownloadContract}
+ * @typeparam T - A type representing a collection of IPC stream download contracts.
+ */
+export type GenericStreamDownloadContract<T> = {
+  [P in keyof T]: T[P] extends IStreamDownloadContract<infer Data>
+    ? EnforceStructure<T[P], IStreamDownloadContract<Data>>
+    : never
+}
+
+/**
+ * Utility type for extracting the data type from a specified IStreamDownloadContract.
+ *
+ * @type {DownloadDataType}
+ * @typeparam T - The target download contract type.
+ * @typeparam K - The key of the contract.
+ * @returns The data type of the specified contract.
+ */
+export type DownloadDataType<T extends GenericStreamDownloadContract<T>, K extends keyof T> =
+  T[K] extends IStreamDownloadContract<infer Data> ? Data : never
+
+/**
+ * Defines a handler type for IPC stream upload, receiving a WritableStream from the renderer.
+ *
+ * @type {IPCStreamUploadHandler}
+ * @typeparam T - The upload contract type.
+ * @typeparam K - The key of the contract.
+ */
+type IPCStreamUploadHandler<T extends GenericStreamUploadContract<T>, K extends keyof T> = (
+  stream: WritableStream<UploadDataType<T, K>>
+) => void
+
+/**
+ * Maps IPC stream upload contract keys to their respective handler functions.
+ *
+ * @type {IPCStreamUploadHandlerType}
+ * @typeparam T - The upload contract type being handled.
+ */
+export type IPCStreamUploadHandlerType<T extends GenericStreamUploadContract<T>> = {
+  [K in keyof T]: IPCStreamUploadHandler<T, K>
+}
+
+/**
+ * An abstract class for registering IPC stream upload handlers.
+ *
+ * @abstract
+ * @class AbstractRegisterStreamUpload
+ */
+export abstract class AbstractRegisterStreamUpload {
+  private static instances: Record<string, AbstractRegisterStreamUpload> = {}
+
+  /**
+   * Abstract property that subclasses must implement, defining the IPC stream upload handlers.
+   */
+  abstract handlers: IPCStreamUploadHandlerType<any>
+
+  /**
+   * Registers an instance of the stream upload handler class.
+   */
+  static register(this: { new (): AbstractRegisterStreamUpload }) {
+    const className = this.name
+    if (AbstractRegisterStreamUpload.instances[className] == null) {
+      AbstractRegisterStreamUpload.instances[className] = new this()
+    }
+    const instance = AbstractRegisterStreamUpload.instances[className]
+    instance.registerHandler()
+  }
+
+  /**
+   * Registers the stream upload handlers.
+   * @private
+   */
+  private registerHandler() {
+    for (const [channel, handler] of Object.entries(this.handlers)) {
+      // Listen for stream start, data, end, error from renderer
+      ipcMain.on(`${channel}-start`, () => {
+        const writable = new WritableStream({
+          write(_chunk) {
+            /* handle chunk */
+          },
+          close() {
+            /* handle end */
+          },
+          abort(_err) {
+            /* handle error */
+          },
+        })
+        handler(writable)
+      })
+      ipcMain.on(`${channel}-data`, (_event, _chunk) => {
+        // Send to writable stream
+      })
+      ipcMain.on(`${channel}-end`, () => {
+        // Close writable stream
+      })
+      ipcMain.on(`${channel}-error`, (_event, _err) => {
+        // Abort writable stream
+      })
+    }
+  }
+}
+
+/**
+ * Defines a handler type for IPC stream download, providing a ReadableStream to the renderer.
+ *
+ * @type {IPCStreamDownloadHandler}
+ * @typeparam T - The download contract type.
+ * @typeparam K - The key of the contract.
+ */
+type IPCStreamDownloadHandler<T extends GenericStreamDownloadContract<T>, K extends keyof T> = (
+  event: IpcMainInvokeEvent
+) => ReadableStream<DownloadDataType<T, K>>
+
+/**
+ * Maps IPC stream download contract keys to their respective handler functions.
+ *
+ * @type {IPCStreamDownloadHandlerType}
+ * @typeparam T - The download contract type being handled.
+ */
+export type IPCStreamDownloadHandlerType<T extends GenericStreamDownloadContract<T>> = {
+  [K in keyof T]: IPCStreamDownloadHandler<T, K>
+}
+
+/**
+ * An abstract class for registering IPC stream download handlers.
+ *
+ * @abstract
+ * @class AbstractRegisterStreamDownload
+ */
+export abstract class AbstractRegisterStreamDownload {
+  private static instances: Record<string, AbstractRegisterStreamDownload> = {}
+
+  /**
+   * Abstract property that subclasses must implement, defining the IPC stream download handlers.
+   */
+  abstract handlers: IPCStreamDownloadHandlerType<any>
+
+  /**
+   * Registers an instance of the stream download handler class.
+   */
+  static register(this: { new (): AbstractRegisterStreamDownload }) {
+    const className = this.name
+    if (AbstractRegisterStreamDownload.instances[className] == null) {
+      AbstractRegisterStreamDownload.instances[className] = new this()
+    }
+    const instance = AbstractRegisterStreamDownload.instances[className]
+    instance.registerHandler()
+  }
+
+  /**
+   * Registers the stream download handlers.
+   * @private
+   */
+  private registerHandler() {
+    for (const [channel, handler] of Object.entries(this.handlers)) {
+      ipcMain.handle(channel as string, async (event) => {
+        const stream = handler(event)
+        const reader = stream.getReader()
+        try {
+          // eslint-disable-next-line no-constant-condition
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            event.sender.send(`${channel}-data`, value)
+          }
+          event.sender.send(`${channel}-end`)
+        } catch (err) {
+          event.sender.send(`${channel}-error`, err)
+        }
+      })
     }
   }
 }

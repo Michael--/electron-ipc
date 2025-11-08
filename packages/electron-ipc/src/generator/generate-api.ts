@@ -11,6 +11,9 @@ import {
   eventContracts,
   invokeContracts,
   sendContracts,
+  streamDownloadContracts,
+  streamInvokeContracts,
+  streamUploadContracts,
 } from './templates'
 
 let output = ''
@@ -32,7 +35,7 @@ const addBlob = (blob: string) => {
  * Contract configuration for code generation
  */
 interface IContract {
-  type: 'invoke' | 'event' | 'send'
+  type: 'invoke' | 'event' | 'send' | 'streamInvoke' | 'streamUpload' | 'streamDownload'
   name: string
 }
 
@@ -58,6 +61,27 @@ const CONTRACT_CONFIG = {
     template: sendContracts,
     methodPrefix: 'on',
     paramType: 'payload' as const,
+    returnType: 'callback' as const,
+    searchType: 'type' as const,
+  },
+  streamInvoke: {
+    template: streamInvokeContracts,
+    methodPrefix: 'invokeStream',
+    paramType: 'request' as const,
+    returnType: 'stream' as const,
+    searchType: 'type' as const,
+  },
+  streamUpload: {
+    template: streamUploadContracts,
+    methodPrefix: 'upload',
+    paramType: 'data' as const,
+    returnType: 'void' as const,
+    searchType: 'type' as const,
+  },
+  streamDownload: {
+    template: streamDownloadContracts,
+    methodPrefix: 'download',
+    paramType: 'data' as const,
     returnType: 'callback' as const,
     searchType: 'type' as const,
   },
@@ -88,6 +112,33 @@ function eventApi(contract: string, propName: string) {
  */
 function sendApi(contract: string, propName: string) {
   const method = createApiMethod('on', propName, contract, 'payload', 'callback')
+  add({ v: method, indent: true })
+  add({ indent: false })
+}
+
+/**
+ * Generates API method code for stream invoke contracts
+ */
+function streamInvokeApi(contract: string, propName: string) {
+  const method = createApiMethod('invokeStream', propName, contract, 'request', 'stream')
+  add({ v: method, indent: true })
+  add({ indent: false })
+}
+
+/**
+ * Generates API method code for stream upload contracts
+ */
+function streamUploadApi(contract: string, propName: string) {
+  const method = createApiMethod('upload', propName, contract, 'request', 'upload')
+  add({ v: method, indent: true })
+  add({ indent: false })
+}
+
+/**
+ * Generates API method code for stream download contracts
+ */
+function streamDownloadApi(contract: string, propName: string) {
+  const method = createApiMethod('download', propName, contract, 'payload', 'download')
   add({ v: method, indent: true })
   add({ indent: false })
 }
@@ -143,16 +194,23 @@ function printUsage() {
   console.log(`  --input=<path>   Path to the TypeScript file containing IPC contracts`)
   console.log(`  --output=<path>  Path where the generated code will be saved`)
   console.log(`\nContract Options (at least one required):`)
-  console.log(`  --invoke=<name>  Type name for invoke contracts (Renderer ↔ Main)`)
-  console.log(`  --event=<name>   Type name for event contracts (Renderer → Main)`)
-  console.log(`  --send=<name>    Type name for send/broadcast contracts (Main → Renderer)`)
+  console.log(`  --invoke=<name>         Type name for invoke contracts (Renderer ↔ Main)`)
+  console.log(`  --event=<name>          Type name for event contracts (Renderer → Main)`)
+  console.log(`  --send=<name>           Type name for send/broadcast contracts (Main → Renderer)`)
+  console.log(
+    `  --stream-invoke=<name>  Type name for stream invoke contracts (Renderer ↔ Main with stream response)`
+  )
+  console.log(`  --stream-upload=<name>  Type name for stream upload contracts (Renderer → Main)`)
+  console.log(
+    `  --stream-download=<name> Type name for stream download contracts (Main → Renderer)`
+  )
   console.log(`\nOptional:`)
   console.log(
     `  --main-broadcast-output=<path>  Path where the main process broadcast API will be saved`
   )
   console.log(`\nExample:`)
   console.log(
-    `  electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api.ts --invoke=InvokeContracts --event=EventContracts --send=BroadcastContracts --main-broadcast-output=./src/main/broadcast-api.ts`
+    `  electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api.ts --invoke=InvokeContracts --event=EventContracts --send=BroadcastContracts --stream-invoke=StreamInvokeContracts --stream-upload=StreamUploadContracts --stream-download=StreamDownloadContracts --main-broadcast-output=./src/main/broadcast-api.ts`
   )
   console.log(`\nNote: If multiple contracts of the same type are specified, the last one wins.`)
 }
@@ -230,7 +288,9 @@ export function processContracts(
   contractNames.forEach(({ type, name }) => {
     const config = CONTRACT_CONFIG[type]
     if (!config) {
-      console.error(`Unknown contract type: ${type}, must be "invoke", "event", or "send"`)
+      console.error(
+        `Unknown contract type: ${type}, must be "invoke", "event", "send", "streamInvoke", "streamUpload", or "streamDownload"`
+      )
       process.exit(1)
     }
 
@@ -238,7 +298,19 @@ export function processContracts(
 
     const found = processDeclarations(
       name,
-      type === 'invoke' ? invokeApi : type === 'event' ? eventApi : sendApi,
+      type === 'invoke'
+        ? invokeApi
+        : type === 'event'
+          ? eventApi
+          : type === 'send'
+            ? sendApi
+            : type === 'streamInvoke'
+              ? streamInvokeApi
+              : type === 'streamUpload'
+                ? streamUploadApi
+                : type === 'streamDownload'
+                  ? streamDownloadApi
+                  : sendApi, // fallback
       config.searchType
     )
 
@@ -389,6 +461,9 @@ export function main() {
   const invokeArg = args.filter((arg) => arg.startsWith('--invoke=')).pop()
   const eventArg = args.filter((arg) => arg.startsWith('--event=')).pop()
   const sendArg = args.filter((arg) => arg.startsWith('--send=')).pop()
+  const streamInvokeArg = args.filter((arg) => arg.startsWith('--stream-invoke=')).pop()
+  const streamUploadArg = args.filter((arg) => arg.startsWith('--stream-upload=')).pop()
+  const streamDownloadArg = args.filter((arg) => arg.startsWith('--stream-download=')).pop()
 
   if (inputPathArg == null || outputPathArg == null) {
     console.error('Error: --input and --output must be defined.')
@@ -400,9 +475,17 @@ export function main() {
   if (invokeArg) contractNames.push({ type: 'invoke', name: invokeArg.split('=')[1] })
   if (eventArg) contractNames.push({ type: 'event', name: eventArg.split('=')[1] })
   if (sendArg) contractNames.push({ type: 'send', name: sendArg.split('=')[1] })
+  if (streamInvokeArg)
+    contractNames.push({ type: 'streamInvoke', name: streamInvokeArg.split('=')[1] })
+  if (streamUploadArg)
+    contractNames.push({ type: 'streamUpload', name: streamUploadArg.split('=')[1] })
+  if (streamDownloadArg)
+    contractNames.push({ type: 'streamDownload', name: streamDownloadArg.split('=')[1] })
 
   if (contractNames.length === 0) {
-    console.error('Error: At least one contract (--invoke, --event, or --send) must be defined.')
+    console.error(
+      'Error: At least one contract (--invoke, --event, --send, --stream-invoke, --stream-upload, or --stream-download) must be defined.'
+    )
     printUsage()
     process.exit(1)
   }

@@ -5,6 +5,9 @@ import {
   IBroadcastContract,
   IInvokeContract,
   IRendererEventContract,
+  IStreamDownloadContract,
+  IStreamInvokeContract,
+  IStreamUploadContract,
 } from '@number10/electron-ipc'
 
 /**
@@ -67,3 +70,43 @@ export type BroadcastContracts = GenericBroadcastContract<{
    */
   About: IBroadcastContract<void>
 }>
+
+/**
+ * StreamInvokeContracts: Defines bidirectional IPC contracts where the response is a stream.
+ * @interface
+ */
+export type StreamInvokeContracts = {
+  /**
+   * GetLargeData streams large data from main to renderer.
+   * @type {object}
+   * @property {string} request - The ID of the data to retrieve.
+   * @property {string} stream - Each chunk of data.
+   */
+  GetLargeData: IStreamInvokeContract<{ id: string }, string>
+}
+
+/**
+ * StreamUploadContracts: Defines unidirectional IPC contracts for streaming data from renderer to main.
+ * @interface
+ */
+export type StreamUploadContracts = {
+  /**
+   * UploadFile streams file data from renderer to main.
+   * @type {object}
+   * @property {Buffer} data - Each chunk of file data.
+   */
+  UploadFile: IStreamUploadContract<Buffer>
+}
+
+/**
+ * StreamDownloadContracts: Defines unidirectional IPC contracts for streaming data from main to renderer.
+ * @interface
+ */
+export type StreamDownloadContracts = {
+  /**
+   * DownloadLogs streams log data from main to renderer.
+   * @type {object}
+   * @property {string} data - Each chunk of log data.
+   */
+  DownloadLogs: IStreamDownloadContract<string>
+}
