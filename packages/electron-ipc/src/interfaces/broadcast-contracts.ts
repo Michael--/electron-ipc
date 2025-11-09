@@ -1,5 +1,38 @@
 /**
  * Broadcast contracts for IPC communication.
+ *
+ * Broadcast contracts enable unidirectional IPC communication from the main process to the renderer
+ * for sending notifications, updates, or data without expecting a response.
+ *
+ * Key features:
+ * - One-way communication (main → renderer)
+ * - Type-safe payload delivery
+ * - Automatic window destruction checks
+ *
+ * Define broadcast contracts:
+ * ```typescript
+ * export type MyBroadcastContracts = GenericBroadcastContract<{
+ *   StatusUpdate: IBroadcastContract<{ status: string; progress: number }>
+ *   Ping: IBroadcastContract<number>
+ * }>
+ * ```
+ *
+ * Use in main process:
+ * ```typescript
+ * const broadcast = createBroadcast<MyBroadcastContracts>()
+ * broadcast("StatusUpdate", mainWindow, { status: 'loading', progress: 50 })
+ * broadcast("Ping", mainWindow, Date.now())
+ * ```
+ *
+ * Listen in renderer:
+ * ```typescript
+ * window.api.onStatusUpdate(({ status, progress }) => {
+ *   console.log(`Status: ${status}, Progress: ${progress}%`)
+ * })
+ * window.api.onPing((timestamp) => {
+ *   console.log('Ping received at', timestamp)
+ * })
+ * ```
  */
 
 import { BrowserWindow } from 'electron'

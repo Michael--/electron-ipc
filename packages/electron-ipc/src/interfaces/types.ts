@@ -1,5 +1,13 @@
 /**
  * Helper types for creating a type-safe IPC (Inter-Process Communication) API for Electron applications.
+ *
+ * This module provides foundational types and utilities for IPC contracts:
+ * - `Serializable`: Defines types safe for IPC serialization
+ * - `EnforceStructure`: Ensures contract structure compliance
+ * - Utility types: Extract request/response types from contracts
+ *
+ * These types are used internally by the contract modules and are typically not used directly.
+ * Instead, use the specific contract types from the respective modules.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

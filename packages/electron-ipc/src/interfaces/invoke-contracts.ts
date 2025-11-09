@@ -1,5 +1,40 @@
 /**
  * Invoke contracts for IPC communication.
+ *
+ * Invoke contracts enable bidirectional IPC communication for request-response patterns between
+ * the renderer and main processes. The renderer sends a request and expects a response from the main process.
+ *
+ * Key features:
+ * - Type-safe request-response communication
+ * - Asynchronous handling with Promises
+ * - Support for streaming responses (StreamInvoke)
+ *
+ * Define invoke contracts:
+ * ```typescript
+ * export type MyInvokeContracts = GenericInvokeContract<{
+ *   HelloEcho: IInvokeContract<string, string>
+ *   GetUser: IInvokeContract<{ id: number }, User>
+ * }>
+ * ```
+ *
+ * Implement in main process:
+ * ```typescript
+ * class MyHandler extends AbstractRegisterHandler {
+ *   handlers: IPCHandlerType<MyInvokeContracts> = {
+ *     HelloEcho: async (_event, message) => `Echo: ${message}`,
+ *     GetUser: async (_event, { id }) => await fetchUser(id)
+ *   }
+ * }
+ * MyHandler.register()
+ * ```
+ *
+ * Use in renderer:
+ * ```typescript
+ * const echo = await window.api.invokeHelloEcho("Hello")
+ * const user = await window.api.invokeGetUser({ id: 123 })
+ * ```
+ *
+ * For streaming responses, use StreamInvoke contracts for large data or real-time streams.
  */
 
 import { ipcMain, IpcMainInvokeEvent } from 'electron'

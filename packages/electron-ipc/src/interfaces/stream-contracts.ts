@@ -1,5 +1,79 @@
 /**
  * Stream contracts for IPC communication (upload and download).
+ *
+ * Stream contracts enable efficient handling of large data transfers or real-time data streams
+ * between renderer and main processes using Web Streams API.
+ *
+ * Two types of streaming:
+ * - **Stream Invoke**: Request-response with streaming response (e.g., large data downloads)
+ * - **Stream Upload**: Renderer uploads data to main (e.g., file uploads)
+ * - **Stream Download**: Main streams data to renderer (e.g., real-time updates)
+ *
+ * Key features:
+ * - Web Streams API integration
+ * - Efficient for large data
+ * - Type-safe stream handling
+ * - Automatic error handling and cleanup
+ *
+ * Define stream contracts:
+ * ```typescript
+ * export type MyStreamInvokeContracts = GenericStreamInvokeContract<{
+ *   GetLargeData: IStreamInvokeContract<{ offset: number }, string>
+ * }>
+ *
+ * export type MyUploadContracts = GenericStreamUploadContract<{
+ *   UploadFile: IStreamUploadContract<{ filename: string }, Uint8Array>
+ * }>
+ *
+ * export type MyDownloadContracts = GenericStreamDownloadContract<{
+ *   DownloadLogs: IStreamDownloadContract<{ since: Date }, string>
+ * }>
+ * ```
+ *
+ * Implement in main process:
+ * ```typescript
+ * class MyStreamHandler extends AbstractRegisterStreamHandler {
+ *   handlers: IPCStreamHandlerType<MyStreamInvokeContracts> = {
+ *     GetLargeData: async (event, { offset }) => {
+ *       return createReadableStream(offset)
+ *     }
+ *   }
+ * }
+ *
+ * class MyUploadHandler extends AbstractRegisterStreamUpload {
+ *   handlers: IPCStreamUploadHandlerType<MyUploadContracts> = {
+ *     UploadFile: ({ filename }, stream) => {
+ *       // Handle upload stream
+ *     }
+ *   }
+ * }
+ *
+ * class MyDownloadHandler extends AbstractRegisterStreamDownload {
+ *   handlers: IPCStreamDownloadHandlerType<MyDownloadContracts> = {
+ *     DownloadLogs: ({ since }, event) => {
+ *       return createLogStream(since)
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * Use in renderer:
+ * ```typescript
+ * // Stream invoke
+ * const reader = await window.api.streamGetLargeData({ offset: 0 })
+ * for await (const chunk of reader) {
+ *   console.log('Chunk:', chunk)
+ * }
+ *
+ * // Upload
+ * await window.api.uploadUploadFile({ filename: 'data.txt' }, createUploadStream())
+ *
+ * // Download
+ * const reader = await window.api.downloadDownloadLogs({ since: new Date() })
+ * for await (const log of reader) {
+ *   console.log('Log:', log)
+ * }
+ * ```
  */
 
 import { ipcMain, IpcMainInvokeEvent } from 'electron'

@@ -1,5 +1,38 @@
 /**
  * Event contracts for IPC communication.
+ *
+ * Event contracts enable unidirectional IPC communication from the renderer to the main process
+ * for fire-and-forget notifications or commands. No response is expected from the main process.
+ *
+ * Key features:
+ * - One-way communication (renderer → main)
+ * - No return values or promises
+ * - Ideal for notifications, commands, or logging
+ *
+ * Define event contracts:
+ * ```typescript
+ * export type MyEventContracts = GenericRendererEventContract<{
+ *   LogMessage: IRendererEventContract<{ level: string; message: string }>
+ *   Quit: IRendererEventContract<void>
+ * }>
+ * ```
+ *
+ * Implement in main process:
+ * ```typescript
+ * class MyEventHandler extends AbstractRegisterEvent {
+ *   events: IPCEventType<MyEventContracts> = {
+ *     LogMessage: (_event, { level, message }) => console.log(`[${level}] ${message}`),
+ *     Quit: () => app.quit()
+ *   }
+ * }
+ * MyEventHandler.register()
+ * ```
+ *
+ * Use in renderer:
+ * ```typescript
+ * window.api.sendLogMessage({ level: 'info', message: 'App started' })
+ * window.api.sendQuit()
+ * ```
  */
 
 import { ipcMain, IpcMainInvokeEvent } from 'electron'
