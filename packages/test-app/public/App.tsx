@@ -46,12 +46,15 @@ function AboutReceiver() {
 }
 
 function AddNumbersDemo() {
-  const [result, setResult] = useState<number | null>(null)
+  const [result, setResult] = useState<string | null>(null)
+
+  const valueA = Math.floor(Math.random() * 10 + 1)
+  const valueB = Math.floor(Math.random() * 10 + 1)
 
   const handleAdd = async () => {
     if (!window.api) return
-    const sum = await window.api.invokeAddNumbers({ a: 5, b: 3 })
-    setResult(sum)
+    const sum = await window.api.invokeAddNumbers({ a: valueA, b: valueB })
+    setResult(`${valueA}+${valueB} = ${sum}`)
   }
 
   return (
@@ -59,7 +62,7 @@ function AddNumbersDemo() {
       <h3 className="demo-title">➕ Add Numbers</h3>
       <p className="demo-description">Invoke with request payload, returns response</p>
       <div className="demo-controls">
-        <button onClick={handleAdd}>Add 5 + 3</button>
+        <button onClick={handleAdd}>{`Add ${valueA} + ${valueB}`}</button>
       </div>
       {result !== null && <div className="demo-result">Result: {result}</div>}
     </div>
@@ -328,7 +331,7 @@ function VideoStreamDemo() {
   const [progress, setProgress] = useState<string>('')
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [selectedVideo, setSelectedVideo] = useState<string>(
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
   )
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -465,6 +468,14 @@ export function App() {
       </section>
 
       <section className="section">
+        <h2 className="section-title">📤 Event (Renderer → Main)</h2>
+        <div className="demo-grid">
+          <QuitProgram />
+          <LogMessageDemo />
+        </div>
+      </section>
+
+      <section className="section">
         <h2 className="section-title">🌊 Stream Invoke (Renderer ↔ Main Stream)</h2>
         <div className="demo-grid">
           <StreamDataDemo />
@@ -483,14 +494,6 @@ export function App() {
         <div className="demo-grid">
           <StreamDownloadDemo />
           <VideoStreamDemo />
-        </div>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">📤 Event (Renderer → Main)</h2>
-        <div className="demo-grid">
-          <QuitProgram />
-          <LogMessageDemo />
         </div>
       </section>
 
