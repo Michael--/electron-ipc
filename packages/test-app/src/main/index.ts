@@ -93,35 +93,28 @@ function initializeEventHandler() {
   // implement stream upload handlers (Renderer → Main)
   class RegisterStreamUpload extends AbstractRegisterStreamUpload {
     handlers: IPCStreamUploadHandlerType<StreamUploadContracts> = {
-      UploadFile: (request, writable) => {
+      UploadFile: (request, onData, onEnd, onError) => {
         // eslint-disable-next-line no-console
         console.log(`[Upload] Started receiving file: ${request.fileName}`)
 
-        const writer = writable.getWriter()
-        let chunkCount = 0
+        // Set up the data handler
+        onData((chunk: Uint8Array) => {
+          // eslint-disable-next-line no-console
+          console.log(`[Upload] Received chunk: ${chunk.length} bytes`)
+          // Here you would process the chunk (e.g., write to file, validate, etc.)
+        })
 
-        // Simulate receiving data
-        const interval = setInterval(async () => {
-          chunkCount++
-          const chunk = Buffer.from(`Chunk ${chunkCount}/10`)
+        // Set up the end handler
+        onEnd(() => {
+          // eslint-disable-next-line no-console
+          console.log(`[Upload] Completed receiving file: ${request.fileName}`)
+        })
 
-          try {
-            await writer.write(chunk)
-            // eslint-disable-next-line no-console
-            console.log(`[Upload] Wrote chunk ${chunkCount}, size: ${chunk.length} bytes`)
-
-            if (chunkCount >= 10) {
-              clearInterval(interval)
-              await writer.close()
-              // eslint-disable-next-line no-console
-              console.log(`[Upload] Completed ${request.fileName}! Wrote ${chunkCount} chunks`)
-            }
-          } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error('[Upload] Error:', err)
-            clearInterval(interval)
-          }
-        }, 1000)
+        // Set up the error handler
+        onError((err) => {
+          // eslint-disable-next-line no-console
+          console.error('[Upload] Error:', err)
+        })
       },
     }
   }

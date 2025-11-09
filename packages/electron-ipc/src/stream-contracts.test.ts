@@ -321,11 +321,17 @@ describe('Stream IPC Contracts', () => {
 
       class RegisterUpload extends AbstractRegisterStreamUpload {
         handlers: IPCStreamUploadHandlerType<UploadContract> = {
-          UploadData: (request, writable) => {
+          UploadData: (request, onData, onEnd, onError) => {
             expect(request.id).toBe(42)
-            const writer = writable.getWriter()
-            writer.write('test-data')
-            writer.close()
+            onData((chunk) => {
+              // Test callback
+            })
+            onEnd(() => {
+              // Test end
+            })
+            onError((err) => {
+              // Test error
+            })
           },
         }
       }

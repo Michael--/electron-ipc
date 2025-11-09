@@ -104,7 +104,7 @@ export interface IStreamUploadContract<
 }
 
 /**
- * Defines a handler type for IPC stream upload, receiving a WritableStream from the renderer.
+ * Defines a handler type for IPC stream upload, receiving callback setters for handling the upload stream.
  *
  * @type {IPCStreamUploadHandler}
  * @typeparam T - The upload contract type.
@@ -112,7 +112,9 @@ export interface IStreamUploadContract<
  */
 type IPCStreamUploadHandler<T extends GenericStreamUploadContract<T>, K extends keyof T> = (
   request: UploadRequestType<T, K>,
-  stream: WritableStream<UploadDataType<T, K>>
+  onData: (callback: (chunk: UploadDataType<T, K>) => void) => void,
+  onEnd: (callback: () => void) => void,
+  onError: (callback: (error: unknown) => void) => void
 ) => void
 
 /**
@@ -167,30 +169,75 @@ export abstract class AbstractRegisterStreamUpload {
    * @private
    */
   private registerHandler() {
+    // Map to track active upload callbacks
+    const activeCallbacks = new Map<
+      string,
+      {
+        onData: (chunk: import('./types').Serializable) => void
+        onEnd: () => void
+        onError: (error: unknown) => void
+      }
+    >()
+
     for (const [channel, handler] of Object.entries(this.handlers)) {
       // Listen for stream start with request parameter
       ipcMain.on(`${channel}-start`, (_event, request) => {
-        const writable = new WritableStream({
-          write(_chunk) {
-            /* handle chunk */
-          },
-          close() {
-            /* handle end */
-          },
-          abort(_err) {
-            /* handle error */
-          },
+        // Create callback functions that the handler can replace
+        let onDataCallback: (chunk: import('./types').Serializable) => void = (_chunk) => {
+          // Default: do nothing
+        }
+        let onEndCallback: () => void = () => {
+          // Default: do nothing
+        }
+        let onErrorCallback: (error: unknown) => void = (_error) => {
+          // Default: do nothing
+        }
+
+        const onData = (callback: (chunk: import('./types').Serializable) => void) => {
+          onDataCallback = callback
+        }
+        const onEnd = (callback: () => void) => {
+          onEndCallback = callback
+        }
+        const onError = (callback: (error: unknown) => void) => {
+          onErrorCallback = callback
+        }
+
+        // Store the callbacks for this channel
+        activeCallbacks.set(channel, {
+          onData: (chunk) => onDataCallback(chunk),
+          onEnd: () => onEndCallback(),
+          onError: (error) => onErrorCallback(error),
         })
-        handler(request, writable)
+
+        // Call the handler with the request and callback setters
+        handler(request, onData, onEnd, onError)
       })
-      ipcMain.on(`${channel}-data`, (_event, _chunk) => {
-        // Send to writable stream
+
+      // Listen for data chunks
+      ipcMain.on(`${channel}-data`, (_event, chunk) => {
+        const callbacks = activeCallbacks.get(channel)
+        if (callbacks) {
+          callbacks.onData(chunk)
+        }
       })
+
+      // Listen for stream end
       ipcMain.on(`${channel}-end`, () => {
-        // Close writable stream
+        const callbacks = activeCallbacks.get(channel)
+        if (callbacks) {
+          callbacks.onEnd()
+          activeCallbacks.delete(channel)
+        }
       })
-      ipcMain.on(`${channel}-error`, (_event, _err) => {
-        // Abort writable stream
+
+      // Listen for stream error/abort
+      ipcMain.on(`${channel}-error`, (_event, err) => {
+        const callbacks = activeCallbacks.get(channel)
+        if (callbacks) {
+          callbacks.onError(err)
+          activeCallbacks.delete(channel)
+        }
       })
     }
   }
