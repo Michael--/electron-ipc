@@ -23,7 +23,7 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 
 ## IPC Contract Types
 
-The generator supports three types of IPC communication:
+The generator supports four types of IPC communication:
 
 ### 1. Invoke (Renderer ↔ Main, Request/Response)
 
@@ -66,7 +66,7 @@ export type EventContracts = GenericRendererEventContract<{
 Main process sends data/events to renderer (one-way only):
 
 ```typescript
-export type IBroadcastContracts = GenericBroadcastContract<{
+export type BroadcastContracts = GenericBroadcastContract<{
   Ping: IBroadcastContract<number>
   About: IBroadcastContract<void>
 }>
@@ -78,6 +78,33 @@ export type IBroadcastContracts = GenericBroadcastContract<{
 
 - `Ping` → `window.api.onPing((count) => ...)`
 - `About` → `window.api.onAbout(() => ...)`
+
+### 4. Streams (Large Data & Real-time)
+
+For efficient handling of large data transfers or real-time data streams using Web Streams API:
+
+```typescript
+// Stream Invoke: Request-response with streaming response
+export type StreamInvokeContracts = GenericStreamInvokeContract<{
+  GetLargeData: IStreamInvokeContract<{ offset: number }, string>
+}>
+
+// Stream Upload: Renderer uploads data to main
+export type StreamUploadContracts = GenericStreamUploadContract<{
+  UploadFile: IStreamUploadContract<{ filename: string }, Uint8Array>
+}>
+
+// Stream Download: Main streams data to renderer
+export type StreamDownloadContracts = GenericStreamDownloadContract<{
+  DownloadLogs: IStreamDownloadContract<{ since: Date }, string>
+}>
+```
+
+**Generated method names:**
+
+- Stream Invoke: `invokeStreamGetLargeData()` → returns `ReadableStream`
+- Stream Upload: `uploadStreamUploadFile()` → returns `WritableStream`
+- Stream Download: `downloadStreamDownloadLogs()` → returns `ReadableStream`
 
 ## Workflow
 
@@ -91,6 +118,9 @@ import {
   GenericBroadcastContract,
   GenericInvokeContract,
   GenericRendererEventContract,
+  GenericStreamInvokeContract,
+  GenericStreamUploadContract,
+  GenericStreamDownloadContract,
   IBroadcastContract,
   IInvokeContract,
   IRendererEventContract,
@@ -114,6 +144,19 @@ export type BroadcastContracts = GenericBroadcastContract<{
   About: IBroadcastContract<void>
 }>
 
+// Streams: Large data and real-time communication
+export type StreamInvokeContracts = GenericStreamInvokeContract<{
+  GetLargeData: IStreamInvokeContract<{ offset: number }, string>
+}>
+
+export type StreamUploadContracts = GenericStreamUploadContract<{
+  UploadFile: IStreamUploadContract<{ filename: string }, Uint8Array>
+}>
+
+export type StreamDownloadContracts = GenericStreamDownloadContract<{
+  DownloadLogs: IStreamDownloadContract<{ since: Date }, string>
+}>
+
 // Optional: Create runtime broadcast helper (if not using generated API)
 // export const mainBroadcast = createBroadcast<BroadcastContracts>()
 ```
@@ -123,10 +166,19 @@ export type BroadcastContracts = GenericBroadcastContract<{
 Run the generator:
 
 ```bash
-pnpm run generate:api
+npx electron-ipc-generate \
+  --input=./src/main/ipc-api.ts \
+  --output=./src/preload/api-generated.ts \
+  --invoke=InvokeContracts \
+  --event=EventContracts \
+  --send=BroadcastContracts \
+  --stream-invoke=StreamInvokeContracts \
+  --stream-upload=StreamUploadContracts \
+  --stream-download=StreamDownloadContracts \
+  --main-broadcast-output=./src/main/broadcast-generated.ts
 ```
 
-This creates `src/preload/api-generated.ts` with type-safe wrappers.
+This creates `src/preload/api-generated.ts` and `src/main/broadcast-generated.ts` with type-safe wrappers.
 
 ### 3. Use in Preload
 
@@ -155,6 +207,28 @@ window.api.sendLogMessage('User clicked button')
 // Broadcast: Listen to events from main (prefixed with 'on')
 window.api.onPing((count) => console.log(`Ping ${count}`))
 window.api.onAbout(() => console.log('About dialog'))
+
+// Streams: Handle large data and real-time communication
+const stream = await window.api.invokeStreamGetLargeData({ offset: 0 })
+const reader = stream.getReader()
+while (true) {
+  const { done, value } = await reader.read()
+  if (done) break
+  console.log('Received:', value)
+}
+
+const uploadStream = window.api.uploadStreamUploadFile({ filename: 'data.txt' })
+const writer = uploadStream.getWriter()
+await writer.write(new Uint8Array([1, 2, 3, 4, 5]))
+await writer.close()
+
+const downloadStream = window.api.downloadStreamDownloadLogs({ since: new Date() })
+const downloadReader = downloadStream.getReader()
+while (true) {
+  const { done, value } = await downloadReader.read()
+  if (done) break
+  console.log('Log:', value)
+}
 ```
 
 **Note:** The generator automatically adds prefixes to method names:
@@ -162,6 +236,9 @@ window.api.onAbout(() => console.log('About dialog'))
 - Invoke contracts → `invoke` prefix
 - Event contracts → `send` prefix
 - Broadcast contracts → `on` prefix
+- Stream invoke → `invokeStream` prefix
+- Stream upload → `uploadStream` prefix
+- Stream download → `downloadStream` prefix
 
 This prevents naming conflicts and makes the API usage self-documenting.
 
@@ -173,6 +250,9 @@ Handle IPC calls in main process (`src/main/index.ts`):
 import {
   AbstractRegisterHandler,
   AbstractRegisterEvent,
+  AbstractRegisterStreamHandler,
+  AbstractRegisterStreamUpload,
+  AbstractRegisterStreamDownload,
   IPCHandlerType,
   IPCEventType,
 } from '@number10/electron-ipc'
@@ -202,9 +282,49 @@ class RegisterEvent extends AbstractRegisterEvent {
   }
 }
 
+// Implement stream invoke handlers (request with streaming response)
+class RegisterStreamHandler extends AbstractRegisterStreamHandler {
+  handlers: IPCStreamHandlerType<StreamInvokeContracts> = {
+    GetLargeData: async (_event, { offset }) => {
+      // Return a ReadableStream
+      return createReadableStreamFromLargeData(offset)
+    },
+  }
+}
+
+// Implement stream upload handlers (renderer → main)
+class RegisterStreamUpload extends AbstractRegisterStreamUpload {
+  handlers: IPCStreamUploadHandlerType<StreamUploadContracts> = {
+    UploadFile: async (_event, { filename }, stream) => {
+      // Handle the uploaded stream
+      const reader = stream.getReader()
+      const chunks = []
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        chunks.push(value)
+      }
+      // Process uploaded data...
+    },
+  }
+}
+
+// Implement stream download handlers (main → renderer)
+class RegisterStreamDownload extends AbstractRegisterStreamDownload {
+  handlers: IPCStreamDownloadHandlerType<StreamDownloadContracts> = {
+    DownloadLogs: async (_event, { since }) => {
+      // Return a ReadableStream for logs
+      return createLogStream(since)
+    },
+  }
+}
+
 // Register all handlers
 RegisterHandler.register()
 RegisterEvent.register()
+RegisterStreamHandler.register()
+RegisterStreamUpload.register()
+RegisterStreamDownload.register()
 
 // Option 1: Use generated main broadcast API (recommended)
 import { mainBroadcast } from './broadcast-generated'

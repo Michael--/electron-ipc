@@ -11,6 +11,9 @@ These helper types enforce a specific structure with named properties:
 - `GenericInvokeContract<T>` + `IInvokeContract<Request, Response>` → `{ request: Request, response: Response }`
 - `GenericRendererEventContract<T>` + `IRendererEventContract<Payload>` → `{ request: Payload }`
 - `GenericBroadcastContract<T>` + `IBroadcastContract<Payload>` → `{ payload: Payload }`
+- `GenericStreamInvokeContract<T>` + `IStreamInvokeContract<Request, Chunk>` → `{ request: Request, response: ReadableStream<Chunk> }`
+- `GenericStreamUploadContract<T>` + `IStreamUploadContract<Request, Chunk>` → `{ request: Request, upload: WritableStream<Chunk> }`
+- `GenericStreamDownloadContract<T>` + `IStreamDownloadContract<Request, Chunk>` → `{ request: Request, download: ReadableStream<Chunk> }`
 
 **Why this is necessary:**
 
@@ -25,11 +28,14 @@ Without these wrappers, the generator would have to handle countless variations 
 
 The generator automatically adds prefixes to method names based on contract type:
 
-| Contract Type | Prefix   | Example                             |
-| ------------- | -------- | ----------------------------------- |
-| Invoke        | `invoke` | `AddNumbers` → `invokeAddNumbers()` |
-| Event         | `send`   | `Quit` → `sendQuit()`               |
-| Broadcast     | `on`     | `Ping` → `onPing(callback)`         |
+| Contract Type   | Prefix           | Example                                         |
+| --------------- | ---------------- | ----------------------------------------------- |
+| Invoke          | `invoke`         | `AddNumbers` → `invokeAddNumbers()`             |
+| Event           | `send`           | `Quit` → `sendQuit()`                           |
+| Broadcast       | `on`             | `Ping` → `onPing(callback)`                     |
+| Stream Invoke   | `invokeStream`   | `GetLargeData` → `invokeStreamGetLargeData()`   |
+| Stream Upload   | `uploadStream`   | `UploadFile` → `uploadStreamUploadFile()`       |
+| Stream Download | `downloadStream` | `DownloadLogs` → `downloadStreamDownloadLogs()` |
 
 **Benefits:**
 

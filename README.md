@@ -85,6 +85,7 @@ electron-ipc/
 
 ## 🎯 Benefits
 
+✅ **Four Communication Patterns** - Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Streams (large data/real-time)  
 ✅ **Compile-Time Type Safety** - Change a contract interface → TypeScript shows errors immediately in all usages  
 ✅ **No Runtime Surprises** - Catch signature mismatches before running the app  
 ✅ **IntelliSense Everywhere** - Auto-completion in main, preload, and renderer processes  

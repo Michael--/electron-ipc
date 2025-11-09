@@ -1,9 +1,18 @@
-# Changelog
+## [Unreleased]
 
-All notable changes to this project will be documented in this file.
+### Added
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+- **Stream Contracts**: Added support for large data transfers and real-time communication using Web Streams API
+  - Stream Invoke: Request-response with streaming response
+  - Stream Upload: Renderer uploads data to main process
+  - Stream Download: Main streams data to renderer process
+- **CLI Options**: Added `--stream-invoke`, `--stream-upload`, and `--stream-download` options
+- **Documentation**: Updated all documentation to include stream contract examples and usage
+
+### Changed
+
+- **Documentation**: Modernized and updated README files across the project
+- **Features**: Updated feature lists to reflect four communication patterns instead of three
 
 ## [1.0.1] - 2025-11-10
 
