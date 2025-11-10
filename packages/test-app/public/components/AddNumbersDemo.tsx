@@ -1,10 +1,10 @@
-import { useInvokeInvokeContracts } from '../../src/preload/api-react-hooks-generated'
+import { useInvokeContracts } from '../../src/preload/api-react-hooks-generated'
 
 /**
  * AddNumbersDemo component - demonstrates invoke with request/response using React hooks
  */
 export function AddNumbersDemo() {
-  const { data, loading, error, invoke } = useInvokeInvokeContracts('AddNumbers')
+  const { data, loading, error, invoke } = useInvokeContracts('AddNumbers')
 
   const valueA = Math.floor(Math.random() * 10 + 1)
   const valueB = Math.floor(Math.random() * 10 + 1)

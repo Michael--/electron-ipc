@@ -339,7 +339,7 @@ import { ${contract} } from "${importPath}"
  * @param channel - The IPC channel name
  * @returns Object with data, loading, error states and invoke function
  */
-export function useInvoke${contract}<K extends keyof ${contract}>(channel: K) {
+export function use${contract}<K extends keyof ${contract}>(channel: K) {
   const [data, setData] = useState<${contract}[K]["response"] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
@@ -381,7 +381,7 @@ import { ${contract} } from "${importPath}"
  * @param channel - The IPC channel name
  * @returns Object with send function
  */
-export function useEvent${contract}<K extends keyof ${contract}>(channel: K) {
+export function use${contract}<K extends keyof ${contract}>(channel: K) {
   const send = useCallback((request: ${contract}[K]["request"]) => {
     const methodName = \`send\${channel}\` as keyof typeof window.${apiName}
     ;(window.${apiName}[methodName] as any)(request)
@@ -411,7 +411,7 @@ import { ${contract} } from "${importPath}"
  * @param channel - The IPC channel name
  * @returns Object with data, subscribe, and unsubscribe functions
  */
-export function useBroadcast${contract}<K extends keyof ${contract}>(channel: K) {
+export function use${contract}<K extends keyof ${contract}>(channel: K) {
   const [data, setData] = useState<${contract}[K]["payload"] | null>(null)
 
   const subscribe = useCallback((callback?: (payload: ${contract}[K]["payload"]) => void) => {

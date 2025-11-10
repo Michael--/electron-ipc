@@ -19,7 +19,7 @@ import { InvokeContracts } from "../main/ipc-api"
  * @param channel - The IPC channel name
  * @returns Object with data, loading, error states and invoke function
  */
-export function useInvokeInvokeContracts<K extends keyof InvokeContracts>(channel: K) {
+export function useInvokeContracts<K extends keyof InvokeContracts>(channel: K) {
   const [data, setData] = useState<InvokeContracts[K]["response"] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
@@ -52,7 +52,7 @@ import { EventContracts } from "../main/ipc-api"
  * @param channel - The IPC channel name
  * @returns Object with send function
  */
-export function useEventEventContracts<K extends keyof EventContracts>(channel: K) {
+export function useEventContracts<K extends keyof EventContracts>(channel: K) {
   const send = useCallback((request: EventContracts[K]["request"]) => {
     const methodName = `send${channel}` as keyof typeof window.api
     ;(window.api[methodName] as any)(request)
@@ -69,7 +69,7 @@ import { BroadcastContracts } from "../main/ipc-api"
  * @param channel - The IPC channel name
  * @returns Object with data, subscribe, and unsubscribe functions
  */
-export function useBroadcastBroadcastContracts<K extends keyof BroadcastContracts>(channel: K) {
+export function useBroadcastContracts<K extends keyof BroadcastContracts>(channel: K) {
   const [data, setData] = useState<BroadcastContracts[K]["payload"] | null>(null)
 
   const subscribe = useCallback((callback?: (payload: BroadcastContracts[K]["payload"]) => void) => {

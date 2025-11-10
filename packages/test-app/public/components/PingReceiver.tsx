@@ -1,11 +1,11 @@
 import React from 'react'
-import { useBroadcastBroadcastContracts } from '../../src/preload/api-react-hooks-generated'
+import { useBroadcastContracts } from '../../src/preload/api-react-hooks-generated'
 
 /**
  * PingReceiver component - displays broadcast ping counter using React hooks
  */
 export function PingReceiver() {
-  const { data, subscribe } = useBroadcastBroadcastContracts('Ping')
+  const { data, subscribe } = useBroadcastContracts('Ping')
 
   React.useEffect(() => {
     return subscribe()
