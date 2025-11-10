@@ -18,10 +18,10 @@ import { BroadcastContracts } from '../main/ipc-api'
  */
 export const mainBroadcast = {
 Ping: (mainWindow: BrowserWindow, payload: BroadcastContracts["Ping"]["payload"]): void => {
-  mainWindow.webContents.send('BroadcastContracts:Ping', payload)
+  mainWindow.webContents.send('Ping', payload)
 }
 ,
 About: (mainWindow: BrowserWindow, payload?: BroadcastContracts["About"]["payload"]): void => {
-  mainWindow.webContents.send('BroadcastContracts:About', payload)
+  mainWindow.webContents.send('About', payload)
 }
 }

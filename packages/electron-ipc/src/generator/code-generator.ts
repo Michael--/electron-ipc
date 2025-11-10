@@ -259,12 +259,12 @@ export function generateMainBroadcastApi(
       if (isVoidPayload) {
         // For void payload, make parameter optional
         method = `${propName}: (mainWindow: BrowserWindow, payload?: ${payloadType}): void => {
-  mainWindow.webContents.send('${contractName}:${propName}', payload)
+  mainWindow.webContents.send('${propName}', payload)
 }`
       } else {
         // For non-void payload, require parameter
         method = `${propName}: (mainWindow: BrowserWindow, payload: ${payloadType}): void => {
-  mainWindow.webContents.send('${contractName}:${propName}', payload)
+  mainWindow.webContents.send('${propName}', payload)
 }`
       }
 
