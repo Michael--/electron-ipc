@@ -167,4 +167,121 @@ describe('generate-api', () => {
       expect(result).toContain('} as const')
     })
   })
+
+  describe('Stream Contracts', () => {
+    it('should generate callback-based API for stream invoke contracts', () => {
+      const sourceCode = `
+        export type StreamInvokeContracts = {
+          GetLargeData: {
+            request: { id: string }
+            stream: string
+          }
+          GetNumbers: {
+            request: void
+            stream: number
+          }
+        }
+      `
+      const sourceFile = project.createSourceFile('test-stream-1.ts', sourceCode)
+      const contracts = [{ type: 'streamInvoke' as const, name: 'StreamInvokeContracts' }]
+      const result = processContracts(sourceFile, contracts, './ipc-api')
+
+      // Should include StreamCallbacks type definition
+      expect(result).toContain('type StreamCallbacks<TData>')
+      expect(result).toContain('onData: (chunk: TData) => void')
+      expect(result).toContain('onEnd: () => void')
+      expect(result).toContain('onError: (error: Error) => void')
+
+      // Should include stream invoke API methods with callbacks parameter
+      expect(result).toContain('const StreamInvokeContractsApi = {')
+      expect(result).toContain('invokeStreamGetLargeData:')
+      expect(result).toContain(
+        'callbacks: StreamCallbacks<StreamInvokeContracts["GetLargeData"]["stream"]>'
+      )
+      expect(result).toContain('): void =>')
+
+      // Should include in final API
+      expect(result).toContain('...StreamInvokeContractsApi,')
+    })
+
+    it('should generate stream upload contracts', () => {
+      const sourceCode = `
+        export type StreamUploadContracts = {
+          UploadFile: {
+            data: Uint8Array
+          }
+        }
+      `
+      const sourceFile = project.createSourceFile('test-stream-2.ts', sourceCode)
+      const contracts = [{ type: 'streamUpload' as const, name: 'StreamUploadContracts' }]
+      const result = processContracts(sourceFile, contracts, './ipc-api')
+
+      expect(result).toContain('const StreamUploadContractsApi = {')
+      expect(result).toContain('uploadUploadFile:')
+      expect(result).toContain('WritableStream')
+    })
+
+    it('should generate stream download contracts', () => {
+      const sourceCode = `
+        export type StreamDownloadContracts = {
+          DownloadLogs: {
+            payload: string
+          }
+        }
+      `
+      const sourceFile = project.createSourceFile('test-stream-3.ts', sourceCode)
+      const contracts = [{ type: 'streamDownload' as const, name: 'StreamDownloadContracts' }]
+      const result = processContracts(sourceFile, contracts, './ipc-api')
+
+      expect(result).toContain('const StreamDownloadContractsApi = {')
+      expect(result).toContain('downloadDownloadLogs:')
+    })
+
+    it('should handle multiple stream contract types together', () => {
+      const sourceCode = `
+        export type StreamInvokeContracts = {
+          GetData: { request: void; stream: string }
+        }
+        export type StreamUploadContracts = {
+          Upload: { data: string }
+        }
+        export type StreamDownloadContracts = {
+          Download: { payload: string }
+        }
+      `
+      const sourceFile = project.createSourceFile('test-stream-4.ts', sourceCode)
+      const contracts = [
+        { type: 'streamInvoke' as const, name: 'StreamInvokeContracts' },
+        { type: 'streamUpload' as const, name: 'StreamUploadContracts' },
+        { type: 'streamDownload' as const, name: 'StreamDownloadContracts' },
+      ]
+      const result = processContracts(sourceFile, contracts, './ipc-api')
+
+      expect(result).toContain('...StreamInvokeContractsApi,')
+      expect(result).toContain('...StreamUploadContractsApi,')
+      expect(result).toContain('...StreamDownloadContractsApi,')
+    })
+
+    it('should generate proper cleanup logic in stream templates', () => {
+      const sourceCode = `
+        export type StreamInvokeContracts = {
+          TestStream: { request: void; stream: string }
+        }
+      `
+      const sourceFile = project.createSourceFile('test-stream-5.ts', sourceCode)
+      const contracts = [{ type: 'streamInvoke' as const, name: 'StreamInvokeContracts' }]
+      const result = processContracts(sourceFile, contracts, './ipc-api')
+
+      // Verify cleanup function exists
+      expect(result).toContain('const cleanup = ()')
+      expect(result).toContain('ipcRenderer.removeListener(dataChannel, dataHandler)')
+      expect(result).toContain('ipcRenderer.removeListener(endChannel, endHandler)')
+      expect(result).toContain('ipcRenderer.removeListener(errorChannel, errorHandler)')
+
+      // Verify cleanup is called on end and error
+      expect(result).toContain('callbacks.onEnd()')
+      expect(result).toContain('cleanup()')
+      expect(result).toContain('callbacks.onError')
+    })
+  })
 })
