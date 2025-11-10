@@ -81,6 +81,7 @@
     }
   },
   "dependencies": {
+    "colors": "^1.4.0",
     "ts-morph": "^27.0.2",
     "yaml": "^2.4.1"
   }

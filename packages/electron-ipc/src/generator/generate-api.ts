@@ -17,6 +17,11 @@ import {
   streamUploadContracts,
 } from './templates'
 
+// just make colors implicit available, e.g. to use "output string".green
+import * as colors from 'colors'
+
+colors.enable()
+
 let output = ''
 let space = 0
 const generatedApiNames: string[] = []
@@ -152,7 +157,9 @@ function processProperties(props: {
   definitions: string
 }) {
   console.log(
-    `${props.contract} contains ${props.propNames.length} properties [${props.propNames.join(', ')}]`
+    colors.gray(
+      `${props.contract} contains ${props.propNames.length} properties [${props.propNames.join(', ')}]`
+    )
   )
 
   if (props.propNames.length === 0) return
@@ -263,7 +270,6 @@ export function processContracts(
       declarations.forEach((decl) => {
         const name = decl.getName()
         const type = decl.getType()
-        console.log(`Type text: ${type.getText()}`)
         let propNames: string[] = []
         const typeText = type.getText()
         if (typeText.startsWith('Generic') && typeText.includes('<{') && typeText.includes('}>')) {
@@ -298,7 +304,7 @@ export function processContracts(
         } else {
           propNames = type.getProperties().map((p) => p.getName())
         }
-        console.log(`Processing ${name}: found ${propNames.length} properties`)
+        console.log(colors.gray(`Processing ${name}: found ${propNames.length} properties`))
         processProperties({ ifaceName: name, propNames, contract, api, definitions: '' })
       })
       return declarations.length
@@ -501,13 +507,15 @@ function processApiConfig(apiConfig: {
   generatedApiNames.length = 0
 
   const sourceFile = project.addSourceFileAtPath(resolvedInputPath)
-  console.log(`Read ${resolvedInputPath}`)
+  console.log(colors.green(`Read ${path.relative(process.cwd(), resolvedInputPath)}`))
 
   const code = processContracts(sourceFile, contracts, importPath, apiName)
 
   const resolvedOutputPath = path.resolve(process.cwd(), outputPath)
   fs.writeFileSync(resolvedOutputPath, code, 'utf8')
-  console.log(`Generated code written to ${resolvedOutputPath}`)
+  console.log(
+    colors.green(`Generated code written to ${path.relative(process.cwd(), resolvedOutputPath)}`)
+  )
 
   // Generate main broadcast API if requested
   if (mainBroadcastOutput && broadcastContractName) {
@@ -518,7 +526,11 @@ function processApiConfig(apiConfig: {
     )
     const resolvedMainBroadcastPath = path.resolve(process.cwd(), mainBroadcastOutput)
     fs.writeFileSync(resolvedMainBroadcastPath, mainBroadcastCode, 'utf8')
-    console.log(`Generated main broadcast API written to ${resolvedMainBroadcastPath}`)
+    console.log(
+      colors.green(
+        `Generated main broadcast API written to ${path.relative(process.cwd(), resolvedMainBroadcastPath)}`
+      )
+    )
   }
 }
 
