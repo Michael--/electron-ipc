@@ -1,0 +1,23 @@
+# IPC Generator Configuration
+# This file defines all APIs to be generated for the Electron application
+# Schema: ./node_modules/electron-ipc/ipc-config.schema.json
+
+apis:
+  # Main API with invoke, event, and broadcast contracts
+  - name: api
+    input: ./src/main/ipc-api.ts
+    output: ./src/preload/api-generated.ts
+    contracts:
+      invoke: InvokeContracts
+      event: EventContracts
+      send: BroadcastContracts
+    mainBroadcastOutput: ./src/main/broadcast-generated.ts
+
+  # Stream API with streaming contracts
+  - name: streamApi
+    input: ./src/main/ipc-api-stream.ts
+    output: ./src/preload/api-stream-generated.ts
+    contracts:
+      streamInvoke: StreamInvokeContracts
+      streamUpload: StreamUploadContracts
+      streamDownload: StreamDownloadContracts

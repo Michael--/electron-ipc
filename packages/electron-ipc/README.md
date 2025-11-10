@@ -349,6 +349,39 @@ This package includes logo assets for branding and documentation:
 
 Both logos are available in SVG format and can be used in documentation, websites, or any other branding materials.
 
+## Configuration File
+
+For projects with multiple APIs, you can define all generation settings in a single YAML configuration file:
+
+```yaml
+# ipc-config.yaml
+apis:
+  - name: api
+    input: ./src/main/ipc-api.ts
+    output: ./src/preload/api-generated.ts
+    contracts:
+      invoke: InvokeContracts
+      event: EventContracts
+      send: BroadcastContracts
+    mainBroadcastOutput: ./src/main/broadcast-generated.ts
+
+  - name: streamApi
+    input: ./src/main/ipc-api-stream.ts
+    output: ./src/preload/api-stream-generated.ts
+    contracts:
+      streamInvoke: StreamInvokeContracts
+      streamUpload: StreamUploadContracts
+      streamDownload: StreamDownloadContracts
+```
+
+Generate all APIs at once:
+
+```bash
+npx electron-ipc-generate --config=./ipc-config.yaml
+```
+
+This creates unique expose functions (`exposeApi`, `exposeStreamApi`) for each API. See [`ipc-config.schema.json`](ipc-config.schema.json) for the complete JSON schema.
+
 ## License
 
 MIT

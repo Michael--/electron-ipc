@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IPC Generator Configuration",
+  "description": "Configuration schema for electron-ipc code generator",
+  "type": "object",
+  "properties": {
+    "apis": {
+      "type": "array",
+      "description": "List of APIs to generate",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the API (used for export and expose function)"
+          },
+          "input": {
+            "type": "string",
+            "description": "Path to the TypeScript file containing IPC contracts"
+          },
+          "output": {
+            "type": "string",
+            "description": "Path where the generated API code will be written"
+          },
+          "contracts": {
+            "type": "object",
+            "description": "Contract types to include in this API",
+            "properties": {
+              "invoke": {
+                "type": "string",
+                "description": "Type name for invoke contracts"
+              },
+              "event": {
+                "type": "string",
+                "description": "Type name for event contracts"
+              },
+              "send": {
+                "type": "string",
+                "description": "Type name for broadcast contracts"
+              },
+              "streamInvoke": {
+                "type": "string",
+                "description": "Type name for stream invoke contracts"
+              },
+              "streamUpload": {
+                "type": "string",
+                "description": "Type name for stream upload contracts"
+              },
+              "streamDownload": {
+                "type": "string",
+                "description": "Type name for stream download contracts"
+              }
+            },
+            "additionalProperties": false
+          },
+          "mainBroadcastOutput": {
+            "type": "string",
+            "description": "Optional: Path for main process broadcast API"
+          }
+        },
+        "required": ["name", "input", "output"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["apis"],
+  "additionalProperties": false
+}

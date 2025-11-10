@@ -251,16 +251,42 @@ console.log('Log:', value)
 
 ```
 
-**Note:** The generator automatically adds prefixes to method names:
+**Note:** The generated broadcast API (`--main-broadcast-output`) is optional but recommended for consistency with the renderer API. Both approaches are type-safe.
 
-- Invoke contracts → `invoke` prefix
-- Event contracts → `send` prefix
-- Broadcast contracts → `on` prefix
-- Stream invoke → `invokeStream` prefix
-- Stream upload → `uploadStream` prefix
-- Stream download → `downloadStream` prefix
+## Configuration File
 
-This prevents naming conflicts and makes the API usage self-documenting.
+For better maintainability with multiple APIs, use a YAML configuration file:
+
+```yaml
+# ipc-config.yaml
+apis:
+  - name: api
+    input: ./src/main/ipc-api.ts
+    output: ./src/preload/api-generated.ts
+    contracts:
+      invoke: InvokeContracts
+      event: EventContracts
+      send: BroadcastContracts
+    mainBroadcastOutput: ./src/main/broadcast-generated.ts
+
+  - name: streamApi
+    input: ./src/main/ipc-api-stream.ts
+    output: ./src/preload/api-stream-generated.ts
+    contracts:
+      streamInvoke: StreamInvokeContracts
+      streamUpload: StreamUploadContracts
+      streamDownload: StreamDownloadContracts
+```
+
+Generate all APIs:
+
+```bash
+electron-ipc-generate --config=./ipc-config.yaml
+```
+
+Each API gets a unique expose function name (e.g., `exposeApi`, `exposeStreamApi`).
+
+## Technology Stack
 
 ### 5. Implement Handlers in Main
 

@@ -15,6 +15,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,json,html,css}\"",
     "generate:api": "electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api-generated.ts --invoke=InvokeContracts --event=EventContracts --send=BroadcastContracts --main-broadcast-output=./src/main/broadcast-generated.ts --api-name=api",
     "generate:api-stream": "electron-ipc-generate --input=./src/main/ipc-api-stream.ts --output=./src/preload/api-stream-generated.ts --stream-invoke=StreamInvokeContracts --stream-upload=StreamUploadContracts --stream-download=StreamDownloadContracts --api-name=streamApi",
+    "generate:all": "electron-ipc-generate --config=./ipc-config.yaml",
     "package": "electron-builder",
     "package:mac": "electron-builder --mac",
     "package:win": "electron-builder --win",
