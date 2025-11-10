@@ -17,15 +17,11 @@ import { BroadcastContracts } from '../main/ipc-api'
  * Main process broadcast API for sending messages to renderer
  */
 export const mainBroadcast = {
-  Ping: (mainWindow: BrowserWindow, payload: BroadcastContracts["Ping"]["payload"]): void => {
-    if (!mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('Ping', payload)
-    }
-  }
-  ,
-  About: (mainWindow: BrowserWindow, payload?: BroadcastContracts["About"]["payload"]): void => {
-    if (!mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('About', payload)
-    }
-  }
-} as const
+Ping: (mainWindow: BrowserWindow, payload: BroadcastContracts["Ping"]["payload"]): void => {
+  mainWindow.webContents.send('BroadcastContracts:Ping', payload)
+}
+,
+About: (mainWindow: BrowserWindow, payload?: BroadcastContracts["About"]["payload"]): void => {
+  mainWindow.webContents.send('BroadcastContracts:About', payload)
+}
+}
