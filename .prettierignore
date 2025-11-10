@@ -22,3 +22,7 @@ build
 
 # Coverage
 coverage
+
+# Generated files
+*-generated.ts
+*-generated.js
