@@ -89,7 +89,7 @@ function StreamDataDemo() {
     setError(null)
     setIsStreaming(true)
 
-    window.api.invokeStreamGetLargeData(
+    window.streamApi.invokeStreamGetLargeData(
       { id: 'demo-stream' },
       {
         onData: (chunk) => {
@@ -213,7 +213,7 @@ function StreamUploadDemo() {
 
     try {
       const fileName = 'demo-file.txt'
-      const writer = window.api.uploadUploadFile({ fileName })
+      const writer = window.streamApi.uploadUploadFile({ fileName })
 
       // Upload 10 chunks over 10 seconds
       for (let i = 1; i <= 10; i++) {
@@ -279,7 +279,7 @@ function StreamDownloadDemo() {
     setError(null)
     setIsDownloading(true)
 
-    window.api.downloadDownloadLogs(
+    window.streamApi.downloadDownloadLogs(
       { level: logLevel },
       (logEntry: string) => {
         setLogs((prev) => [...prev, logEntry])
@@ -357,7 +357,7 @@ function VideoStreamDemo() {
     // eslint-disable-next-line no-console
     console.log('[VideoStreamDemo] Starting download...')
 
-    window.api.downloadStreamVideo(
+    window.streamApi.downloadStreamVideo(
       { url: selectedVideo },
       (chunk: Uint8Array) => {
         // eslint-disable-next-line no-console
