@@ -1,6 +1,9 @@
 # IPC Generator Configuration
 # This file defines all APIs to be generated for the Electron application
-# Schema: ./node_modules/electron-ipc/ipc-config.schema.json
+
+# YAML Schema for validation (uncomment the appropriate one for your environment)
+# $schema: ./node_modules/@number10/electron-ipc/ipc-config.schema.json    # When installed from npm
+$schema: ../electron-ipc/ipc-config.schema.json # When developing locally
 
 apis:
   # Main API with invoke, event, and broadcast contracts
