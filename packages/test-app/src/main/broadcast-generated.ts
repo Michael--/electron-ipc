@@ -9,6 +9,7 @@
 /* prettier-ignore */
 // @ts-nocheck
 
+
 import { BrowserWindow } from 'electron'
 import { BroadcastContracts } from '../main/ipc-api'
 
@@ -16,14 +17,15 @@ import { BroadcastContracts } from '../main/ipc-api'
  * Main process broadcast API for sending messages to renderer
  */
 export const mainBroadcast = {
-  Ping: (mainWindow: BrowserWindow, payload: BroadcastContracts['Ping']['payload']): void => {
+  Ping: (mainWindow: BrowserWindow, payload: BroadcastContracts["Ping"]["payload"]): void => {
     if (!mainWindow.isDestroyed()) {
       mainWindow.webContents.send('Ping', payload)
     }
-  },
-  About: (mainWindow: BrowserWindow, payload?: BroadcastContracts['About']['payload']): void => {
+  }
+  ,
+  About: (mainWindow: BrowserWindow, payload: BroadcastContracts["About"]["payload"]): void => {
     if (!mainWindow.isDestroyed()) {
       mainWindow.webContents.send('About', payload)
     }
-  },
+  }
 } as const

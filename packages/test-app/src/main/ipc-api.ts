@@ -5,7 +5,7 @@ import {
   IBroadcastContract,
   IInvokeContract,
   IRendererEventContract,
-} from 'electron-ipc'
+} from '@number10/electron-ipc'
 
 /**
  * InvokeContracts: Defines bidirectional IPC contracts for request-response communication between renderer and main processes.

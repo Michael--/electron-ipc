@@ -94,7 +94,7 @@ import {
   IBroadcastContract,
   IInvokeContract,
   IRendererEventContract,
-} from 'electron-ipc'
+} from '@number10/electron-ipc'
 
 // Invoke: Renderer calls main and gets response
 export type InvokeContracts = GenericInvokeContract<{
@@ -175,7 +175,7 @@ import {
   AbstractRegisterEvent,
   IPCHandlerType,
   IPCEventType,
-} from 'electron-ipc'
+} from '@number10/electron-ipc'
 import { InvokeContracts, EventContracts, BroadcastContracts } from './ipc-api'
 
 // Implement invoke handlers (request/response)
@@ -212,7 +212,7 @@ mainBroadcast.Ping(mainWindow, 42) // with payload
 mainBroadcast.About(mainWindow) // void payload omitted
 
 // Option 2: Use runtime-generated broadcast helper (alternative)
-import { createBroadcast } from 'electron-ipc'
+import { createBroadcast } from '@number10/electron-ipc'
 const mainBroadcast = createBroadcast<BroadcastContracts>()
 mainBroadcast('Ping', mainWindow, 42)
 mainBroadcast('About', mainWindow, undefined)

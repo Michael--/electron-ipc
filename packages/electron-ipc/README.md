@@ -27,7 +27,7 @@ import {
   GenericInvokeContract,
   GenericRendererEventContract,
   GenericBroadcastContract,
-} from 'electron-ipc'
+} from '@number10/electron-ipc'
 
 export type InvokeContracts = GenericInvokeContract<{
   AddNumbers: IInvokeContract<{ a: number; b: number }, number>
@@ -102,7 +102,7 @@ import {
   AbstractRegisterEvent,
   IPCHandlerType,
   IPCEventType,
-} from 'electron-ipc'
+} from '@number10/electron-ipc'
 import { InvokeContracts, EventContracts } from './ipc-api'
 
 // Implement invoke handlers (request-response)

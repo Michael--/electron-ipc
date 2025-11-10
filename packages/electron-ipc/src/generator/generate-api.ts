@@ -174,10 +174,43 @@ export function processContracts(
       const declarations = getTypeAliasesOf(sourceFile, contract)
       declarations.forEach((decl) => {
         const name = decl.getName()
-        const propNames = decl
-          .getType()
-          .getProperties()
-          .map((p) => p.getName())
+        const type = decl.getType()
+        console.log(`Type text: ${type.getText()}`)
+        let propNames: string[] = []
+        const typeText = type.getText()
+        if (typeText.startsWith('Generic') && typeText.includes('<{') && typeText.includes('}>')) {
+          // Parse generic type like GenericInvokeContract<{ key: value }>
+          const start = typeText.indexOf('<{') + 2
+          const end = typeText.lastIndexOf('}>')
+          const inner = typeText.substring(start, end)
+          // Parse top-level properties separated by ;
+          const props: string[] = []
+          let current = ''
+          let braceLevel = 0
+          let angleLevel = 0
+          for (let i = 0; i < inner.length; i++) {
+            const char = inner[i]
+            if (char === '<') angleLevel++
+            else if (char === '>') angleLevel--
+            else if (char === '{') braceLevel++
+            else if (char === '}') braceLevel--
+            else if (char === ';' && braceLevel === 0 && angleLevel === 0) {
+              props.push(current.trim())
+              current = ''
+              continue
+            }
+            current += char
+          }
+          if (current.trim()) props.push(current.trim())
+          propNames = props.map((p) => p.split(':')[0].trim())
+        } else if (type.isObject() && type.getTypeArguments().length > 0) {
+          // For generic types like GenericInvokeContract<T>, get properties from T
+          const typeArg = type.getTypeArguments()[0]
+          propNames = typeArg.getProperties().map((p) => p.getName())
+        } else {
+          propNames = type.getProperties().map((p) => p.getName())
+        }
+        console.log(`Processing ${name}: found ${propNames.length} properties`)
         processProperties({ ifaceName: name, propNames, contract, api, definitions: '' })
       })
       return declarations.length
@@ -254,20 +287,54 @@ export function generateMainBroadcastApi(
   const declarations = getTypeAliasesOf(sourceFile, contractName)
   if (declarations.length > 0) {
     const decl = declarations[0]
-    const propNames = decl
-      .getType()
-      .getProperties()
-      .map((p) => p.getName())
+    const type = decl.getType()
+    const typeText = type.getText()
+    let propNames: string[] = []
+    if (typeText.startsWith('Generic') && typeText.includes('<{') && typeText.includes('}>')) {
+      // Parse generic type like GenericBroadcastContract<{ key: value }>
+      const start = typeText.indexOf('<{') + 2
+      const end = typeText.lastIndexOf('}>')
+      const inner = typeText.substring(start, end)
+      // Parse top-level properties separated by ;
+      const props: string[] = []
+      let current = ''
+      let braceLevel = 0
+      let angleLevel = 0
+      for (let i = 0; i < inner.length; i++) {
+        const char = inner[i]
+        if (char === '<') angleLevel++
+        else if (char === '>') angleLevel--
+        else if (char === '{') braceLevel++
+        else if (char === '}') braceLevel--
+        else if (char === ';' && braceLevel === 0 && angleLevel === 0) {
+          props.push(current.trim())
+          current = ''
+          continue
+        }
+        current += char
+      }
+      if (current.trim()) props.push(current.trim())
+      propNames = props.map((p) => p.split(':')[0].trim())
+    } else {
+      propNames = type.getProperties().map((p) => p.getName())
+    }
 
     propNames.forEach((propName, index) => {
       const payloadType = `${contractName}["${propName}"]["payload"]`
 
       // Check if payload type is void to make it optional
-      const prop = decl.getType().getProperty(propName)
-      const propType = prop?.getTypeAtLocation(decl)
-      const payloadProp = propType?.getProperty('payload')
-      const payloadTypeDef = payloadProp?.getTypeAtLocation(decl)
-      const isVoidPayload = payloadTypeDef?.getText() === 'void'
+      let isVoidPayload = false
+      if (typeText.startsWith('Generic')) {
+        // For generic types, check the string
+        isVoidPayload = typeText.includes(`${propName}: IBroadcastContract<void>`)
+      } else {
+        // For direct types, use property analysis
+        const prop = type.getProperty(propName)
+        const propType = prop?.getTypeAtLocation(decl)
+        const payloadProp = propType?.getProperty('payload')
+        const payloadTypeDef = payloadProp?.getTypeAtLocation(decl)
+        isVoidPayload = payloadTypeDef?.getText() === 'void'
+      }
 
       let method: string
       if (isVoidPayload) {
@@ -302,7 +369,15 @@ export function generateMainBroadcastApi(
  * Main entry point - parses CLI arguments and generates IPC API code
  */
 export function main() {
-  const project = new Project()
+  const tsConfigPath = path.join(process.cwd(), 'tsconfig.json')
+  const project = fs.existsSync(tsConfigPath)
+    ? new Project({ tsConfigFilePath: tsConfigPath })
+    : new Project()
+
+  // Add electron-ipc source files to resolve types
+  const electronIpcPath = path.join(process.cwd(), '../../electron-ipc/src/**/*.ts')
+  project.addSourceFilesAtPaths(electronIpcPath)
+  project.resolveSourceFileDependencies()
 
   const args = process.argv.slice(2)
 

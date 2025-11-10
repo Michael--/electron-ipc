@@ -11,79 +11,82 @@
 
 import { ipcRenderer } from "electron"
 
-import { InvokeContracts } from '../main/ipc-api'
+
+import { InvokeContracts } from "../main/ipc-api"
 
 // This function takes the channel and request, infers the types, and calls ipcRenderer.invoke with the correct types enforced.
-const invokeInvokeContracts = <K extends keyof InvokeContracts>(
-  channel: K,
-  request: InvokeContracts[K]['request']
-): Promise<InvokeContracts[K]['response']> => {
-  return ipcRenderer.invoke(channel as string, request) as Promise<InvokeContracts[K]['response']>
+const invokeInvokeContracts = <K extends keyof InvokeContracts>(channel: K, request: InvokeContracts[K]["request"]): Promise<InvokeContracts[K]["response"]> => {
+   return ipcRenderer.invoke(channel as string, request) as Promise<InvokeContracts[K]["response"]>
 }
+
 
 const InvokeContractsApi = {
-  invokeAddNumbers: (
-    request: InvokeContracts['AddNumbers']['request']
-  ): Promise<InvokeContracts['AddNumbers']['response']> => {
-    return invokeInvokeContracts('AddNumbers', request)
-  },
-  invokeGetAppInfo: (
-    request: InvokeContracts['GetAppInfo']['request']
-  ): Promise<InvokeContracts['GetAppInfo']['response']> => {
-    return invokeInvokeContracts('GetAppInfo', request)
-  },
+   invokeAddNumbers: (request: InvokeContracts["AddNumbers"]["request"]): Promise<InvokeContracts["AddNumbers"]["response"]> => {
+   return invokeInvokeContracts("AddNumbers", request)
+},
+   invokeGetAppInfo: (request: InvokeContracts["GetAppInfo"]["request"]): Promise<InvokeContracts["GetAppInfo"]["response"]> => {
+   return invokeInvokeContracts("GetAppInfo", request)
+},
 }
 
-import { EventContracts } from '../main/ipc-api'
+import { EventContracts } from "../main/ipc-api"
 
 // This function takes the channel and request, infers the types, and calls ipcRenderer.send with the correct types enforced.
-const sendEventContracts = <K extends keyof EventContracts>(
-  channel: K,
-  request: EventContracts[K]['request']
-): void => {
-  ipcRenderer.send(channel as string, request)
+const sendEventContracts = <K extends keyof EventContracts>(channel: K, request: EventContracts[K]["request"]): void => {
+   ipcRenderer.send(channel as string, request)
 }
+
 
 const EventContractsApi = {
-  sendQuit: (request: EventContracts['Quit']['request']) => {
-    return sendEventContracts('Quit', request)
-  },
-  sendLogMessage: (request: EventContracts['LogMessage']['request']) => {
-    return sendEventContracts('LogMessage', request)
-  },
+   sendQuit: (request: EventContracts["Quit"]["request"]) => {
+   return sendEventContracts("Quit", request)
+},
+   sendLogMessage: (request: EventContracts["LogMessage"]["request"]) => {
+   return sendEventContracts("LogMessage", request)
+},
 }
 
-import { BroadcastContracts } from '../main/ipc-api'
+import { BroadcastContracts } from "../main/ipc-api"
 
 // This function takes the channel and request, infers the types, and calls ipcRenderer.on with the correct types enforced.
-const onBroadcastContracts = <K extends keyof BroadcastContracts>(
-  channel: K,
-  callback: (payload: BroadcastContracts[K]['payload']) => void
-): void => {
-  ipcRenderer.on(channel as string, (_event, payload: BroadcastContracts[K]['payload']) =>
-    callback(payload)
-  )
+const onBroadcastContracts = <K extends keyof BroadcastContracts>(channel: K, callback: (payload: BroadcastContracts[K]["payload"]) => void): void => {
+   ipcRenderer.on(channel as string, (_event, payload: BroadcastContracts[K]["payload"]) => callback(payload))
 }
 
+
 const BroadcastContractsApi = {
-  onPing: (callback: (content: BroadcastContracts['Ping']['payload']) => void) => {
-    return onBroadcastContracts('Ping', callback)
-  },
-  onAbout: (callback: (content: BroadcastContracts['About']['payload']) => void) => {
-    return onBroadcastContracts('About', callback)
-  },
+   onPing: (callback: (content: BroadcastContracts["Ping"]["payload"]) => void) => {
+   return onBroadcastContracts("Ping", callback)
+},
+   onAbout: (callback: (content: BroadcastContracts["About"]["payload"]) => void) => {
+   return onBroadcastContracts("About", callback)
+},
 }
 
 export const api = {
-  ...InvokeContractsApi,
-  ...EventContractsApi,
-  ...BroadcastContractsApi,
+   ...InvokeContractsApi,
+   ...EventContractsApi,
+   ...BroadcastContractsApi,
 }
 export type ApiType = typeof api
+
 
 /**
  * Exposes the generated IPC API to the renderer process via contextBridge
  * Handles context isolation automatically
+ *
+ * Usage in preload script:
+ * ```typescript
+ * import { exposeApi, ApiType } from './api-generated'
+ *
+ * declare global {
+ *   interface Window {
+ *     api: ApiType
+ *   }
+ * }
+ *
+ * exposeApi()
+ * ```
  */
 export const exposeApi = () => {
   // Use `contextBridge` APIs to expose Electron APIs to
@@ -99,3 +102,4 @@ export const exposeApi = () => {
     ;(globalThis as any).api = api
   }
 }
+

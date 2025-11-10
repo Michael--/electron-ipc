@@ -1,10 +1,10 @@
-import { app, BrowserWindow } from 'electron'
 import {
   AbstractRegisterEvent,
   AbstractRegisterHandler,
   IPCEventType,
   IPCHandlerType,
-} from 'electron-ipc'
+} from '@number10/electron-ipc'
+import { app, BrowserWindow } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 import { mainBroadcast } from './broadcast-generated'

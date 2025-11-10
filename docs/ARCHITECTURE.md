@@ -105,7 +105,7 @@ import { mainBroadcast } from './broadcast-generated'
 mainBroadcast.Ping(mainWindow, 42)
 
 // Option 2: Runtime broadcast helper (alternative)
-import { createBroadcast } from 'electron-ipc'
+import { createBroadcast } from '@number10/electron-ipc'
 const mainBroadcast = createBroadcast<BroadcastContracts>()
 mainBroadcast('Ping', mainWindow, 42)
 
