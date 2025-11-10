@@ -237,49 +237,51 @@ export const createApiMethod = (
 /**
  * Generates the final API export combining all contract APIs
  * @param apiNames - Array of API constant names to spread
+ * @param apiName - Name of the exported API object (default: 'api')
  * @returns Export statements for api object and ApiType
  */
-export const createApiExport = (apiNames: string[]) => `
-export const api = {
+export const createApiExport = (apiNames: string[], apiName: string = 'api') => `
+export const ${apiName} = {
 ${apiNames.map((name) => `   ...${name},`).join('\n')}
 }
-export type ApiType = typeof api
+export type ${apiName.charAt(0).toUpperCase() + apiName.slice(1)}Type = typeof ${apiName}
 `
 
 /**
  * Generates the exposeApi function for preload scripts
+ * @param apiName - Name of the API to expose (default: 'api')
  * @returns Function to expose the API via contextBridge
  */
-export const createExposeApi = () => `
+export const createExposeApi = (apiName: string = 'api') => `
 /**
  * Exposes the generated IPC API to the renderer process via contextBridge
  * Handles context isolation automatically
  *
  * Usage in preload script:
  * \`\`\`typescript
- * import { exposeApi, ApiType } from './api-generated'
+ * import { exposeApi, ${apiName.charAt(0).toUpperCase() + apiName.slice(1)}Type } from './api-generated'
  *
  * declare global {
  *   interface Window {
- *     api: ApiType
+ *     ${apiName}: ${apiName.charAt(0).toUpperCase() + apiName.slice(1)}Type
  *   }
  * }
  *
- * exposeApi()
+ * exposeApi('${apiName}')
  * \`\`\`
  */
-export const exposeApi = () => {
+export const exposeApi = (name: string = '${apiName}') => {
   // Use \`contextBridge\` APIs to expose Electron APIs to
   // renderer only if context isolation is enabled, otherwise
   // just add to the DOM global.
   if (process.contextIsolated) {
     try {
-      require('electron').contextBridge.exposeInMainWorld('api', api)
+      require('electron').contextBridge.exposeInMainWorld(name, ${apiName})
     } catch (error) {
       console.error(error)
     }
   } else {
-    ;(globalThis as any).api = api
+    ;(globalThis as any)[name] = ${apiName}
   }
 }
 `

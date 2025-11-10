@@ -39,13 +39,14 @@ npx electron-ipc-generate \
   --input=./src/main/ipc-api.ts \
   --output=./src/preload/api.ts \
   --invoke=InvokeContracts \
-  --event=EventContracts
+  --event=EventContracts \
+  --api-name=myApi
 ```
 
 ```typescript
 // 3. Use in renderer
-const result = await window.api.invokeAddNumbers({ a: 1, b: 2 })
-window.api.sendLogMessage('Hello from renderer!')
+const result = await window.myApi.invokeAddNumbers({ a: 1, b: 2 })
+window.myApi.sendLogMessage('Hello from renderer!')
 ```
 
 ```typescript
@@ -134,7 +135,8 @@ npx electron-ipc-generate \
   --stream-invoke=StreamInvokeContracts \
   --stream-upload=StreamUploadContracts \
   --stream-download=StreamDownloadContracts \
-  --main-broadcast-output=./src/main/broadcast-generated.ts
+  --main-broadcast-output=./src/main/broadcast-generated.ts \
+  --api-name=myApi
 ```
 
 ### 3. Setup Preload Script
@@ -142,57 +144,59 @@ npx electron-ipc-generate \
 In your preload script (e.g., `src/preload/index.ts`), expose the generated API to the renderer process:
 
 ```typescript
-import { ApiType, exposeApi } from './api-generated'
+import { MyApiType, exposeApi } from './api-generated'
 
 declare global {
   interface Window {
-    api: ApiType
+    myApi: MyApiType
   }
 }
 
-exposeApi()
+exposeApi('myApi')
 ```
 
-The `exposeApi()` function uses Electron's `contextBridge` to securely expose the type-safe API to the renderer process. The `ApiType` provides full TypeScript IntelliSense for `window.api`.
+The `exposeApi('myApi')` function uses Electron's `contextBridge` to securely expose the type-safe API to the renderer process. The `MyApiType` provides full TypeScript IntelliSense for `window.myApi`.
 
 ### 4. Use in Renderer
 
 The API is now available in the renderer process with full type safety:
 
+````typescript
 ```typescript
 // Invoke methods (request-response)
-const result = await window.api.invokeAddNumbers({ a: 1, b: 2 })
+const result = await window.myApi.invokeAddNumbers({ a: 1, b: 2 })
 
 // Send events (fire-and-forget)
-window.api.sendLogMessage({ level: 'info', message: 'Hello!' })
+window.myApi.sendLogMessage({ level: 'info', message: 'Hello!' })
 
 // Listen to broadcasts
-window.api.onPing((count) => console.log('Ping:', count))
+window.myApi.onPing((count) => console.log('Ping:', count))
 
 // Stream invoke (request with streaming response)
-const stream = await window.api.invokeStreamGetLargeData({ offset: 0 })
+const stream = await window.myApi.invokeStreamGetLargeData({ offset: 0 })
 const reader = stream.getReader()
 while (true) {
   const { done, value } = await reader.read()
   if (done) break
   console.log('Received:', value)
-}
+````
 
 // Stream upload (upload data to main)
-const uploadStream = window.api.uploadStreamUploadFile({ filename: 'data.txt' })
+const uploadStream = window.myApi.uploadStreamUploadFile({ filename: 'data.txt' })
 const writer = uploadStream.getWriter()
 await writer.write(new Uint8Array([1, 2, 3, 4, 5]))
 await writer.close()
 
 // Stream download (receive stream from main)
-const downloadStream = window.api.downloadStreamDownloadLogs({ since: new Date() })
+const downloadStream = window.myApi.downloadStreamDownloadLogs({ since: new Date() })
 const downloadReader = downloadStream.getReader()
 while (true) {
-  const { done, value } = await downloadReader.read()
-  if (done) break
-  console.log('Log:', value)
+const { done, value } = await downloadReader.read()
+if (done) break
+console.log('Log:', value)
 }
-```
+
+````
 
 ### 5. Handle in Main Process
 
@@ -288,7 +292,7 @@ RegisterEvent.register()
 RegisterStreamHandler.register()
 RegisterStreamUpload.register()
 RegisterStreamDownload.register()
-```
+````
 
 **Sending broadcasts from main to renderer:**
 

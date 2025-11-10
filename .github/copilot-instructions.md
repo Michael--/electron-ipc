@@ -50,6 +50,7 @@ export function generateIpcCode(schema: IpcSchema): string {
 - Follow **functional programming** principles where appropriate
 - **No any types** unless absolutely necessary (use unknown instead)
 - Use **explicit return types** for functions
+- When you did code changes,always provide a short commit message summarizing the changes made can be used by copy paste into commit
 
 ## Testing
 

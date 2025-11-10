@@ -175,7 +175,8 @@ npx electron-ipc-generate \
   --stream-invoke=StreamInvokeContracts \
   --stream-upload=StreamUploadContracts \
   --stream-download=StreamDownloadContracts \
-  --main-broadcast-output=./src/main/broadcast-generated.ts
+  --main-broadcast-output=./src/main/broadcast-generated.ts \
+  --api-name=myApi
 ```
 
 This creates `src/preload/api-generated.ts` and `src/main/broadcast-generated.ts` with type-safe wrappers.
@@ -185,50 +186,69 @@ This creates `src/preload/api-generated.ts` and `src/main/broadcast-generated.ts
 Expose the generated API via context bridge (`src/preload/index.ts`):
 
 ```typescript
-import { contextBridge } from 'electron'
-import { api } from './api-generated'
+import { exposeApi, MyApiType } from './api-generated'
 
-contextBridge.exposeInMainWorld('api', api)
+declare global {
+  interface Window {
+    myApi: MyApiType
+  }
+}
+
+exposeApi('myApi')
+```
+
+**Alternative:** You can also use the contextBridge directly:
+
+```typescript
+import { contextBridge } from 'electron'
+import { myApi } from './api-generated'
+
+contextBridge.exposeInMainWorld('myApi', myApi)
 ```
 
 ### 4. Use in Renderer
 
 Access the API with full TypeScript support (`src/renderer/App.tsx`):
 
+````typescript
 ```typescript
 // Invoke: Call main and await response (prefixed with 'invoke')
-const result = await window.api.invokeAddNumbers({ a: 5, b: 3 }) // result = 8
-const version = await window.api.invokeGetVersion()
+const result = await window.myApi.invokeAddNumbers({ a: 5, b: 3 }) // result = 8
+const version = await window.myApi.invokeGetVersion()
 
 // Event: Send to main (prefixed with 'send')
-window.api.sendQuit()
-window.api.sendLogMessage('User clicked button')
+window.myApi.sendQuit()
+window.myApi.sendLogMessage('User clicked button')
 
 // Broadcast: Listen to events from main (prefixed with 'on')
-window.api.onPing((count) => console.log(`Ping ${count}`))
-window.api.onAbout(() => console.log('About dialog'))
+window.myApi.onPing((count) => console.log(`Ping ${count}`))
+window.myApi.onAbout(() => console.log('About dialog'))
 
 // Streams: Handle large data and real-time communication
-const stream = await window.api.invokeStreamGetLargeData({ offset: 0 })
+const stream = await window.myApi.invokeStreamGetLargeData({ offset: 0 })
+````
+
 const reader = stream.getReader()
 while (true) {
-  const { done, value } = await reader.read()
-  if (done) break
-  console.log('Received:', value)
+const { done, value } = await reader.read()
+if (done) break
+console.log('Received:', value)
 }
 
-const uploadStream = window.api.uploadStreamUploadFile({ filename: 'data.txt' })
+const uploadStream = window.myApi.uploadStreamUploadFile({ filename: 'data.txt' })
 const writer = uploadStream.getWriter()
 await writer.write(new Uint8Array([1, 2, 3, 4, 5]))
 await writer.close()
 
-const downloadStream = window.api.downloadStreamDownloadLogs({ since: new Date() })
+const downloadStream = window.myApi.downloadStreamDownloadLogs({ since: new Date() })
 const downloadReader = downloadStream.getReader()
 while (true) {
-  const { done, value } = await downloadReader.read()
-  if (done) break
-  console.log('Log:', value)
-}
+const { done, value } = await downloadReader.read()
+if (done) break
+console.log('Log:', value)
+
+```
+
 ```
 
 **Note:** The generator automatically adds prefixes to method names:
@@ -351,7 +371,8 @@ electron-ipc-generate \
   --invoke InvokeContracts \
   --event EventContracts \
   --send BroadcastContracts \
-  --main-broadcast-output ./src/main/broadcast-generated.ts
+  --main-broadcast-output ./src/main/broadcast-generated.ts \
+  --api-name myApi
 ```
 
 ### CLI Options
@@ -361,7 +382,11 @@ electron-ipc-generate \
 - `--invoke=<name>` - Type name for invoke contracts (Renderer ↔ Main, request/response)
 - `--event=<name>` - Type name for event contracts (Renderer → Main, no response)
 - `--send=<name>` - Type name for send/broadcast contracts (Main → Renderer, one-way)
+- `--stream-invoke=<name>` - Type name for stream invoke contracts (Renderer ↔ Main with stream response)
+- `--stream-upload=<name>` - Type name for stream upload contracts (Renderer → Main)
+- `--stream-download=<name>` - Type name for stream download contracts (Main → Renderer)
 - `--main-broadcast-output=<path>` - **Optional:** Path where the main process broadcast API will be saved
+- `--api-name=<name>` - **Optional:** Name of the exported API object (default: 'api')
 
 **Note:** At least one contract type must be specified. If multiple contracts of the same type are specified, the last one wins.
 

@@ -205,12 +205,16 @@ function printUsage() {
     `  --stream-download=<name> Type name for stream download contracts (Main → Renderer)`
   )
   console.log(`\nOptional:`)
+  console.log(`  --api-name=<name>        Name of the exported API object (default: 'api')`)
   console.log(
     `  --main-broadcast-output=<path>  Path where the main process broadcast API will be saved`
   )
   console.log(`\nExample:`)
   console.log(
     `  electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api.ts --invoke=InvokeContracts --event=EventContracts --send=BroadcastContracts --stream-invoke=StreamInvokeContracts --stream-upload=StreamUploadContracts --stream-download=StreamDownloadContracts --main-broadcast-output=./src/main/broadcast-api.ts`
+  )
+  console.log(
+    `  electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api.ts --api-name=myApi --invoke=InvokeContracts`
   )
   console.log(`\nNote: If multiple contracts of the same type are specified, the last one wins.`)
 }
@@ -221,7 +225,8 @@ function printUsage() {
 export function processContracts(
   sourceFile: SourceFile,
   contractNames: IContract[],
-  importPath: string
+  importPath: string,
+  apiName: string = 'api'
 ) {
   const processDeclarations = (
     contract: string,
@@ -321,8 +326,8 @@ export function processContracts(
     }
   })
 
-  addBlob(createApiExport(generatedApiNames))
-  addBlob(createExposeApi())
+  addBlob(createApiExport(generatedApiNames, apiName))
+  addBlob(createExposeApi(apiName))
   return output
 }
 
@@ -456,6 +461,7 @@ export function main() {
   const inputPathArg = args.find((arg) => arg.startsWith('--input='))
   const outputPathArg = args.find((arg) => arg.startsWith('--output='))
   const mainBroadcastOutputArg = args.find((arg) => arg.startsWith('--main-broadcast-output='))
+  const apiNameArg = args.find((arg) => arg.startsWith('--api-name='))
 
   // New simplified contract syntax: --invoke=Name, --event=Name, --send=Name
   const invokeArg = args.filter((arg) => arg.startsWith('--invoke=')).pop()
@@ -493,6 +499,7 @@ export function main() {
   const inputPath = inputPathArg.split('=')[1]
   const outputPath = outputPathArg.split('=')[1]
   const mainBroadcastOutputPath = mainBroadcastOutputArg?.split('=')[1]
+  const apiName = apiNameArg ? apiNameArg.split('=')[1] : 'api'
 
   const relativePath = path.relative(path.dirname(outputPath), path.dirname(inputPath))
   const importPath = `${relativePath.replace(/\\/g, '/')}/ipc-api`
@@ -502,7 +509,7 @@ export function main() {
     const sourceFile = project.addSourceFileAtPath(resolvedInputPath)
     console.log(`Read ${resolvedInputPath}`)
 
-    const code = processContracts(sourceFile, contractNames, importPath)
+    const code = processContracts(sourceFile, contractNames, importPath, apiName)
 
     const resolvedOutputPath = path.resolve(process.cwd(), outputPath)
     fs.writeFileSync(resolvedOutputPath, code, 'utf8')
