@@ -47,6 +47,21 @@
 import { BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron'
 
 /**
+ * Defines types that can be safely serialized across IPC boundaries.
+ * Only JSON-compatible types are allowed: primitives, arrays, and plain objects.
+ * Excludes: Date, Map, Set, Function, Class instances, undefined in arrays/objects.
+ *
+ * @type {Serializable}
+ */
+export type Serializable =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Serializable }
+  | Serializable[]
+
+/**
  * Enforces a structure match between a given type `T` and a specified `Structure`.
  * It ensures that `T` extends `Structure` and has exactly the same set of keys.
  *
@@ -64,12 +79,16 @@ type EnforceStructure<T, Structure> = T extends Structure
 /**
  * Represents a generic interface for IPC invocation contracts, specifying a structured contract
  * with a defined request and response type to ensure type-safe IPC communication.
+ * Both request and response must be serializable types (JSON-compatible).
  *
  * @interface IInvokeContract
- * @typeparam TRequest - The type of the data sent from the renderer to the main process.
- * @typeparam TResponse - The type of the data sent as a response from the main process back to the renderer.
+ * @typeparam TRequest - The type of the data sent from the renderer to the main process (must be Serializable).
+ * @typeparam TResponse - The type of the data sent as a response from the main process back to the renderer (must be Serializable).
  */
-export interface IInvokeContract<TRequest, TResponse> {
+export interface IInvokeContract<
+  TRequest extends Serializable | void,
+  TResponse extends Serializable | void,
+> {
   request: TRequest
   response: TResponse
 }
@@ -194,11 +213,12 @@ export abstract class AbstractRegisterHandler {
  * Defines a generic interface for IPC event contracts, specifying a contract with a request type for unidirectional
  * communication from the renderer to the main process. It's typically used for events or notifications where a direct
  * response is not expected, facilitating type-safe data transmission.
+ * The request must be a serializable type (JSON-compatible).
  *
  * @interface IRendererEventContract
- * @typeparam TRequest - The type of the data sent from the renderer to the main process.
+ * @typeparam TRequest - The type of the data sent from the renderer to the main process (must be Serializable).
  */
-export interface IRendererEventContract<TRequest> {
+export interface IRendererEventContract<TRequest extends Serializable | void> {
   request: TRequest
 }
 
@@ -319,11 +339,12 @@ export abstract class AbstractRegisterEvent {
  * IBroadcastContract: A generic interface defining the structure for IPC send contracts.
  * It specifies a contract with a payload type for unidirectional communication from the main process to the renderer.
  * Typically used for sending data or triggering events in the renderer from the main process.
+ * The payload must be a serializable type (JSON-compatible).
  *
  * @interface
- * @typeparam TRequest - The type of the data (payload) sent from the main process to the renderer.
+ * @typeparam TRequest - The type of the data (payload) sent from the main process to the renderer (must be Serializable).
  */
-export interface IBroadcastContract<TRequest> {
+export interface IBroadcastContract<TRequest extends Serializable | void> {
   payload: TRequest
 }
 
