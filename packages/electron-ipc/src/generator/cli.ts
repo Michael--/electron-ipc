@@ -3,7 +3,7 @@ import * as colors from 'colors'
 import * as fs from 'fs'
 import * as path from 'path'
 import { Project } from 'ts-morph'
-import { generateMainBroadcastApi, processContracts } from './code-generator'
+import { generateMainBroadcastApi, generateReactHooks, processContracts } from './code-generator'
 import { IContract, ProcessApiConfig } from './types'
 import { resetOutput } from './utils'
 import { processYamlConfig } from './yaml-processor'
@@ -34,6 +34,7 @@ function printUsage() {
   console.log(
     `  --main-broadcast-output=<path>  Path where the main process broadcast API will be saved`
   )
+  console.log(`  --react-hooks=<path>     Path where React hooks will be generated (optional)`)
   console.log(`\nExamples:`)
   console.log(`  electron-ipc-generate --config=./ipc-config.yaml`)
   console.log(
@@ -51,6 +52,7 @@ export function processApiConfig({
   contracts,
   mainBroadcastOutput,
   broadcastContractName,
+  reactHooks,
 }: ProcessApiConfig) {
   const project = new Project()
   const resolvedInputPath = path.resolve(process.cwd(), input)
@@ -88,6 +90,18 @@ export function processApiConfig({
       )
     )
   }
+
+  // Generate React hooks if requested
+  if (reactHooks) {
+    const reactHooksCode = generateReactHooks(contracts, importPath, sourceFile, apiName)
+    const resolvedReactHooksPath = path.resolve(process.cwd(), reactHooks)
+    fs.writeFileSync(resolvedReactHooksPath, reactHooksCode, 'utf8')
+    console.log(
+      colors.green(
+        `Generated React hooks written to ${path.relative(process.cwd(), resolvedReactHooksPath)}`
+      )
+    )
+  }
 }
 
 /**
@@ -119,6 +133,7 @@ export function main() {
   const streamInvokeArg = args.filter((arg) => arg.startsWith('--stream-invoke=')).pop()
   const streamUploadArg = args.filter((arg) => arg.startsWith('--stream-upload=')).pop()
   const streamDownloadArg = args.filter((arg) => arg.startsWith('--stream-download=')).pop()
+  const reactHooksArg = args.filter((arg) => arg.startsWith('--react-hooks=')).pop()
 
   if (inputPathArg == null || outputPathArg == null) {
     console.error('Error: --input and --output must be defined.')
@@ -137,18 +152,19 @@ export function main() {
   if (streamDownloadArg)
     contractNames.push({ type: 'streamDownload', name: streamDownloadArg.split('=')[1] })
 
-  if (contractNames.length === 0) {
-    console.error(
-      'Error: At least one contract (--invoke, --event, --send, --stream-invoke, --stream-upload, or --stream-download) must be defined.'
-    )
-    printUsage()
-    process.exit(1)
-  }
-
   const inputPath = inputPathArg.split('=')[1]
   const outputPath = outputPathArg.split('=')[1]
   const mainBroadcastOutputPath = mainBroadcastOutputArg?.split('=')[1]
   const apiName = apiNameArg ? apiNameArg.split('=')[1] : 'api'
+  const reactHooksOutputPath = reactHooksArg?.split('=')[1]
+
+  if (contractNames.length === 0 && !reactHooksOutputPath) {
+    console.error(
+      'Error: At least one contract (--invoke, --event, --send, --stream-invoke, --stream-upload, or --stream-download) must be defined, or --react-hooks must be specified.'
+    )
+    printUsage()
+    process.exit(1)
+  }
 
   const relativePath = path.relative(path.dirname(outputPath), path.dirname(inputPath))
   const importPath = `${relativePath.replace(/\\/g, '/')}/ipc-api`
@@ -179,6 +195,18 @@ export function main() {
       console.log(
         colors.green(
           `Generated main broadcast API written to ${path.relative(process.cwd(), resolvedMainBroadcastPath)}`
+        )
+      )
+    }
+
+    // Generate React hooks if requested
+    if (reactHooksOutputPath) {
+      const reactHooksCode = generateReactHooks(contractNames, importPath, sourceFile)
+      const resolvedReactHooksPath = path.resolve(process.cwd(), reactHooksOutputPath)
+      fs.writeFileSync(resolvedReactHooksPath, reactHooksCode, 'utf8')
+      console.log(
+        colors.green(
+          `Generated React hooks written to ${path.relative(process.cwd(), resolvedReactHooksPath)}`
         )
       )
     }

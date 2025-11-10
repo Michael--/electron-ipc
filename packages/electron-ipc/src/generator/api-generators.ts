@@ -23,8 +23,8 @@ export function eventApi(contract: string, propName: string) {
  * Generates API method code for send/broadcast contracts
  */
 export function sendApi(contract: string, propName: string) {
-  const method = createApiMethod('on', propName, contract, 'payload', 'callback')
-  add({ v: method, indent: true })
+  const onMethod = createApiMethod('on', propName, contract, 'payload', 'callback')
+  add({ v: onMethod, indent: true })
   add({ indent: false })
 }
 

@@ -49,8 +49,10 @@ const EventContractsApi = {
 import { BroadcastContracts } from "../main/ipc-api"
 
 // This function takes the channel and request, infers the types, and calls ipcRenderer.on with the correct types enforced.
-const onBroadcastContracts = <K extends keyof BroadcastContracts>(channel: K, callback: (payload: BroadcastContracts[K]["payload"]) => void): void => {
-   ipcRenderer.on(channel as string, (_event, payload: BroadcastContracts[K]["payload"]) => callback(payload))
+const onBroadcastContracts = <K extends keyof BroadcastContracts>(channel: K, callback: (payload: BroadcastContracts[K]["payload"]) => void): (() => void) => {
+   const handler = (event: any, data: any) => callback(data)
+   ipcRenderer.on(channel as string, handler)
+   return () => ipcRenderer.removeListener(channel as string, handler)
 }
 
 
@@ -61,6 +63,7 @@ const BroadcastContractsApi = {
    onAbout: (callback: (content: BroadcastContracts["About"]["payload"]) => void) => {
    return onBroadcastContracts("About", callback)
 },
+   on: onBroadcastContracts,
 }
 
 export const api = {

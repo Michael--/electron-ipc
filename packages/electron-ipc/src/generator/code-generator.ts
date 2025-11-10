@@ -15,6 +15,10 @@ import {
   createExposeApi,
   createFileHeader,
   createMainFileHeader,
+  createReactHooksFileHeader,
+  reactBroadcastHook,
+  reactEventHook,
+  reactInvokeHook,
 } from './templates'
 import { IContract } from './types'
 import { add, addBlob, generatedApiNames, output } from './utils'
@@ -40,12 +44,6 @@ function processProperties(props: {
   api: ApiFunc
   definitions: string
 }) {
-  console.log(
-    colors.gray(
-      `${props.contract} contains ${props.propNames.length} properties [${props.propNames.join(', ')}]`
-    )
-  )
-
   if (props.propNames.length === 0) return
   props.definitions.split('\n').forEach((v) => add({ v }))
 
@@ -58,6 +56,11 @@ function processProperties(props: {
   props.propNames.forEach((prop) => {
     props.api(props.ifaceName, prop)
   })
+
+  // Add generic on method for broadcast contracts
+  if (props.ifaceName === 'BroadcastContracts') {
+    add({ v: `on: on${props.ifaceName},` })
+  }
 
   // Close the API definition
   add({ v: '}', indent: false })
@@ -134,7 +137,9 @@ export function processContracts(
   addBlob(createFileHeader())
 
   contractNames.forEach(({ type, name }) => {
-    const config = CONTRACT_CONFIG[type]
+    if (type === 'reactHooks') return // Skip reactHooks, handled separately
+
+    const config = CONTRACT_CONFIG[type as keyof typeof CONTRACT_CONFIG]
     if (!config) {
       console.error(
         `Unknown contract type: ${type}, must be "invoke", "event", "send", "streamInvoke", "streamUpload", or "streamDownload"`
@@ -167,6 +172,16 @@ export function processContracts(
       process.exit(1)
     }
   })
+
+  // Add generic on method for broadcast contracts if any exist
+  const hasBroadcastContracts = contractNames.some((c) => c.type === 'send')
+  if (hasBroadcastContracts) {
+    const broadcastContract = contractNames.find((c) => c.type === 'send')
+    if (broadcastContract) {
+      // Note: Generic on method is now added inside the BroadcastContractsApi object
+      // in processProperties function
+    }
+  }
 
   addBlob(createApiExport(generatedApiNames, apiName))
   addBlob(createExposeApi(apiName))
@@ -274,5 +289,46 @@ export function generateMainBroadcastApi(
   }
 
   add('}')
+  return output.join('\n')
+}
+
+/**
+ * Generates React hooks for all provided contracts
+ * @param contractNames - Array of contract configurations
+ * @param importPath - Relative import path to the contract definitions
+ * @param sourceFile - The source file containing the contracts
+ * @returns Generated React hooks code as string
+ */
+export function generateReactHooks(
+  contractNames: IContract[],
+  importPath: string,
+  sourceFile: SourceFile,
+  apiName: string = 'api'
+): string {
+  const output: string[] = []
+  const add = (v: string) => output.push(v)
+
+  add(createReactHooksFileHeader())
+
+  // Group contracts by type
+  const invokeContracts = contractNames.filter((c) => c.type === 'invoke')
+  const eventContracts = contractNames.filter((c) => c.type === 'event')
+  const broadcastContracts = contractNames.filter((c) => c.type === 'send')
+
+  // Generate hooks for invoke contracts
+  invokeContracts.forEach(({ name }) => {
+    add(reactInvokeHook(name, importPath, apiName))
+  })
+
+  // Generate hooks for event contracts
+  eventContracts.forEach(({ name }) => {
+    add(reactEventHook(name, importPath, apiName))
+  })
+
+  // Generate hooks for broadcast contracts
+  broadcastContracts.forEach(({ name }) => {
+    add(reactBroadcastHook(name, importPath, apiName))
+  })
+
   return output.join('\n')
 }

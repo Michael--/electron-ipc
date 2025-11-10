@@ -1,28 +1,31 @@
-import { useState } from 'react'
+import { useInvokeInvokeContracts } from '../../src/preload/react-hooks-generated'
 
 /**
- * AddNumbersDemo component - demonstrates invoke with request/response
+ * AddNumbersDemo component - demonstrates invoke with request/response using React hooks
  */
 export function AddNumbersDemo() {
-  const [result, setResult] = useState<string | null>(null)
+  const { data, loading, error, invoke } = useInvokeInvokeContracts('AddNumbers')
 
   const valueA = Math.floor(Math.random() * 10 + 1)
   const valueB = Math.floor(Math.random() * 10 + 1)
 
   const handleAdd = async () => {
-    if (!window.api) return
-    const sum = await window.api.invokeAddNumbers({ a: valueA, b: valueB })
-    setResult(`${valueA}+${valueB} = ${sum}`)
+    await invoke({ a: valueA, b: valueB })
   }
 
   return (
     <div className="demo-card invoke">
-      <h3 className="demo-title">➕ Add Numbers</h3>
-      <p className="demo-description">Invoke with request payload, returns response</p>
+      <h3 className="demo-title">➕ Add Numbers (Hooks)</h3>
+      <p className="demo-description">
+        Invoke with request payload, returns response using React hooks
+      </p>
       <div className="demo-controls">
-        <button onClick={handleAdd}>{`Add ${valueA} + ${valueB}`}</button>
+        <button onClick={handleAdd} disabled={loading}>
+          {loading ? 'Adding...' : `Add ${valueA} + ${valueB}`}
+        </button>
       </div>
-      {result !== null && <div className="demo-result">Result: {result}</div>}
+      {error && <div className="demo-error">Error: {error.message}</div>}
+      {data !== null && <div className="demo-result">Result: {data}</div>}
     </div>
   )
 }

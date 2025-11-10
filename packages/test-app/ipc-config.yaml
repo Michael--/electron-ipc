@@ -15,6 +15,7 @@ apis:
       event: EventContracts
       send: BroadcastContracts
     mainBroadcastOutput: ./src/main/broadcast-generated.ts
+    reactHooks: ./src/preload/react-hooks-generated.ts
 
   # Stream API with streaming contracts
   - name: streamApi

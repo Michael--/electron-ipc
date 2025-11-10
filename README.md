@@ -20,9 +20,17 @@ The main library - a TypeScript code generator that creates type-safe IPC commun
 
 **Status:** 🚧 Under active development
 
+### `packages/electron-ipc-react`
+
+React hooks for seamless integration of IPC calls in React components. Provides automatic state management, loading states, and error handling.
+
+**Status:** ✅ Available
+
 ### `packages/test-app`
 
-A full Electron application that serves as a test environment and reference implementation for the `electron-ipc` library.
+A full Electron application that serves as a test environment and reference implementation for the `electron-ipc` library. Demonstrates both core API and React hooks usage.
+
+## 🚀 Getting Started
 
 ## 🚀 Getting Started
 
@@ -70,27 +78,40 @@ electron-ipc/
 │   │   │   ├── generator/   # Code generation logic
 │   │   │   ├── interfaces/  # TypeScript interfaces
 │   │   │   └── index.ts
-│   │
-│   └── test-app/            # Electron test environment
+│   ├── electron-ipc-react/  # React hooks package (publishable)
+│   │   ├── src/
+│   │   │   └── index.ts
+│   │   └── README.md
+│   └── test-app/            # Electron test application (private)
 │       ├── src/
-│       │   ├── main/        # Main process
+│       │   ├── main/        # Main process code
 │       │   ├── preload/     # Preload scripts
-│       │   └── renderer/    # React UI
-│       └── package.json
+│       │   └── renderer/    # Renderer process (React)
+│       └── public/          # React components
+```
+
+│ │
+│ └── test-app/ # Electron test environment
+│ ├── src/
+│ │ ├── main/ # Main process
+│ │ ├── preload/ # Preload scripts
+│ │ └── renderer/ # React UI
+│ └── package.json
 │
-├── docs/                    # Detailed documentation
-├── package.json             # Workspace root
-└── tsconfig.json            # Base TypeScript config
+├── docs/ # Detailed documentation
+├── package.json # Workspace root
+└── tsconfig.json # Base TypeScript config
+
 ```
 
 ## 🎯 Benefits
 
-✅ **Four Communication Patterns** - Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Streams (large data/real-time)  
-✅ **Compile-Time Type Safety** - Change a contract interface → TypeScript shows errors immediately in all usages  
-✅ **No Runtime Surprises** - Catch signature mismatches before running the app  
-✅ **IntelliSense Everywhere** - Auto-completion in main, preload, and renderer processes  
-✅ **Refactoring Support** - Rename/change contracts → TypeScript guides you to fix all usages  
-✅ **Zero Boilerplate** - Auto-generated IPC wrappers and type definitions  
+✅ **Four Communication Patterns** - Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Streams (large data/real-time)
+✅ **Compile-Time Type Safety** - Change a contract interface → TypeScript shows errors immediately in all usages
+✅ **No Runtime Surprises** - Catch signature mismatches before running the app
+✅ **IntelliSense Everywhere** - Auto-completion in main, preload, and renderer processes
+✅ **Refactoring Support** - Rename/change contracts → TypeScript guides you to fix all usages
+✅ **Zero Boilerplate** - Auto-generated IPC wrappers and type definitions
 ✅ **Single Source of Truth** - IPC contracts defined once, validated everywhere
 
 ## 📚 Documentation
@@ -125,3 +146,4 @@ For detailed usage, API reference, and examples, see [`docs/README.md`](docs/REA
 ## 📝 License
 
 MIT
+```

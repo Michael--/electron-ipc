@@ -2,7 +2,14 @@
  * Contract configuration for code generation
  */
 export interface IContract {
-  type: 'invoke' | 'event' | 'send' | 'streamInvoke' | 'streamUpload' | 'streamDownload'
+  type:
+    | 'invoke'
+    | 'event'
+    | 'send'
+    | 'streamInvoke'
+    | 'streamUpload'
+    | 'streamDownload'
+    | 'reactHooks'
   name: string
 }
 
@@ -21,6 +28,7 @@ export interface ApiConfig {
     streamUpload?: string
     streamDownload?: string
   }
+  reactHooks?: string
   mainBroadcastOutput?: string
 }
 
@@ -41,4 +49,5 @@ export interface ProcessApiConfig {
   contracts: IContract[]
   mainBroadcastOutput?: string
   broadcastContractName?: string
+  reactHooks?: string
 }

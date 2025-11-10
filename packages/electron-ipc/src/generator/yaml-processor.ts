@@ -60,6 +60,7 @@ export function processYamlConfig(configPath: string) {
       contracts: contractNames,
       mainBroadcastOutput: api.mainBroadcastOutput,
       broadcastContractName,
+      reactHooks: api.reactHooks,
     })
   })
 }
