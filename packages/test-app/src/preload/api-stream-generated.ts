@@ -129,12 +129,12 @@ const StreamDownloadContractsApi = {
 },
 }
 
-export const api = {
+export const streamApi = {
    ...StreamInvokeContractsApi,
    ...StreamUploadContractsApi,
    ...StreamDownloadContractsApi,
 }
-export type ApiType = typeof api
+export type StreamApiType = typeof streamApi
 
 
 /**
@@ -143,29 +143,29 @@ export type ApiType = typeof api
  *
  * Usage in preload script:
  * ```typescript
- * import { exposeApi, ApiType } from './api-generated'
+ * import { exposeStreamApi, StreamApiType } from './api-generated'
  *
  * declare global {
  *   interface Window {
- *     api: ApiType
+ *     streamApi: StreamApiType
  *   }
  * }
  *
- * exposeApi()
+ * exposeStreamApi()
  * ```
  */
-export const exposeApi = () => {
+export const exposeStreamApi = () => {
   // Use `contextBridge` APIs to expose Electron APIs to
   // renderer only if context isolation is enabled, otherwise
   // just add to the DOM global.
   if (process.contextIsolated) {
     try {
-      require('electron').contextBridge.exposeInMainWorld('api', api)
+      require('electron').contextBridge.exposeInMainWorld('streamApi', streamApi)
     } catch (error) {
       console.error(error)
     }
   } else {
-    ;(globalThis as any).api = api
+    ;(globalThis as any).streamApi = streamApi
   }
 }
 

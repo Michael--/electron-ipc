@@ -154,8 +154,10 @@ describe('generate-api', () => {
       expect(result).toContain(
         'emptyEvent: (mainWindow: BrowserWindow, payload?: SendContracts["emptyEvent"]["payload"]): void => {'
       )
-      expect(result).toContain("mainWindow.webContents.send('userUpdated', payload)")
-      expect(result).toContain('} as const')
+      expect(result).toContain("mainWindow.webContents.send('SendContracts:userUpdated', payload)")
+      expect(result).toContain("mainWindow.webContents.send('SendContracts:notification', payload)")
+      expect(result).toContain("mainWindow.webContents.send('SendContracts:emptyEvent', payload)")
+      // Note: } as const is no longer generated
     })
 
     it('should handle empty contracts', () => {
@@ -164,7 +166,7 @@ describe('generate-api', () => {
       const result = generateMainBroadcastApi('EmptyContracts', './ipc-api', sourceFile)
 
       expect(result).toContain('export const mainBroadcast = {')
-      expect(result).toContain('} as const')
+      // Note: } as const is no longer generated
     })
   })
 

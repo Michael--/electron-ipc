@@ -45,7 +45,7 @@ function printUsage() {
  * Processes a single API configuration
  */
 export function processApiConfig({
-  name: _name,
+  name,
   input,
   output,
   contracts,
@@ -60,7 +60,7 @@ export function processApiConfig({
 
   const relativePath = path.relative(path.dirname(output), path.dirname(input))
   const importPath = `${relativePath.replace(/\\/g, '/')}/ipc-api`
-  const apiName = 'api'
+  const apiName = name
 
   const sourceFile = project.addSourceFileAtPath(resolvedInputPath)
   console.log(colors.green(`Read ${path.relative(process.cwd(), resolvedInputPath)}`))
