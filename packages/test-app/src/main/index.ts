@@ -6,12 +6,20 @@ import {
   AbstractRegisterStreamUpload,
   IPCEventType,
   IPCHandlerType,
+  IPCStreamDownloadHandlerType,
+  IPCStreamHandlerType,
+  IPCStreamUploadHandlerType,
 } from '@number10/electron-ipc'
 import { app, BrowserWindow } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 import { mainBroadcast } from './broadcast-generated'
-import { EventContracts, InvokeContracts, StreamInvokeContracts } from './ipc-api'
+import { EventContracts, InvokeContracts } from './ipc-api'
+import {
+  StreamDownloadContracts,
+  StreamInvokeContracts,
+  StreamUploadContracts,
+} from './ipc-api-stream'
 
 let eventHandlerInitialized = false
 

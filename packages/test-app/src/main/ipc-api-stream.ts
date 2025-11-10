@@ -5,7 +5,7 @@ import {
   IStreamDownloadContract,
   IStreamInvokeContract,
   IStreamUploadContract,
-} from 'electron-ipc'
+} from '@number10/electron-ipc'
 
 /**
  * StreamInvokeContracts: Defines bidirectional IPC contracts where the response is a stream.
