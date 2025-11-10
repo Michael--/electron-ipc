@@ -152,10 +152,10 @@ declare global {
   }
 }
 
-exposeApi('myApi')
+exposeApi()
 ```
 
-The `exposeApi('myApi')` function uses Electron's `contextBridge` to securely expose the type-safe API to the renderer process. The `MyApiType` provides full TypeScript IntelliSense for `window.myApi`.
+The `exposeApi()` function uses Electron's `contextBridge` to securely expose the type-safe API to the renderer process. The `MyApiType` provides full TypeScript IntelliSense for `window.myApi`.
 
 ### 4. Use in Renderer
 

@@ -85,21 +85,21 @@ export type ApiType = typeof api
  *   }
  * }
  *
- * exposeApi('api')
+ * exposeApi()
  * ```
  */
-export const exposeApi = (name: string = 'api') => {
+export const exposeApi = () => {
   // Use `contextBridge` APIs to expose Electron APIs to
   // renderer only if context isolation is enabled, otherwise
   // just add to the DOM global.
   if (process.contextIsolated) {
     try {
-      require('electron').contextBridge.exposeInMainWorld(name, api)
+      require('electron').contextBridge.exposeInMainWorld('api', api)
     } catch (error) {
       console.error(error)
     }
   } else {
-    ;(globalThis as any)[name] = api
+    ;(globalThis as any).api = api
   }
 }
 

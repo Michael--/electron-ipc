@@ -194,7 +194,7 @@ declare global {
   }
 }
 
-exposeApi('myApi')
+exposeApi()
 ```
 
 **Alternative:** You can also use the contextBridge directly:
