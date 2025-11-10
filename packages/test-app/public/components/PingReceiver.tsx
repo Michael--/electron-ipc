@@ -1,5 +1,5 @@
 import React from 'react'
-import { useBroadcastBroadcastContracts } from '../../src/preload/react-hooks-generated'
+import { useBroadcastBroadcastContracts } from '../../src/preload/api-react-hooks-generated'
 
 /**
  * PingReceiver component - displays broadcast ping counter using React hooks

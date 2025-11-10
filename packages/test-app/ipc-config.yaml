@@ -14,8 +14,8 @@ apis:
       invoke: InvokeContracts
       event: EventContracts
       send: BroadcastContracts
-    mainBroadcastOutput: ./src/main/broadcast-generated.ts
-    reactHooks: ./src/preload/react-hooks-generated.ts
+    broadcastOutput: ./src/main/api-broadcast-generated.ts
+    reactHooksOutput: ./src/preload/api-react-hooks-generated.ts
 
   # Stream API with streaming contracts
   - name: streamApi

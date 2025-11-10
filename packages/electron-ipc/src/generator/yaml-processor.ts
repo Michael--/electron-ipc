@@ -58,9 +58,9 @@ export function processYamlConfig(configPath: string) {
       input: api.input,
       output: api.output,
       contracts: contractNames,
-      mainBroadcastOutput: api.mainBroadcastOutput,
+      broadcastOutput: api.broadcastOutput,
       broadcastContractName,
-      reactHooks: api.reactHooks,
+      reactHooksOutput: api.reactHooksOutput,
     })
   })
 }

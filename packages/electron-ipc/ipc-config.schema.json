@@ -53,7 +53,7 @@
             },
             "additionalProperties": false
           },
-          "mainBroadcastOutput": {
+          "broadcastOutput": {
             "type": "string",
             "description": "Optional: Path for main process broadcast API"
           }

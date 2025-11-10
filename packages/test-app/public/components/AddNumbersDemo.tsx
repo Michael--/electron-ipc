@@ -1,4 +1,4 @@
-import { useInvokeInvokeContracts } from '../../src/preload/react-hooks-generated'
+import { useInvokeInvokeContracts } from '../../src/preload/api-react-hooks-generated'
 
 /**
  * AddNumbersDemo component - demonstrates invoke with request/response using React hooks

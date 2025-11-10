@@ -267,7 +267,7 @@ apis:
       invoke: InvokeContracts
       event: EventContracts
       send: BroadcastContracts
-    mainBroadcastOutput: ./src/main/broadcast-generated.ts
+    broadcastOutput: ./src/main/broadcast-generated.ts
 
   - name: streamApi
     input: ./src/main/ipc-api-stream.ts

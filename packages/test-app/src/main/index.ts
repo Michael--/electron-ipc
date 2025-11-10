@@ -13,7 +13,7 @@ import {
 import { app, BrowserWindow } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
-import { mainBroadcast } from './broadcast-generated'
+import { mainBroadcast } from './api-broadcast-generated'
 import { EventContracts, InvokeContracts } from './ipc-api'
 import {
   StreamDownloadContracts,

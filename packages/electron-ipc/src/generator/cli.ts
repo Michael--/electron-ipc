@@ -50,9 +50,9 @@ export function processApiConfig({
   input,
   output,
   contracts,
-  mainBroadcastOutput,
+  broadcastOutput,
   broadcastContractName,
-  reactHooks,
+  reactHooksOutput,
 }: ProcessApiConfig) {
   const project = new Project()
   const resolvedInputPath = path.resolve(process.cwd(), input)
@@ -76,13 +76,13 @@ export function processApiConfig({
   )
 
   // Generate main broadcast API if requested
-  if (mainBroadcastOutput && broadcastContractName) {
+  if (broadcastOutput && broadcastContractName) {
     const mainBroadcastCode = generateMainBroadcastApi(
       broadcastContractName,
       importPath,
       sourceFile
     )
-    const resolvedMainBroadcastPath = path.resolve(process.cwd(), mainBroadcastOutput)
+    const resolvedMainBroadcastPath = path.resolve(process.cwd(), broadcastOutput)
     fs.writeFileSync(resolvedMainBroadcastPath, mainBroadcastCode, 'utf8')
     console.log(
       colors.green(
@@ -92,9 +92,9 @@ export function processApiConfig({
   }
 
   // Generate React hooks if requested
-  if (reactHooks) {
+  if (reactHooksOutput) {
     const reactHooksCode = generateReactHooks(contracts, importPath, sourceFile, apiName)
-    const resolvedReactHooksPath = path.resolve(process.cwd(), reactHooks)
+    const resolvedReactHooksPath = path.resolve(process.cwd(), reactHooksOutput)
     fs.writeFileSync(resolvedReactHooksPath, reactHooksCode, 'utf8')
     console.log(
       colors.green(
@@ -123,7 +123,7 @@ export function main() {
 
   const inputPathArg = args.find((arg) => arg.startsWith('--input='))
   const outputPathArg = args.find((arg) => arg.startsWith('--output='))
-  const mainBroadcastOutputArg = args.find((arg) => arg.startsWith('--main-broadcast-output='))
+  const broadcastOutputArg = args.find((arg) => arg.startsWith('--main-broadcast-output='))
   const apiNameArg = args.find((arg) => arg.startsWith('--api-name='))
 
   // New simplified contract syntax: --invoke=Name, --event=Name, --send=Name
@@ -154,7 +154,7 @@ export function main() {
 
   const inputPath = inputPathArg.split('=')[1]
   const outputPath = outputPathArg.split('=')[1]
-  const mainBroadcastOutputPath = mainBroadcastOutputArg?.split('=')[1]
+  const broadcastOutputPath = broadcastOutputArg?.split('=')[1]
   const apiName = apiNameArg ? apiNameArg.split('=')[1] : 'api'
   const reactHooksOutputPath = reactHooksArg?.split('=')[1]
 
@@ -183,14 +183,14 @@ export function main() {
     )
 
     // Generate main broadcast API if requested
-    if (mainBroadcastOutputPath && sendArg) {
+    if (broadcastOutputPath && sendArg) {
       const broadcastContractName = sendArg.split('=')[1]
       const mainBroadcastCode = generateMainBroadcastApi(
         broadcastContractName,
         importPath,
         sourceFile
       )
-      const resolvedMainBroadcastPath = path.resolve(process.cwd(), mainBroadcastOutputPath)
+      const resolvedMainBroadcastPath = path.resolve(process.cwd(), broadcastOutputPath)
       fs.writeFileSync(resolvedMainBroadcastPath, mainBroadcastCode, 'utf8')
       console.log(
         colors.green(
