@@ -11,7 +11,7 @@
 
 
 import { BrowserWindow } from 'electron'
-import { BroadcastContracts } from '../main/ipc-api'
+import { BroadcastContracts } from '/ipc-api'
 
 /**
  * Main process broadcast API for sending messages to renderer

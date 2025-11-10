@@ -13,7 +13,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,html,css}\"",
-    "generate:all": "electron-ipc-generate --config=./ipc-config.yaml",
+    "generate:all": "electron-ipc-generate --config=./src/main/ipc-config.yaml",
     "package": "electron-builder",
     "package:mac": "electron-builder --mac",
     "package:win": "electron-builder --win",
