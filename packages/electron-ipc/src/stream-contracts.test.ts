@@ -2,10 +2,18 @@
 import { ipcMain } from 'electron'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  AbstractRegisterStreamDownload,
   AbstractRegisterStreamHandler,
+  AbstractRegisterStreamUpload,
+  GenericStreamDownloadContract,
   GenericStreamInvokeContract,
+  GenericStreamUploadContract,
+  IPCStreamDownloadHandlerType,
   IPCStreamHandlerType,
+  IPCStreamUploadHandlerType,
+  IStreamDownloadContract,
   IStreamInvokeContract,
+  IStreamUploadContract,
 } from './interfaces/ipc-contracts'
 
 // Mock Electron APIs
@@ -13,6 +21,8 @@ vi.mock('electron', () => ({
   ipcMain: {
     handle: vi.fn(),
     removeHandler: vi.fn(),
+    on: vi.fn(),
+    removeListener: vi.fn(),
   },
 }))
 
@@ -279,6 +289,127 @@ describe('Stream IPC Contracts', () => {
       expect(ipcMain.handle).toHaveBeenCalledWith('NumberStream', expect.any(Function))
       expect(ipcMain.handle).toHaveBeenCalledWith('ObjectStream', expect.any(Function))
       expect(ipcMain.handle).toHaveBeenCalledWith('ArrayStream', expect.any(Function))
+    })
+  })
+
+  describe('GenericStreamUploadContract', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('should accept valid stream upload contract structure', () => {
+      type TestUploadContract = GenericStreamUploadContract<{
+        UploadFile: IStreamUploadContract<Uint8Array>
+      }>
+
+      const contract: TestUploadContract = {
+        UploadFile: {
+          data: new Uint8Array([1, 2, 3]),
+        },
+      }
+
+      expect(contract.UploadFile.data).toBeInstanceOf(Uint8Array)
+      expect(contract.UploadFile.data.length).toBe(3)
+    })
+
+    it('should register upload handlers via AbstractRegisterStreamUpload', () => {
+      type UploadContract = GenericStreamUploadContract<{
+        UploadData: IStreamUploadContract<string>
+      }>
+
+      class RegisterUpload extends AbstractRegisterStreamUpload {
+        handlers: IPCStreamUploadHandlerType<UploadContract> = {
+          UploadData: (writable) => {
+            const writer = writable.getWriter()
+            writer.write('test-data')
+            writer.close()
+          },
+        }
+      }
+
+      RegisterUpload.register()
+
+      expect(ipcMain.on).toHaveBeenCalledWith('UploadData-start', expect.any(Function))
+      expect(ipcMain.on).toHaveBeenCalledWith('UploadData-data', expect.any(Function))
+      expect(ipcMain.on).toHaveBeenCalledWith('UploadData-end', expect.any(Function))
+      expect(ipcMain.on).toHaveBeenCalledWith('UploadData-error', expect.any(Function))
+    })
+
+    it('should support Uint8Array data type', () => {
+      type UploadContract = GenericStreamUploadContract<{
+        UploadBinary: IStreamUploadContract<Uint8Array>
+      }>
+
+      const contract: UploadContract = {
+        UploadBinary: {
+          data: new Uint8Array([255, 254, 253]),
+        },
+      }
+
+      expect(contract.UploadBinary.data).toBeInstanceOf(Uint8Array)
+      expect(Array.from(contract.UploadBinary.data)).toEqual([255, 254, 253])
+    })
+  })
+
+  describe('GenericStreamDownloadContract', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('should accept valid stream download contract structure', () => {
+      type TestDownloadContract = GenericStreamDownloadContract<{
+        DownloadLogs: IStreamDownloadContract<string>
+      }>
+
+      const contract: TestDownloadContract = {
+        DownloadLogs: {
+          data: 'log entry',
+        },
+      }
+
+      expect(contract.DownloadLogs.data).toBe('log entry')
+    })
+
+    it('should register download handlers via AbstractRegisterStreamDownload', () => {
+      type DownloadContract = GenericStreamDownloadContract<{
+        GetLogs: IStreamDownloadContract<number>
+      }>
+
+      class RegisterDownload extends AbstractRegisterStreamDownload {
+        handlers: IPCStreamDownloadHandlerType<DownloadContract> = {
+          GetLogs: () => {
+            return new globalThis.ReadableStream({
+              start(controller) {
+                controller.enqueue(42)
+                controller.close()
+              },
+            })
+          },
+        }
+      }
+
+      RegisterDownload.register()
+
+      expect(ipcMain.handle).toHaveBeenCalledWith('GetLogs', expect.any(Function))
+    })
+
+    it('should support different data types in download streams', () => {
+      type DownloadContract = GenericStreamDownloadContract<{
+        DownloadNumbers: IStreamDownloadContract<number>
+        DownloadObjects: IStreamDownloadContract<{ id: number; value: string }>
+      }>
+
+      const contract: DownloadContract = {
+        DownloadNumbers: {
+          data: 123,
+        },
+        DownloadObjects: {
+          data: { id: 1, value: 'test' },
+        },
+      }
+
+      expect(contract.DownloadNumbers.data).toBe(123)
+      expect(contract.DownloadObjects.data).toEqual({ id: 1, value: 'test' })
     })
   })
 })
