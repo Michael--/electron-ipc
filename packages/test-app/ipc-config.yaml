@@ -25,3 +25,4 @@ apis:
       streamInvoke: StreamInvokeContracts
       streamUpload: StreamUploadContracts
       streamDownload: StreamDownloadContracts
+    reactHooksOutput: ./src/preload/api-stream-react-hooks-generated.ts

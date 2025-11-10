@@ -19,6 +19,9 @@ import {
   reactBroadcastHook,
   reactEventHook,
   reactInvokeHook,
+  reactStreamDownloadHook,
+  reactStreamInvokeHook,
+  reactStreamUploadHook,
 } from './templates'
 import { IContract } from './types'
 import { add, addBlob, generatedApiNames, output } from './utils'
@@ -314,6 +317,9 @@ export function generateReactHooks(
   const invokeContracts = contractNames.filter((c) => c.type === 'invoke')
   const eventContracts = contractNames.filter((c) => c.type === 'event')
   const broadcastContracts = contractNames.filter((c) => c.type === 'send')
+  const streamInvokeContracts = contractNames.filter((c) => c.type === 'streamInvoke')
+  const streamUploadContracts = contractNames.filter((c) => c.type === 'streamUpload')
+  const streamDownloadContracts = contractNames.filter((c) => c.type === 'streamDownload')
 
   // Generate hooks for invoke contracts
   invokeContracts.forEach(({ name }) => {
@@ -328,6 +334,21 @@ export function generateReactHooks(
   // Generate hooks for broadcast contracts
   broadcastContracts.forEach(({ name }) => {
     add(reactBroadcastHook(name, importPath, apiName))
+  })
+
+  // Generate hooks for stream invoke contracts
+  streamInvokeContracts.forEach(({ name }) => {
+    add(reactStreamInvokeHook(name, importPath, apiName))
+  })
+
+  // Generate hooks for stream upload contracts
+  streamUploadContracts.forEach(({ name }) => {
+    add(reactStreamUploadHook(name, importPath, apiName))
+  })
+
+  // Generate hooks for stream download contracts
+  streamDownloadContracts.forEach(({ name }) => {
+    add(reactStreamDownloadHook(name, importPath, apiName))
   })
 
   return output.join('\n')

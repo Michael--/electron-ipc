@@ -31,7 +31,7 @@ export const createReactHooksFileHeader = () => `/**
 /* prettier-ignore */
 // @ts-nocheck
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useRef } from 'react'
 `
 
 /**
@@ -424,6 +424,195 @@ export function use${contract}<K extends keyof ${contract}>(channel: K) {
   }, [channel])
 
   return { data, subscribe }
+}
+`
+}
+
+/**
+ * Generates React hook for stream invoke contracts
+ * @param contract - The contract type name
+ * @param importPath - Relative import path to the contract definition
+ * @returns Template string for React stream invoke hook
+ */
+export const reactStreamInvokeHook = (
+  contract: string,
+  importPath: string,
+  apiName: string = 'api'
+) => {
+  return `
+import { ${contract} } from "${importPath}"
+
+/**
+ * React hook for stream invoke operations with automatic state management
+ * @param channel - The IPC channel name
+ * @returns Object with data, loading, error states and invoke function
+ */
+export function use${contract}<K extends keyof ${contract}>(channel: K) {
+  const [data, setData] = useState<${contract}[K]["stream"][]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+  const [isComplete, setIsComplete] = useState(false)
+
+  const invoke = useCallback((request: ${contract}[K]["request"]) => {
+    setLoading(true)
+    setError(null)
+    setData([])
+    setIsComplete(false)
+
+    const methodName = \`invokeStream\${channel}\` as keyof typeof window.${apiName}
+    ;(window.${apiName}[methodName] as any)(request, {
+      onData: (chunk: ${contract}[K]["stream"]) => {
+        setData(prev => [...prev, chunk])
+      },
+      onEnd: () => {
+        setLoading(false)
+        setIsComplete(true)
+      },
+      onError: (err: Error) => {
+        setError(err)
+        setLoading(false)
+      }
+    })
+  }, [channel])
+
+  const reset = useCallback(() => {
+    setData([])
+    setError(null)
+    setIsComplete(false)
+  }, [])
+
+  return { data, loading, error, isComplete, invoke, reset }
+}
+`
+}
+
+/**
+ * Generates React hook for stream upload contracts
+ * @param contract - The contract type name
+ * @param importPath - Relative import path to the contract definition
+ * @returns Template string for React stream upload hook
+ */
+export const reactStreamUploadHook = (
+  contract: string,
+  importPath: string,
+  apiName: string = 'api'
+) => {
+  return `
+import { ${contract} } from "${importPath}"
+
+/**
+ * React hook for stream upload operations
+ * @param channel - The IPC channel name
+ * @returns Object with writer and status
+ */
+export function use${contract}<K extends keyof ${contract}>(channel: K) {
+  const [isActive, setIsActive] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+  const writerRef = useRef<any>(null)
+
+  const start = useCallback((request: ${contract}[K]["request"]) => {
+    setIsActive(true)
+    setError(null)
+    const methodName = \`upload\${channel}\` as keyof typeof window.${apiName}
+    writerRef.current = (window.${apiName}[methodName] as any)(request)
+    return writerRef.current
+  }, [channel])
+
+  const write = useCallback(async (chunk: ${contract}[K]["data"]) => {
+    if (!writerRef.current) throw new Error('Stream not started')
+    try {
+      await writerRef.current.write(chunk)
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      setError(error)
+      throw error
+    }
+  }, [])
+
+  const close = useCallback(async () => {
+    if (!writerRef.current) return
+    try {
+      await writerRef.current.close()
+      setIsActive(false)
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      setError(error)
+      throw error
+    }
+  }, [])
+
+  const abort = useCallback(async (reason?: any) => {
+    if (!writerRef.current) return
+    try {
+      await writerRef.current.abort(reason)
+      setIsActive(false)
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      setError(error)
+      throw error
+    }
+  }, [])
+
+  return { isActive, error, start, write, close, abort }
+}
+`
+}
+
+/**
+ * Generates React hook for stream download contracts
+ * @param contract - The contract type name
+ * @param importPath - Relative import path to the contract definition
+ * @returns Template string for React stream download hook
+ */
+export const reactStreamDownloadHook = (
+  contract: string,
+  importPath: string,
+  apiName: string = 'api'
+) => {
+  return `
+import { ${contract} } from "${importPath}"
+
+/**
+ * React hook for stream download operations with automatic state management
+ * @param channel - The IPC channel name
+ * @returns Object with data, loading, error states and download function
+ */
+export function use${contract}<K extends keyof ${contract}>(channel: K) {
+  const [data, setData] = useState<${contract}[K]["data"][]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+  const [isComplete, setIsComplete] = useState(false)
+
+  const download = useCallback((request: ${contract}[K]["request"]) => {
+    setLoading(true)
+    setError(null)
+    setData([])
+    setIsComplete(false)
+
+    const methodName = \`download\${channel}\` as keyof typeof window.${apiName}
+    ;(window.${apiName}[methodName] as any)(request,
+      (chunk: ${contract}[K]["data"]) => {
+        setData(prev => [...prev, chunk])
+      },
+      () => {
+        setLoading(false)
+        setIsComplete(true)
+      },
+      (err: any) => {
+        const error = err instanceof Error ? err : new Error(String(err))
+        setError(error)
+        setLoading(false)
+      }
+    )
+  }, [channel])
+
+  const reset = useCallback(() => {
+    setData([])
+    setError(null)
+    setIsComplete(false)
+  }, [])
+
+  return { data, loading, error, isComplete, download, reset }
 }
 `
 }
