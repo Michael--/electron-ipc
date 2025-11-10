@@ -144,7 +144,7 @@ npx electron-ipc-generate \
 In your preload script (e.g., `src/preload/index.ts`), expose the generated API to the renderer process:
 
 ```typescript
-import { MyApiType, exposeApi } from './api-generated'
+import { exposeMyApi, MyApiType } from './api-generated'
 
 declare global {
   interface Window {
@@ -152,10 +152,10 @@ declare global {
   }
 }
 
-exposeApi()
+exposeMyApi()
 ```
 
-The `exposeApi()` function uses Electron's `contextBridge` to securely expose the type-safe API to the renderer process. The `MyApiType` provides full TypeScript IntelliSense for `window.myApi`.
+The `exposeMyApi()` function uses Electron's `contextBridge` to securely expose the type-safe API to the renderer process. The `MyApiType` provides full TypeScript IntelliSense for `window.myApi`.
 
 ### 4. Use in Renderer
 

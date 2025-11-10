@@ -186,7 +186,7 @@ This creates `src/preload/api-generated.ts` and `src/main/broadcast-generated.ts
 Expose the generated API via context bridge (`src/preload/index.ts`):
 
 ```typescript
-import { exposeApi, MyApiType } from './api-generated'
+import { exposeMyApi, MyApiType } from './api-generated'
 
 declare global {
   interface Window {
@@ -194,7 +194,7 @@ declare global {
   }
 }
 
-exposeApi()
+exposeMyApi()
 ```
 
 **Alternative:** You can also use the contextBridge directly:

@@ -1,5 +1,5 @@
 import { ApiType, exposeApi } from './api-generated'
-import { StreamApiType, exposeApi as exposeStreamApi } from './api-stream-generated'
+import { StreamApiType, exposeStreamApi } from './api-stream-generated'
 
 /**
  * Preload script - runs in isolated context

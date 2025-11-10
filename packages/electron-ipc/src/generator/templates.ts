@@ -252,14 +252,16 @@ export type ${apiName.charAt(0).toUpperCase() + apiName.slice(1)}Type = typeof $
  * @param apiName - Name of the API to expose (default: 'api')
  * @returns Function to expose the API via contextBridge
  */
-export const createExposeApi = (apiName: string = 'api') => `
+export const createExposeApi = (apiName: string = 'api') => {
+  const exposeFunctionName = `expose${apiName.charAt(0).toUpperCase() + apiName.slice(1)}`
+  return `
 /**
  * Exposes the generated IPC API to the renderer process via contextBridge
  * Handles context isolation automatically
  *
  * Usage in preload script:
  * \`\`\`typescript
- * import { exposeApi, ${apiName.charAt(0).toUpperCase() + apiName.slice(1)}Type } from './api-generated'
+ * import { ${exposeFunctionName}, ${apiName.charAt(0).toUpperCase() + apiName.slice(1)}Type } from './api-generated'
  *
  * declare global {
  *   interface Window {
@@ -267,10 +269,10 @@ export const createExposeApi = (apiName: string = 'api') => `
  *   }
  * }
  *
- * exposeApi()
+ * ${exposeFunctionName}()
  * \`\`\`
  */
-export const exposeApi = () => {
+export const ${exposeFunctionName} = () => {
   // Use \`contextBridge\` APIs to expose Electron APIs to
   // renderer only if context isolation is enabled, otherwise
   // just add to the DOM global.
@@ -285,6 +287,7 @@ export const exposeApi = () => {
   }
 }
 `
+}
 
 /**
  * Creates the file header for generated Main Process files
