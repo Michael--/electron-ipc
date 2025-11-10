@@ -2,6 +2,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { Project, SourceFile } from 'ts-morph'
+import { parse as parseYaml } from 'yaml'
 import {
   createApiExport,
   createApiMethod,
@@ -186,11 +187,38 @@ function getInterfacesOf(sourceFile: SourceFile, typename: string) {
 }
 
 /**
+ * Configuration for a single API definition in YAML config
+ */
+interface ApiConfig {
+  name: string
+  input: string
+  output: string
+  contracts?: {
+    invoke?: string
+    event?: string
+    send?: string
+    streamInvoke?: string
+    streamUpload?: string
+    streamDownload?: string
+  }
+  mainBroadcastOutput?: string
+}
+
+/**
+ * Root YAML configuration structure
+ */
+interface YamlConfig {
+  apis: ApiConfig[]
+}
+
+/**
  * Prints CLI usage instructions
  */
 function printUsage() {
-  console.log(`Usage: electron-ipc-generate --input=<path> --output=<path> [options]`)
-  console.log(`\nRequired:`)
+  console.log(`Usage: electron-ipc-generate [options]`)
+  console.log(`\nOption 1: Using YAML config file:`)
+  console.log(`  --config=<path>  Path to YAML configuration file`)
+  console.log(`\nOption 2: Using CLI arguments:`)
   console.log(`  --input=<path>   Path to the TypeScript file containing IPC contracts`)
   console.log(`  --output=<path>  Path where the generated code will be saved`)
   console.log(`\nContract Options (at least one required):`)
@@ -209,14 +237,11 @@ function printUsage() {
   console.log(
     `  --main-broadcast-output=<path>  Path where the main process broadcast API will be saved`
   )
-  console.log(`\nExample:`)
+  console.log(`\nExamples:`)
+  console.log(`  electron-ipc-generate --config=./ipc-config.yaml`)
   console.log(
-    `  electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api.ts --invoke=InvokeContracts --event=EventContracts --send=BroadcastContracts --stream-invoke=StreamInvokeContracts --stream-upload=StreamUploadContracts --stream-download=StreamDownloadContracts --main-broadcast-output=./src/main/broadcast-api.ts`
+    `  electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api.ts --invoke=InvokeContracts --event=EventContracts --send=BroadcastContracts --main-broadcast-output=./src/main/broadcast-api.ts`
   )
-  console.log(
-    `  electron-ipc-generate --input=./src/main/ipc-api.ts --output=./src/preload/api.ts --api-name=myApi --invoke=InvokeContracts`
-  )
-  console.log(`\nNote: If multiple contracts of the same type are specified, the last one wins.`)
 }
 
 /**
@@ -443,20 +468,135 @@ export function generateMainBroadcastApi(
 }
 
 /**
+ * Processes a single API configuration
+ */
+function processApiConfig(apiConfig: {
+  name: string
+  input: string
+  output: string
+  contracts: IContract[]
+  mainBroadcastOutput?: string
+  broadcastContractName?: string
+}) {
+  const {
+    name: apiName,
+    input,
+    output: outputPath,
+    contracts,
+    mainBroadcastOutput,
+    broadcastContractName,
+  } = apiConfig
+
+  // Create a new project for each API to avoid conflicts
+  const project = new Project()
+
+  const relativePath = path.relative(path.dirname(outputPath), path.dirname(input))
+  const importPath = `${relativePath.replace(/\\/g, '/')}/ipc-api`
+
+  const resolvedInputPath = path.resolve(process.cwd(), input)
+
+  // Reset output state for this API
+  output = ''
+  space = 0
+  generatedApiNames.length = 0
+
+  const sourceFile = project.addSourceFileAtPath(resolvedInputPath)
+  console.log(`Read ${resolvedInputPath}`)
+
+  const code = processContracts(sourceFile, contracts, importPath, apiName)
+
+  const resolvedOutputPath = path.resolve(process.cwd(), outputPath)
+  fs.writeFileSync(resolvedOutputPath, code, 'utf8')
+  console.log(`Generated code written to ${resolvedOutputPath}`)
+
+  // Generate main broadcast API if requested
+  if (mainBroadcastOutput && broadcastContractName) {
+    const mainBroadcastCode = generateMainBroadcastApi(
+      broadcastContractName,
+      importPath,
+      sourceFile
+    )
+    const resolvedMainBroadcastPath = path.resolve(process.cwd(), mainBroadcastOutput)
+    fs.writeFileSync(resolvedMainBroadcastPath, mainBroadcastCode, 'utf8')
+    console.log(`Generated main broadcast API written to ${resolvedMainBroadcastPath}`)
+  }
+}
+
+/**
+ * Processes YAML configuration file
+ */
+function processYamlConfig(configPath: string) {
+  const resolvedConfigPath = path.resolve(process.cwd(), configPath)
+
+  if (!fs.existsSync(resolvedConfigPath)) {
+    console.error(`Error: Config file not found: ${resolvedConfigPath}`)
+    process.exit(1)
+  }
+
+  const configContent = fs.readFileSync(resolvedConfigPath, 'utf8')
+  const config = parseYaml(configContent) as YamlConfig
+
+  if (!config.apis || !Array.isArray(config.apis)) {
+    console.error('Error: Invalid YAML config - "apis" array is required')
+    process.exit(1)
+  }
+
+  config.apis.forEach((api) => {
+    if (!api.name || !api.input || !api.output) {
+      console.error('Error: Each API must have "name", "input", and "output" properties')
+      process.exit(1)
+    }
+
+    const contractNames: IContract[] = []
+    let broadcastContractName: string | undefined
+
+    if (api.contracts) {
+      if (api.contracts.invoke) contractNames.push({ type: 'invoke', name: api.contracts.invoke })
+      if (api.contracts.event) contractNames.push({ type: 'event', name: api.contracts.event })
+      if (api.contracts.send) {
+        contractNames.push({ type: 'send', name: api.contracts.send })
+        broadcastContractName = api.contracts.send
+      }
+      if (api.contracts.streamInvoke)
+        contractNames.push({ type: 'streamInvoke', name: api.contracts.streamInvoke })
+      if (api.contracts.streamUpload)
+        contractNames.push({ type: 'streamUpload', name: api.contracts.streamUpload })
+      if (api.contracts.streamDownload)
+        contractNames.push({ type: 'streamDownload', name: api.contracts.streamDownload })
+    }
+
+    if (contractNames.length === 0) {
+      console.error(`Error: API "${api.name}" must have at least one contract defined`)
+      process.exit(1)
+    }
+
+    processApiConfig({
+      name: api.name,
+      input: api.input,
+      output: api.output,
+      contracts: contractNames,
+      mainBroadcastOutput: api.mainBroadcastOutput,
+      broadcastContractName,
+    })
+  })
+}
+
+/**
  * Main entry point - parses CLI arguments and generates IPC API code
  */
 export function main() {
-  const tsConfigPath = path.join(process.cwd(), 'tsconfig.json')
-  const project = fs.existsSync(tsConfigPath)
-    ? new Project({ tsConfigFilePath: tsConfigPath })
-    : new Project()
-
-  // Add electron-ipc source files to resolve types
-  const electronIpcPath = path.join(process.cwd(), '../../electron-ipc/src/**/*.ts')
-  project.addSourceFilesAtPaths(electronIpcPath)
-  project.resolveSourceFileDependencies()
-
   const args = process.argv.slice(2)
+
+  // Check for YAML config file first
+  const configArg = args.find((arg) => arg.startsWith('--config='))
+  if (configArg) {
+    const configPath = configArg.split('=')[1]
+    processYamlConfig(configPath)
+    return
+  }
+
+  // Fall back to original CLI argument parsing
+  const project = new Project()
 
   const inputPathArg = args.find((arg) => arg.startsWith('--input='))
   const outputPathArg = args.find((arg) => arg.startsWith('--output='))
