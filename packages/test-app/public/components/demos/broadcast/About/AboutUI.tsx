@@ -10,7 +10,7 @@ interface AboutUIProps {
 export function AboutUI({ triggered }: AboutUIProps) {
   return (
     <div className="demo-result">
-      {triggered ? '✅ About event received!' : 'Waiting for About event...'}
+      {triggered ? '✅ About event received!' : 'Waiting for About event (every 20s)...'}
     </div>
   )
 }

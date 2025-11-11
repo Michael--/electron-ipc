@@ -268,10 +268,12 @@ function createWindow(): void {
   }
 
   mainWindow.webContents.on('did-finish-load', () => {
-    // Example: Send 'About' event to renderer after load
-    if (mainWindow) {
-      mainBroadcast.About(mainWindow)
-    }
+    // Example: Send 'About' event to renderer once per 20s
+    setInterval(() => {
+      if (mainWindow) {
+        mainBroadcast.About(mainWindow)
+      }
+    }, 20000)
 
     // send ping event every second for demo purposes
     let pingCount = 0
