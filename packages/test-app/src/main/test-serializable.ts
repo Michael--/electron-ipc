@@ -3,7 +3,7 @@
  * Uncomment any of the type definitions to see TypeScript errors.
  */
 
-import type { IInvokeContract } from 'electron-ipc'
+import type { IInvokeContract } from '@number10/electron-ipc'
 
 // ❌ This should cause a compile error when uncommented:
 // type InvalidDateContract = IInvokeContract<Date, string>
