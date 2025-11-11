@@ -1,18 +1,22 @@
-import { AboutReceiver } from './components/AboutReceiver'
-import { AddNumbersDemo } from './components/AddNumbersDemo'
-import { AppInfoDemo } from './components/AppInfoDemo'
-import { LogMessageDemo } from './components/LogMessageDemo'
-import { PingReceiver } from './components/PingReceiver'
-import { QuitProgram } from './components/QuitProgram'
-import { StreamDataDemo } from './components/StreamDataDemo'
-import { StreamDownloadDemo } from './components/StreamDownloadDemo'
-import { StreamUploadDemo } from './components/StreamUploadDemo'
-import { VideoStreamDemo } from './components/VideoStreamDemo'
+import { useState } from 'react'
+import { AboutDemo } from './components/demos/broadcast/About'
+import { PingDemo } from './components/demos/broadcast/Ping'
+import { LogMessageDemo } from './components/demos/event/LogMessage'
+import { QuitDemo } from './components/demos/event/Quit'
+import { AddNumbersDemo } from './components/demos/invoke/AddNumbers'
+import { AppInfoDemo } from './components/demos/invoke/AppInfo'
+import { StreamDownloadDemo } from './components/demos/stream/StreamDownload/DownloadLogs'
+import { VideoStreamDemo } from './components/demos/stream/StreamDownload/StreamVideo'
+import { StreamDataDemo } from './components/demos/stream/StreamInvoke/GetLargeData'
+import { StreamUploadDemo } from './components/demos/stream/StreamUpload/UploadFile'
+import { Toggle } from './components/shared/Toggle'
 
 /**
  * Main React App component
  */
 export function App() {
+  const [variant, setVariant] = useState<'native' | 'hooks'>('hooks')
+
   return (
     <div className="container">
       <header className="header">
@@ -20,51 +24,52 @@ export function App() {
         <p className="subtitle">
           Type-safe IPC communication examples for the <code>electron-ipc</code> library
         </p>
+        <Toggle value={variant} onChange={setVariant} />
       </header>
 
       <section className="section">
         <h2 className="section-title">📡 Broadcast (Main → Renderer)</h2>
         <div className="demo-grid">
-          <PingReceiver />
-          <AboutReceiver />
+          <PingDemo variant={variant} />
+          <AboutDemo variant={variant} />
         </div>
       </section>
 
       <section className="section">
         <h2 className="section-title">🔄 Invoke (Renderer ↔ Main)</h2>
         <div className="demo-grid">
-          <AddNumbersDemo />
-          <AppInfoDemo />
+          <AddNumbersDemo variant={variant} />
+          <AppInfoDemo variant={variant} />
         </div>
       </section>
 
       <section className="section">
         <h2 className="section-title">📤 Event (Renderer → Main)</h2>
         <div className="demo-grid">
-          <QuitProgram />
-          <LogMessageDemo />
+          <QuitDemo variant={variant} />
+          <LogMessageDemo variant={variant} />
         </div>
       </section>
 
       <section className="section">
         <h2 className="section-title">🌊 Stream Invoke (Renderer ↔ Main Stream)</h2>
         <div className="demo-grid">
-          <StreamDataDemo />
+          <StreamDataDemo variant={variant} />
         </div>
       </section>
 
       <section className="section">
         <h2 className="section-title">📤 Stream Upload (Renderer → Main Stream)</h2>
         <div className="demo-grid">
-          <StreamUploadDemo />
+          <StreamUploadDemo variant={variant} />
         </div>
       </section>
 
       <section className="section">
         <h2 className="section-title">📥 Stream Download (Main → Renderer Stream)</h2>
         <div className="demo-grid">
-          <StreamDownloadDemo />
-          <VideoStreamDemo />
+          <StreamDownloadDemo variant={variant} />
+          <VideoStreamDemo variant={variant} />
         </div>
       </section>
 
