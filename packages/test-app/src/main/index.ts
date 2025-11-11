@@ -1,4 +1,11 @@
-import { mainBroadcast } from '@gen/ipc-api'
+import {
+  EventContracts,
+  InvokeContracts,
+  mainBroadcast,
+  StreamDownloadContracts,
+  StreamInvokeContracts,
+  StreamUploadContracts,
+} from '@gen/ipc-api'
 import {
   AbstractRegisterEvent,
   AbstractRegisterHandler,
@@ -14,12 +21,6 @@ import {
 import { app, BrowserWindow } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
-import { EventContracts, InvokeContracts } from './ipc-api'
-import {
-  StreamDownloadContracts,
-  StreamInvokeContracts,
-  StreamUploadContracts,
-} from './ipc-api-stream'
 
 let eventHandlerInitialized = false
 

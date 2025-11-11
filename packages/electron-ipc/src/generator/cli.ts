@@ -59,7 +59,7 @@ export function processApiConfig({
   resetOutput()
 
   const relativePath = path.relative(path.dirname(output), path.dirname(input))
-  const importPath = `${relativePath.replace(/\\/g, '/')}/ipc-api`
+  const importPath = relativePath ? `${relativePath.replace(/\\/g, '/')}/ipc-api` : './ipc-api'
   const apiName = name
 
   const sourceFile = project.addSourceFileAtPath(resolvedInputPath)

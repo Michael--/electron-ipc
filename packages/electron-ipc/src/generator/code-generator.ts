@@ -12,6 +12,7 @@ import {
 import { ApiFunc, CONTRACT_CONFIG } from './config'
 import {
   createApiExport,
+  createContractReExports,
   createExposeApi,
   createFileHeader,
   createMainFileHeader,
@@ -139,6 +140,9 @@ export function processContracts(
 
   addBlob(createFileHeader())
 
+  // Collect contract names for re-export
+  const contractNamesForExport: string[] = []
+
   contractNames.forEach(({ type, name }) => {
     if (type === 'reactHooks') return // Skip reactHooks, handled separately
 
@@ -151,6 +155,9 @@ export function processContracts(
     }
 
     addBlob(config.template(name, importPath))
+
+    // Add contract name to list for re-export
+    contractNamesForExport.push(name)
 
     const found = processDeclarations(
       name,
@@ -188,6 +195,7 @@ export function processContracts(
 
   addBlob(createApiExport(generatedApiNames, apiName))
   addBlob(createExposeApi(apiName))
+  addBlob(createContractReExports(contractNamesForExport, importPath))
   return output
 }
 

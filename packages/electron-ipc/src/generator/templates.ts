@@ -616,3 +616,20 @@ export function use${contract}<K extends keyof ${contract}>(channel: K) {
 }
 `
 }
+
+/**
+ * Generates re-exports for all contract types used in this API
+ * @param contractNames - Array of contract type names to re-export
+ * @param importPath - Relative import path to the contract definitions
+ * @returns Re-export statements for all contract types
+ */
+export const createContractReExports = (contractNames: string[], importPath: string) => {
+  if (contractNames.length === 0) return ''
+
+  return `
+// Re-export contract types for convenience
+export type {
+${contractNames.map((name) => `  ${name},`).join('\n')}
+} from "${importPath}"
+`
+}
