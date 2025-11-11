@@ -20,15 +20,9 @@ The main library - a TypeScript code generator that creates type-safe IPC commun
 
 **Status:** 🚧 Under active development
 
-### `packages/electron-ipc-react`
-
-React hooks for seamless integration of IPC calls in React components. Provides automatic state management, loading states, and error handling.
-
-**Status:** ✅ Available
-
 ### `packages/test-app`
 
-A full Electron application that serves as a test environment and reference implementation for the `electron-ipc` library. Demonstrates both core API and React hooks usage.
+A full Electron application that serves as a test environment and reference implementation for the `electron-ipc` library.
 
 ## 🚀 Getting Started
 
@@ -81,10 +75,6 @@ electron-ipc/
 │   │   │   ├── generator/   # Code generation logic
 │   │   │   ├── interfaces/  # TypeScript interfaces
 │   │   │   └── index.ts
-│   ├── electron-ipc-react/  # React hooks package (publishable)
-│   │   ├── src/
-│   │   │   └── index.ts
-│   │   └── README.md
 │   └── test-app/            # Electron test application (private)
 │       ├── src/
 │       │   ├── main/        # Main process code
