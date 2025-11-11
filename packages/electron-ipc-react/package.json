@@ -26,7 +26,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
-    "clean": "rm -rf dist *.tsbuildinfo",
+    "clean": "rimraf dist *.tsbuildinfo",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
@@ -64,6 +64,7 @@
     "@types/react": "^18.2.0",
     "@vitest/coverage-v8": "^1.6.1",
     "@vitest/ui": "^1.0.4",
+    "rimraf": "^5.0.5",
     "typescript": "^5.3.3",
     "vite": "^5.0.8",
     "vite-plugin-dts": "^3.7.0",

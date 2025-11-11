@@ -5,10 +5,10 @@
   "description": "Test application for electron-ipc library",
   "main": "dist/main/index.js",
   "scripts": {
-    "dev": "mkdir -p dist && pnpm run generate:all && electron-vite dev",
-    "build": "mkdir -p dist && pnpm run generate:all && electron-vite build",
+    "dev": "mkdirp dist && pnpm run generate:all && electron-vite dev",
+    "build": "mkdirp dist && pnpm run generate:all && electron-vite build",
     "preview": "electron-vite preview",
-    "clean": "rm -rf dist out *.tsbuildinfo",
+    "clean": "rimraf dist out *.tsbuildinfo",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -31,6 +31,8 @@
     "electron": "^28.0.0",
     "electron-builder": "^24.9.1",
     "electron-vite": "^2.0.0",
+    "mkdirp": "^3.0.1",
+    "rimraf": "^5.0.5",
     "typescript": "^5.3.3",
     "vite": "^5.0.8",
     "vitest": "^1.0.4"
