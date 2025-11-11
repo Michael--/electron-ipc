@@ -1,5 +1,5 @@
 // just make colors implicit available, e.g. to use "output string".green
-import * as colors from 'colors'
+import colors from 'colors'
 
 colors.enable()
 

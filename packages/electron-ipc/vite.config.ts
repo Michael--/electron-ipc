@@ -26,7 +26,7 @@ export default defineConfig({
       },
     },
     rollupOptions: {
-      external: ['electron', 'fs', 'path', 'ts-morph'],
+      external: ['electron', 'fs', 'path', 'ts-morph', 'colors', 'yaml'],
     },
     sourcemap: true,
     outDir: 'dist',

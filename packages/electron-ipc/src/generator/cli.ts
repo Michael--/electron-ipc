@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import * as colors from 'colors'
+import colors from 'colors'
 import * as fs from 'fs'
 import * as path from 'path'
 import { Project } from 'ts-morph'

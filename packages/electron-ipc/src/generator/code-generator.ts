@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import * as colors from 'colors'
+import colors from 'colors'
 import { SourceFile } from 'ts-morph'
 import {
   eventApi,
