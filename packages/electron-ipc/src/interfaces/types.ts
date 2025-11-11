@@ -48,6 +48,45 @@ export type Serializable =
   | Serializable[]
 
 /**
+ * Validates that an object type only contains serializable values.
+ * Ensures all properties in the object are compatible with IPC serialization.
+ * Optional properties can be omitted, but when present must be serializable (not undefined).
+ * Use null instead of undefined for optional values that need to be transmitted.
+ *
+ * @example
+ * ```typescript
+ * // Define a type-safe serializable object
+ * type UserData = SerializableObject<{
+ *   id: number;
+ *   name: string;
+ *   tags: string[];
+ *   role: string | null; // Use null for optional values
+ *   metadata: { [key: string]: string };
+ * }>;
+ *
+ * // TypeScript will enforce serializable values
+ * const user: UserData = {
+ *   id: 1,
+ *   name: "Alice",
+ *   tags: ["admin", "user"],
+ *   role: null, // null is serializable, undefined is not
+ *   metadata: { role: "admin" }
+ * };
+ *
+ * // Invalid: would cause type error
+ * // type Invalid = SerializableObject<{
+ * //   createdAt: Date; // Error: Date is not Serializable
+ * // }>;
+ * ```
+ *
+ * @type {SerializableObject}
+ * @typeparam T - The object type to validate. Must extend Record<string, unknown>.
+ */
+export type SerializableObject<T extends Record<string, unknown>> = {
+  [K in keyof T]: T[K] extends Serializable ? T[K] : never
+}
+
+/**
  * Enforces a structure match between a given type `T` and a specified `Structure`.
  * It ensures that `T` extends `Structure` and has exactly the same set of keys.
  *
