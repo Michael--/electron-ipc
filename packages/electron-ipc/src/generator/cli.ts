@@ -45,7 +45,13 @@ function printUsage() {
 /**
  * Processes a single API configuration
  */
-export function processApiConfig({ name, input, output, contracts, reactHooks }: ProcessApiConfig) {
+export function processApiConfig({
+  name,
+  input,
+  output,
+  contracts,
+  reactHooksOutput,
+}: ProcessApiConfig) {
   const project = new Project()
   const resolvedInputPath = path.resolve(process.cwd(), input)
 
@@ -75,17 +81,23 @@ export function processApiConfig({ name, input, output, contracts, reactHooks }:
     }
   }
 
-  // Add React hooks if requested
-  if (reactHooks) {
-    const reactHooksCode = generateReactHooks(contracts, importPath, sourceFile, apiName)
-    code += '\n\n' + reactHooksCode
-  }
-
   const resolvedOutputPath = path.resolve(process.cwd(), output)
   fs.writeFileSync(resolvedOutputPath, code, 'utf8')
   console.log(
     colors.green(`Generated code written to ${path.relative(process.cwd(), resolvedOutputPath)}`)
   )
+
+  // Generate React hooks if requested
+  if (reactHooksOutput) {
+    const reactHooksCode = generateReactHooks(contracts, importPath, sourceFile, apiName)
+    const resolvedReactHooksPath = path.resolve(process.cwd(), reactHooksOutput)
+    fs.writeFileSync(resolvedReactHooksPath, reactHooksCode, 'utf8')
+    console.log(
+      colors.green(
+        `Generated React hooks written to ${path.relative(process.cwd(), resolvedReactHooksPath)}`
+      )
+    )
+  }
 }
 
 /**

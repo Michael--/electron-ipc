@@ -10,7 +10,7 @@ apis:
   - name: api
     input: ./src/main/ipc-api.ts
     output: ./dist/ipc-api.ts
-    reactHooks: true
+    reactHooksOutput: ./dist/ipc-api-react-hooks.ts
     contracts:
       invoke: InvokeContracts
       event: EventContracts
@@ -20,7 +20,7 @@ apis:
   - name: streamApi
     input: ./src/main/ipc-api-stream.ts
     output: ./dist/ipc-stream-api.ts
-    reactHooks: true
+    reactHooksOutput: ./dist/ipc-stream-api-react-hooks.ts
     contracts:
       streamInvoke: StreamInvokeContracts
       streamUpload: StreamUploadContracts

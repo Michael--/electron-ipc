@@ -1,4 +1,4 @@
-import { useInvokeContracts } from '@gen/ipc-api'
+import { useInvokeContracts } from '@gen/ipc-api-react-hooks'
 
 /**
  * AddNumbersDemo component - demonstrates invoke with request/response using React hooks

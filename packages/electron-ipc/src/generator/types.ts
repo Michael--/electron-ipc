@@ -28,7 +28,7 @@ export interface ApiConfig {
     streamUpload?: string
     streamDownload?: string
   }
-  reactHooks?: boolean
+  reactHooksOutput?: string
 }
 
 /**
@@ -46,5 +46,5 @@ export interface ProcessApiConfig {
   input: string
   output: string
   contracts: IContract[]
-  reactHooks?: boolean
+  reactHooksOutput?: string
 }

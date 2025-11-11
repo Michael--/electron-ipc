@@ -53,9 +53,9 @@
             },
             "additionalProperties": false
           },
-          "reactHooks": {
-            "type": "boolean",
-            "description": "Optional: Generate React hooks for this API"
+          "reactHooksOutput": {
+            "type": "string",
+            "description": "Optional: Path where React hooks will be generated"
           }
         },
         "required": ["name", "input", "output"],

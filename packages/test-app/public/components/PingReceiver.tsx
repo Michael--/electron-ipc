@@ -1,4 +1,4 @@
-import { useBroadcastContracts } from '@gen/ipc-api'
+import { useBroadcastContracts } from '@gen/ipc-api-react-hooks'
 import React from 'react'
 
 /**
