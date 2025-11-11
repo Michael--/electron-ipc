@@ -1,5 +1,4 @@
 import { useStreamInvokeContracts } from '@gen/ipc-stream-api-react-hooks'
-import { useState } from 'react'
 import { StreamDataUI } from './StreamDataUI'
 
 /**
@@ -7,26 +6,17 @@ import { StreamDataUI } from './StreamDataUI'
  * @returns Hooks-based StreamData component
  */
 export function StreamDataHooks() {
-  const [messages, setMessages] = useState<string[]>([])
-  const { isStreaming, error, invokeStream } = useStreamInvokeContracts('GetLargeData')
+  const { data, loading, error, invoke } = useStreamInvokeContracts('GetLargeData')
 
   const handleStartStream = () => {
-    setMessages([])
-    invokeStream(
-      { id: 'demo-stream' },
-      {
-        onData: (chunk) => {
-          setMessages((prev) => [...prev, chunk])
-        },
-      }
-    )
+    invoke({ id: 'demo-stream' })
   }
 
   return (
     <StreamDataUI
-      messages={messages}
-      isStreaming={isStreaming}
-      error={error}
+      messages={data}
+      isStreaming={loading}
+      error={error?.message || null}
       onStartStream={handleStartStream}
     />
   )

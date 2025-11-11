@@ -1,5 +1,5 @@
 import { useStreamDownloadContracts } from '@gen/ipc-stream-api-react-hooks'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { VideoStreamUI } from './VideoStreamUI'
 
 /**
@@ -12,7 +12,7 @@ export function VideoStreamHooks() {
   const [selectedVideo, setSelectedVideo] = useState<string>(
     'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
   )
-  const { loading, error, download } = useStreamDownloadContracts('StreamVideo')
+  const { data, loading, error, isComplete, download } = useStreamDownloadContracts('StreamVideo')
 
   const handleStartStream = () => {
     if (videoUrl) {
@@ -22,8 +22,31 @@ export function VideoStreamHooks() {
 
     setProgress('Initializing...')
     download({ url: selectedVideo })
-    setProgress('Download started via hooks...')
   }
+
+  // Update progress as data arrives
+  useEffect(() => {
+    if (loading && data.length > 0) {
+      const totalBytes = data.reduce((acc, chunk) => acc + chunk.length, 0)
+      setProgress(`Downloading ${(totalBytes / 1024 / 1024).toFixed(2)} MB...`)
+    }
+  }, [data, loading])
+
+  // Create video blob when complete
+  useEffect(() => {
+    if (isComplete && data.length > 0) {
+      try {
+        // @ts-expect-error - Uint8Array is BlobPart compatible at runtime
+        const blob = new Blob(data, { type: 'video/mp4' })
+        const url = URL.createObjectURL(blob)
+        setVideoUrl(url)
+        const totalBytes = data.reduce((acc, chunk) => acc + chunk.length, 0)
+        setProgress(`Complete: ${(totalBytes / 1024 / 1024).toFixed(2)} MB - Ready to play!`)
+      } catch (err) {
+        setProgress(`Error: ${err instanceof Error ? err.message : 'Failed to create video'}`)
+      }
+    }
+  }, [isComplete, data])
 
   return (
     <VideoStreamUI

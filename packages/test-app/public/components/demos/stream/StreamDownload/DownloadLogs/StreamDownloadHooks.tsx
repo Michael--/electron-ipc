@@ -7,27 +7,18 @@ import { StreamDownloadUI } from './StreamDownloadUI'
  * @returns Hooks-based StreamDownload component
  */
 export function StreamDownloadHooks() {
-  const [logs, setLogs] = useState<string[]>([])
   const [logLevel, setLogLevel] = useState<'info' | 'warn' | 'error'>('info')
-  const { isDownloading, error, download } = useStreamDownloadContracts('DownloadLogs')
+  const { data, loading, error, download } = useStreamDownloadContracts('DownloadLogs')
 
   const handleStartDownload = () => {
-    setLogs([])
-    download(
-      { level: logLevel },
-      {
-        onData: (logEntry: string) => {
-          setLogs((prev) => [...prev, logEntry])
-        },
-      }
-    )
+    download({ level: logLevel })
   }
 
   return (
     <StreamDownloadUI
-      logs={logs}
-      isDownloading={isDownloading}
-      error={error}
+      logs={data}
+      isDownloading={loading}
+      error={error?.message || null}
       logLevel={logLevel}
       onLevelChange={setLogLevel}
       onStartDownload={handleStartDownload}

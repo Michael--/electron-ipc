@@ -8,25 +8,25 @@ import { StreamUploadUI } from './StreamUploadUI'
  */
 export function StreamUploadHooks() {
   const [uploadMessages, setUploadMessages] = useState<string[]>([])
-  const { isUploading, error, upload } = useStreamUploadContracts('UploadFile')
+  const { isActive, error, start, write, close } = useStreamUploadContracts('UploadFile')
 
   const handleStartUpload = async () => {
     setUploadMessages([])
 
     const fileName = 'demo-file.txt'
-    const writer = upload({ fileName })
+    start({ fileName })
 
     try {
       for (let i = 1; i <= 10; i++) {
         const text = `File chunk ${i}/10 - ${new Date().toLocaleTimeString()}`
         const encoder = new TextEncoder()
         const chunk = encoder.encode(text)
-        await writer.write(chunk)
+        await write(chunk)
         setUploadMessages((prev) => [...prev, `✓ Uploaded chunk ${i}/10 to ${fileName}`])
         await new Promise((resolve) => setTimeout(resolve, 1000))
       }
 
-      await writer.close()
+      await close()
       setUploadMessages((prev) => [...prev, `✅ Upload complete: ${fileName}`])
     } catch (err) {
       setUploadMessages((prev) => [
@@ -39,8 +39,8 @@ export function StreamUploadHooks() {
   return (
     <StreamUploadUI
       uploadMessages={uploadMessages}
-      isUploading={isUploading}
-      error={error}
+      isUploading={isActive}
+      error={error?.message || null}
       onStartUpload={handleStartUpload}
     />
   )
