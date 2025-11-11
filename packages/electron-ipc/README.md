@@ -21,7 +21,7 @@ npm install electron-ipc
 Here's a minimal example to get you started:
 
 ```typescript
-// 1. Define contracts (ipc-api.ts)
+// 1. Define contracts (src/main/ipc-api.ts)
 import { GenericInvokeContract, GenericRendererEventContract } from 'electron-ipc'
 
 export type InvokeContracts = GenericInvokeContract<{
@@ -33,24 +33,30 @@ export type EventContracts = GenericRendererEventContract<{
 }>
 ```
 
+```yaml
+# 2. Create configuration file (ipc-config.yaml)
+apis:
+  - name: myApi
+    input: ./src/main/ipc-api.ts
+    output: ./src/preload/api-generated.ts
+    contracts:
+      invoke: InvokeContracts
+      event: EventContracts
+```
+
 ```bash
-# 2. Generate API
-npx electron-ipc-generate \
-  --input=./src/main/ipc-api.ts \
-  --output=./src/preload/api.ts \
-  --invoke=InvokeContracts \
-  --event=EventContracts \
-  --api-name=myApi
+# 3. Generate API
+npx electron-ipc-generate --config=./ipc-config.yaml
 ```
 
 ```typescript
-// 3. Use in renderer
+// 4. Use in renderer
 const result = await window.myApi.invokeAddNumbers({ a: 1, b: 2 })
 window.myApi.sendLogMessage('Hello from renderer!')
 ```
 
 ```typescript
-// 4. Handle in main process
+// 5. Handle in main process
 import {
   AbstractRegisterHandler,
   AbstractRegisterEvent,
@@ -121,25 +127,39 @@ export type StreamDownloadContracts = GenericStreamDownloadContract<{
 }>
 ```
 
-### 2. Generate API Code
+### 2. Create Configuration File
 
-Run the generator to create type-safe IPC functions:
+Create a YAML configuration file (e.g., `ipc-config.yaml`) to define your API generation settings:
 
-```bash
-npx electron-ipc-generate \
-  --input=./src/main/ipc-api.ts \
-  --output=./src/preload/api-generated.ts \
-  --invoke=InvokeContracts \
-  --event=EventContracts \
-  --send=BroadcastContracts \
-  --stream-invoke=StreamInvokeContracts \
-  --stream-upload=StreamUploadContracts \
-  --stream-download=StreamDownloadContracts \
-  --main-broadcast-output=./src/main/broadcast-generated.ts \
-  --api-name=myApi
+```yaml
+apis:
+  - name: myApi
+    input: ./src/main/ipc-api.ts
+    output: ./src/preload/api-generated.ts
+    contracts:
+      invoke: InvokeContracts
+      event: EventContracts
+      send: BroadcastContracts
+
+  # You can define multiple APIs in the same file
+  - name: streamApi
+    input: ./src/main/ipc-api-stream.ts
+    output: ./src/preload/stream-api-generated.ts
+    contracts:
+      streamInvoke: StreamInvokeContracts
+      streamUpload: StreamUploadContracts
+      streamDownload: StreamDownloadContracts
 ```
 
-### 3. Setup Preload Script
+### 3. Generate API Code
+
+Run the generator with your configuration file:
+
+```bash
+npx electron-ipc-generate --config=./ipc-config.yaml
+```
+
+### 4. Setup Preload Script
 
 In your preload script (e.g., `src/preload/index.ts`), expose the generated API to the renderer process:
 
@@ -157,7 +177,9 @@ exposeMyApi()
 
 The `exposeMyApi()` function uses Electron's `contextBridge` to securely expose the type-safe API to the renderer process. The `MyApiType` provides full TypeScript IntelliSense for `window.myApi`.
 
-### 4. Use in Renderer
+### 5. Use in Renderer
+
+### 5. Use in Renderer
 
 The API is now available in the renderer process with full type safety:
 
@@ -198,7 +220,7 @@ console.log('Log:', value)
 
 ````
 
-### 5. Handle in Main Process
+### 6. Handle in Main Process
 
 Implement handlers for invoke contracts, events, and streams in your main process (e.g., `src/main/index.ts`):
 
@@ -308,6 +330,89 @@ mainBroadcast.About(mainWindow)
 
 The generated `mainBroadcast` object provides type-safe methods for each broadcast contract. Each method takes the target `BrowserWindow` as the first parameter, followed by the payload (if any).
 
+## Configuration
+
+### YAML Configuration File
+
+The recommended way to configure the generator is using a YAML configuration file. This provides a clean, maintainable way to manage multiple APIs and their settings.
+
+#### Basic Configuration
+
+```yaml
+# ipc-config.yaml
+apis:
+  - name: myApi
+    input: ./src/main/ipc-api.ts
+    output: ./src/preload/api-generated.ts
+    contracts:
+      invoke: InvokeContracts
+      event: EventContracts
+```
+
+#### Full Configuration Example
+
+```yaml
+# ipc-config.yaml
+# $schema: ./node_modules/@number10/electron-ipc/ipc-config.schema.json  # For IntelliSense
+
+apis:
+  # Main API with standard contracts
+  - name: api
+    input: ./src/main/ipc-api.ts
+    output: ./src/preload/api-generated.ts
+    reactHooksOutput: ./src/renderer/hooks/api-hooks.ts # Optional React hooks
+    contracts:
+      invoke: InvokeContracts # Request-response pattern
+      event: EventContracts # Renderer → Main events
+      send: BroadcastContracts # Main → Renderer broadcasts
+
+  # Stream API for large data transfer
+  - name: streamApi
+    input: ./src/main/ipc-api-stream.ts
+    output: ./src/preload/stream-api-generated.ts
+    contracts:
+      streamInvoke: StreamInvokeContracts # Request with streaming response
+      streamUpload: StreamUploadContracts # Upload stream from renderer
+      streamDownload: StreamDownloadContracts # Download stream to renderer
+```
+
+#### Configuration Schema
+
+Each API definition supports the following properties:
+
+| Property                   | Type   | Required | Description                                        |
+| -------------------------- | ------ | -------- | -------------------------------------------------- |
+| `name`                     | string | ✅       | Name of the API (used for `expose{Name}` function) |
+| `input`                    | string | ✅       | Path to TypeScript file with IPC contracts         |
+| `output`                   | string | ✅       | Output path for generated API code                 |
+| `reactHooksOutput`         | string | ❌       | Optional path for generated React hooks            |
+| `contracts`                | object | ✅       | Contract type mappings (at least one required)     |
+| `contracts.invoke`         | string | ❌       | Type name for invoke contracts                     |
+| `contracts.event`          | string | ❌       | Type name for event contracts                      |
+| `contracts.send`           | string | ❌       | Type name for broadcast contracts                  |
+| `contracts.streamInvoke`   | string | ❌       | Type name for stream invoke contracts              |
+| `contracts.streamUpload`   | string | ❌       | Type name for stream upload contracts              |
+| `contracts.streamDownload` | string | ❌       | Type name for stream download contracts            |
+
+#### Usage
+
+```bash
+# Generate all APIs defined in the config file
+npx electron-ipc-generate --config=./ipc-config.yaml
+```
+
+#### IntelliSense Support
+
+Add the JSON schema reference to your YAML file for IntelliSense in VS Code:
+
+```yaml
+$schema: ./node_modules/@number10/electron-ipc/ipc-config.schema.json
+
+apis:
+  - name: api
+    # ... IntelliSense will provide auto-completion here
+```
+
 ## Features
 
 ✅ **Full Type Safety** - Compile-time validation across all IPC communication  
@@ -315,23 +420,9 @@ The generated `mainBroadcast` object provides type-safe methods for each broadca
 ✅ **IntelliSense Support** - Auto-completion in all processes (main, preload, renderer)  
 ✅ **Four Communication Patterns** - Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Streams (large data/real-time)  
 ✅ **Context Bridge Integration** - Secure IPC through Electron's `contextBridge`  
-✅ **TypeScript Strict Mode** - Designed for maximum type safety
-
-## CLI Options
-
-The generator supports the following command-line options:
-
-- `--input=<path>` - Path to file containing IPC contract definitions
-- `--output=<path>` - Path where generated preload API code will be written
-- `--invoke=<name>` - Type name for invoke contracts (request-response)
-- `--event=<name>` - Type name for event contracts (renderer → main)
-- `--send=<name>` - Type name for broadcast contracts (main → renderer)
-- `--stream-invoke=<name>` - Type name for stream invoke contracts (request-response with streaming)
-- `--stream-upload=<name>` - Type name for stream upload contracts (renderer → main)
-- `--stream-download=<name>` - Type name for stream download contracts (main → renderer)
-- `--main-broadcast-output=<path>` - Path where main process broadcast API will be generated
-
-At least one contract type must be specified.
+✅ **TypeScript Strict Mode** - Designed for maximum type safety  
+✅ **YAML Configuration** - Clean, maintainable multi-API setup  
+✅ **React Hooks Generation** - Optional React hooks for seamless integration
 
 ## Documentation
 
@@ -348,39 +439,6 @@ This package includes logo assets for branding and documentation:
 - `assets/logo-dark.svg` - Dark theme logo (dark background)
 
 Both logos are available in SVG format and can be used in documentation, websites, or any other branding materials.
-
-## Configuration File
-
-For projects with multiple APIs, you can define all generation settings in a single YAML configuration file:
-
-```yaml
-# ipc-config.yaml
-apis:
-  - name: api
-    input: ./src/main/ipc-api.ts
-    output: ./src/preload/api-generated.ts
-    contracts:
-      invoke: InvokeContracts
-      event: EventContracts
-      send: BroadcastContracts
-    broadcastOutput: ./src/main/broadcast-generated.ts
-
-  - name: streamApi
-    input: ./src/main/ipc-api-stream.ts
-    output: ./src/preload/api-stream-generated.ts
-    contracts:
-      streamInvoke: StreamInvokeContracts
-      streamUpload: StreamUploadContracts
-      streamDownload: StreamDownloadContracts
-```
-
-Generate all APIs at once:
-
-```bash
-npx electron-ipc-generate --config=./ipc-config.yaml
-```
-
-This creates unique expose functions (`exposeApi`, `exposeStreamApi`) for each API. See [`ipc-config.schema.json`](ipc-config.schema.json) for the complete JSON schema.
 
 ## License
 
