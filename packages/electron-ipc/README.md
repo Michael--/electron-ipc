@@ -1,19 +1,32 @@
-# electron-ipc
+# @number10/electron-ipc
 
 <p align="center">
   <img src="./assets/logo-light.svg" width="200" alt="Electron IPC Logo">
 </p>
 
-TypeScript code generator for type-safe Electron IPC communication.
+TypeScript code generator for type-safe Electron IPC communication with streaming support.
+
+[![npm version](https://img.shields.io/npm/v/@number10/electron-ipc.svg)](https://www.npmjs.com/package/@number10/electron-ipc)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
 
-This library provides a code generation approach to create type-safe IPC communication between Electron's main and renderer processes.
+This library provides a code generation approach to create type-safe IPC communication between Electron's main and renderer processes. It supports traditional request/response patterns, events, broadcasts, and streaming for large data transfers.
+
+## Features
+
+- ✅ **Type-Safe Communication**: Full TypeScript support with compile-time type checking
+- ✅ **Four Communication Patterns**: Invoke, Event, Broadcast, and Streaming
+- ✅ **Streaming Support**: Handle large data transfers efficiently using Web Streams API
+- ✅ **React Hooks**: Automatic generation of React hooks for all contract types
+- ✅ **YAML Configuration**: Clean, maintainable configuration for multiple APIs
+- ✅ **Cross-Platform**: Full support for Windows, macOS, and Linux
+- ✅ **Zero Runtime Overhead**: All type safety at compile time
 
 ## Installation
 
 ```bash
-npm install electron-ipc
+npm install @number10/electron-ipc
 ```
 
 ## Quick Start
@@ -22,14 +35,14 @@ Here's a minimal example to get you started:
 
 ```typescript
 // 1. Define contracts (src/main/ipc-api.ts)
-import { GenericInvokeContract, GenericRendererEventContract } from 'electron-ipc'
+import { GenericInvokeContract, GenericEventContract } from '@number10/electron-ipc'
 
 export type InvokeContracts = GenericInvokeContract<{
   AddNumbers: IInvokeContract<{ a: number; b: number }, number>
 }>
 
-export type EventContracts = GenericRendererEventContract<{
-  LogMessage: IRendererEventContract<string>
+export type EventContracts = GenericEventContract<{
+  LogMessage: IEventContract<string>
 }>
 ```
 
@@ -39,6 +52,7 @@ apis:
   - name: myApi
     input: ./src/main/ipc-api.ts
     output: ./src/preload/api-generated.ts
+    reactHooksOutput: ./src/preload/api-hooks.ts # Optional
     contracts:
       invoke: InvokeContracts
       event: EventContracts
@@ -430,6 +444,61 @@ For detailed documentation, architecture, and advanced usage, see:
 
 - [📚 Complete Documentation](https://github.com/Michael--/electron-ipc/tree/main/docs) - Comprehensive guide with examples and best practices
 - [🏗️ Architecture Guide](https://github.com/Michael--/electron-ipc/blob/main/docs/ARCHITECTURE.md) - Technical details about the code generator design
+
+## Migration from v1.x
+
+### Breaking Changes
+
+**1. YAML Configuration Required**
+
+CLI arguments are no longer supported. Create a YAML configuration file:
+
+```yaml
+# ipc-config.yaml
+apis:
+  - name: myApi
+    input: ./src/main/ipc-api.ts
+    output: ./src/preload/generated-api.ts
+    contracts:
+      invoke: InvokeContracts
+      event: EventContracts
+```
+
+Then run:
+
+```bash
+npx electron-ipc-generate --config=./ipc-config.yaml
+```
+
+**2. React Hooks Integration**
+
+The separate `electron-ipc-react` package has been removed. React hooks are now generated via:
+
+```yaml
+apis:
+  - name: myApi
+    # ... other config
+    reactHooksOutput: ./src/hooks/api-hooks.ts # Add this line
+```
+
+**3. Import Path Updates**
+
+Contract types are now re-exported from generated files. Update imports:
+
+```typescript
+// Old
+import { InvokeContracts } from './ipc-api'
+
+// New (optional, both work)
+import { InvokeContracts } from './generated-api'
+```
+
+### New Features in v2.0
+
+- ✅ **Streaming Contracts**: Handle large files and real-time data
+- ✅ **Automatic React Hooks**: Generate hooks for all contract types
+- ✅ **Windows Support**: Full cross-platform compatibility
+- ✅ **Multiple APIs**: Define multiple API configurations in one YAML file
 
 ## Assets
 

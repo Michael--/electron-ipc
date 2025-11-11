@@ -1,18 +1,64 @@
-## [Unreleased]
+## [2.0.0] - 2025-11-11
+
+### 🚨 Breaking Changes
+
+- **YAML Configuration Required**: CLI arguments have been removed. YAML configuration file is now mandatory for code generation
+  - Use `electron-ipc-generate --config=<path-to-yaml>` instead of individual CLI flags
+  - This provides better structure, maintainability, and multi-API support
+- **Package Structure**: Removed `electron-ipc-react` package - React hooks are now generated as part of the main code generation
+- **Import Paths**: Contract types are now re-exported from generated API files for cleaner imports
 
 ### Added
 
-- **Stream Contracts**: Added support for large data transfers and real-time communication using Web Streams API
-  - Stream Invoke: Request-response with streaming response
-  - Stream Upload: Renderer uploads data to main process
-  - Stream Download: Main streams data to renderer process
-- **CLI Options**: Added `--stream-invoke`, `--stream-upload`, and `--stream-download` options
-- **Documentation**: Updated all documentation to include stream contract examples and usage
+- **Stream Contracts**: Full support for large data transfers and real-time communication using Web Streams API
+  - `StreamInvokeContract`: Request-response with streaming response
+  - `StreamUploadContract`: Renderer uploads data stream to main process
+  - `StreamDownloadContract`: Main streams data to renderer process
+- **React Hooks Generation**: Automatic generation of React hooks for all contract types
+  - Hooks for invoke, event, broadcast, and all stream contracts
+  - Optional via `reactHooksOutput` in YAML config
+- **YAML Configuration**: Comprehensive configuration file support
+  - Multiple API definitions in single config
+  - Per-API contract type selection
+  - Flexible input/output paths
+- **Cross-Platform Build Support**: Full Windows compatibility
+  - Replaced Unix-specific `chmod` with cross-platform `shx`
+  - Proper handling of external dependencies in build process
+  - Fixed bin symlink creation in monorepo setup
+- **Improved Code Generation**:
+  - Dynamic import paths based on input filename
+  - Re-export contract types from generated files
+  - Individual output files per API configuration
 
 ### Changed
 
-- **Documentation**: Modernized and updated README files across the project
-- **Features**: Updated feature lists to reflect four communication patterns instead of three
+- **Build Process**: Optimized monorepo build order to handle bin symlinks correctly
+  - Build electron-ipc first, then install to create symlinks, then build all packages
+- **Dependencies**: External dependencies (`ts-morph`, `colors`, `yaml`) are now properly bundled as external
+  - Smaller bundle size (~24KB vs ~9MB)
+  - Faster installation and execution
+- **Generator Architecture**: Refactored into modular components
+  - Separated YAML processing, code generation, and templates
+  - Improved maintainability and testability
+
+### Fixed
+
+- **Windows Compatibility**: Fixed all Windows-specific build issues
+  - Cross-platform chmod using `shx`
+  - Proper path handling for all platforms
+- **Monorepo Build**: Fixed clean build from scratch
+  - Correct dependency resolution order
+  - Bin symlink creation after package build
+- **Stream Contracts**: Proper stream upload/download data handling
+- **Type Safety**: Compile-time serialization validation for all IPC contracts
+- **Import Paths**: Corrected dynamic import path generation based on configuration
+
+### Documentation
+
+- Updated all README files for version 2.0.0
+- Added comprehensive Windows user notes
+- Documented stream communication patterns
+- Updated architecture documentation
 
 ## [1.0.1] - 2025-11-10
 

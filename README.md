@@ -4,7 +4,7 @@
   <img src="packages/electron-ipc/assets/logo-light.svg" width="200" alt="Electron IPC Logo">
 </p>
 
-Type-safe IPC communication generator for Electron applications.
+Type-safe IPC communication generator for Electron applications with streaming support.
 
 ## Overview
 
@@ -14,17 +14,23 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 
 ## 📦 Packages
 
-### `packages/electron-ipc`
+### `packages/electron-ipc` (v2.0.0)
 
 The main library - a TypeScript code generator that creates type-safe IPC communication code for Electron applications.
 
-**Status:** 🚧 Under active development
+**Features:**
+
+- ✅ Type-safe invoke/event/broadcast patterns
+- ✅ Stream support for large data transfers
+- ✅ Automatic React hooks generation
+- ✅ YAML-based configuration
+- ✅ Full Windows/macOS/Linux support
+
+**Status:** Production ready
 
 ### `packages/test-app`
 
 A full Electron application that serves as a test environment and reference implementation for the `electron-ipc` library.
-
-## 🚀 Getting Started
 
 ## 🚀 Getting Started
 
