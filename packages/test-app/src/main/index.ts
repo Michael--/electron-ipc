@@ -1,11 +1,9 @@
+import { EventContracts, InvokeContracts, mainBroadcast } from '@gen/ipc-api'
 import {
-  EventContracts,
-  InvokeContracts,
-  mainBroadcast,
   StreamDownloadContracts,
   StreamInvokeContracts,
   StreamUploadContracts,
-} from '@gen/ipc-api'
+} from '@gen/ipc-stream-api'
 import {
   AbstractRegisterEvent,
   AbstractRegisterHandler,
