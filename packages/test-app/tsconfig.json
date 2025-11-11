@@ -2,12 +2,15 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "composite": true,
+    "composite": false,
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@gen/*": ["./dist/*"]
+    }
   },
-  "include": ["src/**/*", "public/**/*"],
+  "include": ["src/**/*", "public/**/*", "dist/**/*"],
   "exclude": ["node_modules", "dist", "out"],
   "references": [
     {

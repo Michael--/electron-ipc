@@ -1,5 +1,5 @@
-import { ApiType, exposeApi } from './api-generated'
-import { StreamApiType, exposeStreamApi } from './api-stream-generated'
+import { ApiType, exposeApi } from '@gen/ipc-api'
+import { StreamApiType, exposeStreamApi } from '@gen/ipc-stream-api'
 
 /**
  * Preload script - runs in isolated context

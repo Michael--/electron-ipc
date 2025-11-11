@@ -31,14 +31,12 @@ export function processYamlConfig(configPath: string) {
     }
 
     const contractNames: IContract[] = []
-    let broadcastContractName: string | undefined
 
     if (api.contracts) {
       if (api.contracts.invoke) contractNames.push({ type: 'invoke', name: api.contracts.invoke })
       if (api.contracts.event) contractNames.push({ type: 'event', name: api.contracts.event })
       if (api.contracts.send) {
         contractNames.push({ type: 'send', name: api.contracts.send })
-        broadcastContractName = api.contracts.send
       }
       if (api.contracts.streamInvoke)
         contractNames.push({ type: 'streamInvoke', name: api.contracts.streamInvoke })
@@ -58,9 +56,7 @@ export function processYamlConfig(configPath: string) {
       input: api.input,
       output: api.output,
       contracts: contractNames,
-      broadcastOutput: api.broadcastOutput,
-      broadcastContractName,
-      reactHooksOutput: api.reactHooksOutput,
+      reactHooks: api.reactHooks,
     })
   })
 }

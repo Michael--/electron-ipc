@@ -5,6 +5,11 @@ import { resolve } from 'path'
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
+    resolve: {
+      alias: {
+        '@gen': resolve(__dirname, 'dist'),
+      },
+    },
     build: {
       outDir: 'dist/main',
       sourcemap: true,
@@ -16,6 +21,11 @@ export default defineConfig({
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
+    resolve: {
+      alias: {
+        '@gen': resolve(__dirname, 'dist'),
+      },
+    },
     build: {
       outDir: 'dist/preload',
       sourcemap: true,

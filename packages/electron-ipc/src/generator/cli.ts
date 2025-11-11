@@ -45,15 +45,7 @@ function printUsage() {
 /**
  * Processes a single API configuration
  */
-export function processApiConfig({
-  name,
-  input,
-  output,
-  contracts,
-  broadcastOutput,
-  broadcastContractName,
-  reactHooksOutput,
-}: ProcessApiConfig) {
+export function processApiConfig({ name, input, output, contracts, reactHooks }: ProcessApiConfig) {
   const project = new Project()
   const resolvedInputPath = path.resolve(process.cwd(), input)
 
@@ -67,41 +59,33 @@ export function processApiConfig({
   const sourceFile = project.addSourceFileAtPath(resolvedInputPath)
   console.log(colors.green(`Read ${path.relative(process.cwd(), resolvedInputPath)}`))
 
-  const code = processContracts(sourceFile, contracts, importPath, apiName)
+  let code = processContracts(sourceFile, contracts, importPath, apiName)
+
+  // Add main broadcast API if broadcast contracts exist
+  const hasBroadcastContracts = contracts.some((c) => c.type === 'send')
+  if (hasBroadcastContracts) {
+    const broadcastContract = contracts.find((c) => c.type === 'send')
+    if (broadcastContract) {
+      const mainBroadcastCode = generateMainBroadcastApi(
+        broadcastContract.name,
+        importPath,
+        sourceFile
+      )
+      code += '\n\n' + mainBroadcastCode
+    }
+  }
+
+  // Add React hooks if requested
+  if (reactHooks) {
+    const reactHooksCode = generateReactHooks(contracts, importPath, sourceFile, apiName)
+    code += '\n\n' + reactHooksCode
+  }
 
   const resolvedOutputPath = path.resolve(process.cwd(), output)
   fs.writeFileSync(resolvedOutputPath, code, 'utf8')
   console.log(
     colors.green(`Generated code written to ${path.relative(process.cwd(), resolvedOutputPath)}`)
   )
-
-  // Generate main broadcast API if requested
-  if (broadcastOutput && broadcastContractName) {
-    const mainBroadcastCode = generateMainBroadcastApi(
-      broadcastContractName,
-      importPath,
-      sourceFile
-    )
-    const resolvedMainBroadcastPath = path.resolve(process.cwd(), broadcastOutput)
-    fs.writeFileSync(resolvedMainBroadcastPath, mainBroadcastCode, 'utf8')
-    console.log(
-      colors.green(
-        `Generated main broadcast API written to ${path.relative(process.cwd(), resolvedMainBroadcastPath)}`
-      )
-    )
-  }
-
-  // Generate React hooks if requested
-  if (reactHooksOutput) {
-    const reactHooksCode = generateReactHooks(contracts, importPath, sourceFile, apiName)
-    const resolvedReactHooksPath = path.resolve(process.cwd(), reactHooksOutput)
-    fs.writeFileSync(resolvedReactHooksPath, reactHooksCode, 'utf8')
-    console.log(
-      colors.green(
-        `Generated React hooks written to ${path.relative(process.cwd(), resolvedReactHooksPath)}`
-      )
-    )
-  }
 }
 
 /**

@@ -53,9 +53,9 @@
             },
             "additionalProperties": false
           },
-          "broadcastOutput": {
-            "type": "string",
-            "description": "Optional: Path for main process broadcast API"
+          "reactHooks": {
+            "type": "boolean",
+            "description": "Optional: Generate React hooks for this API"
           }
         },
         "required": ["name", "input", "output"],

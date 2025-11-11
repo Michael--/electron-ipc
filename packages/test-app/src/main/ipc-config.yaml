@@ -9,9 +9,8 @@ apis:
   # Main API with invoke, event, and broadcast contracts
   - name: api
     input: ./src/main/ipc-api.ts
-    output: ./src/preload/api-generated.ts
-    broadcastOutput: ./src/main/api-broadcast-generated.ts
-    reactHooksOutput: ./src/preload/api-react-hooks-generated.ts
+    output: ./dist/ipc-api.ts
+    reactHooks: true
     contracts:
       invoke: InvokeContracts
       event: EventContracts
@@ -20,8 +19,8 @@ apis:
   # Stream API with streaming contracts
   - name: streamApi
     input: ./src/main/ipc-api-stream.ts
-    output: ./src/preload/api-stream-generated.ts
-    reactHooksOutput: ./src/preload/api-stream-react-hooks-generated.ts
+    output: ./dist/ipc-stream-api.ts
+    reactHooks: true
     contracts:
       streamInvoke: StreamInvokeContracts
       streamUpload: StreamUploadContracts

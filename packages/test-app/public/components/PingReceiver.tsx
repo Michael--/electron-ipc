@@ -1,5 +1,5 @@
+import { useBroadcastContracts } from '@gen/ipc-api'
 import React from 'react'
-import { useBroadcastContracts } from '../../src/preload/api-react-hooks-generated'
 
 /**
  * PingReceiver component - displays broadcast ping counter using React hooks
