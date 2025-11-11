@@ -154,9 +154,9 @@ describe('generate-api', () => {
       expect(result).toContain(
         'emptyEvent: (mainWindow: BrowserWindow, payload?: SendContracts["emptyEvent"]["payload"]): void => {'
       )
-      expect(result).toContain("mainWindow.webContents.send('SendContracts:userUpdated', payload)")
-      expect(result).toContain("mainWindow.webContents.send('SendContracts:notification', payload)")
-      expect(result).toContain("mainWindow.webContents.send('SendContracts:emptyEvent', payload)")
+      expect(result).toContain("mainWindow.webContents.send('userUpdated', payload)")
+      expect(result).toContain("mainWindow.webContents.send('notification', payload)")
+      expect(result).toContain("mainWindow.webContents.send('emptyEvent', payload)")
       // Note: } as const is no longer generated
     })
 
