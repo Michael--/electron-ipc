@@ -38,6 +38,11 @@ export default defineConfig({
   renderer: {
     root: resolve(__dirname, 'public'),
     plugins: [react()],
+    resolve: {
+      alias: {
+        '@gen': resolve(__dirname, 'dist'),
+      },
+    },
     build: {
       outDir: 'dist/renderer',
       sourcemap: true,
