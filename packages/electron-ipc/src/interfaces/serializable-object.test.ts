@@ -232,4 +232,21 @@ describe('SerializableObject', () => {
     const deserialized = JSON.parse(serialized) as ValidOptional
     expect(deserialized).toEqual(valid)
   })
+
+  it('should serialize and deserialize and fail', () => {
+    type InvalidData = { createdAt: Date; age?: number }
+    const original: InvalidData = { createdAt: new Date(), age: undefined }
+
+    // Attempt to serialize using JSON
+    const serialized = JSON.stringify(original)
+    const deserialized = JSON.parse(serialized) as InvalidData
+
+    // Date becomes string (not serializable as Date)
+    expect(typeof deserialized.createdAt).toBe('string')
+    expect(deserialized.createdAt).not.toBeInstanceOf(Date)
+
+    // undefined properties are lost during serialization
+    expect(deserialized).not.toHaveProperty('age')
+    expect('age' in deserialized).toBe(false)
+  })
 })
