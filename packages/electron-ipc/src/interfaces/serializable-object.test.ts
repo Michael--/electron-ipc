@@ -122,8 +122,6 @@ describe('SerializableObject', () => {
     expectTypeOf(valid).toMatchTypeOf<UnionData>()
   })
 
-  // ...existing code...
-
   it('should work with interfaces', () => {
     interface UserData {
       id: number
