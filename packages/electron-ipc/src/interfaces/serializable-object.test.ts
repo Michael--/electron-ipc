@@ -121,4 +121,30 @@ describe('SerializableObject', () => {
 
     expectTypeOf(valid).toMatchTypeOf<UnionData>()
   })
+
+  // ...existing code...
+
+  it('should work with interfaces', () => {
+    interface UserData {
+      id: number
+      name: string
+      email: string
+      age: number | null
+      tags: string[]
+      metadata: { [key: string]: string }
+    }
+
+    type SerializableUserData = SerializableObject<UserData>
+
+    const validUser: SerializableUserData = {
+      id: 1,
+      name: 'Alice',
+      email: 'alice@example.com',
+      age: 30,
+      tags: ['admin', 'user'],
+      metadata: { role: 'admin', department: 'IT' },
+    }
+
+    expectTypeOf(validUser).toMatchTypeOf<SerializableUserData>()
+  })
 })

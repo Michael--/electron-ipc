@@ -80,9 +80,9 @@ export type Serializable =
  * ```
  *
  * @type {SerializableObject}
- * @typeparam T - The object type to validate. Must extend Record<string, unknown>.
+ * @typeparam T - The object type to validate. Must be an object type.
  */
-export type SerializableObject<T extends Record<string, unknown>> = {
+export type SerializableObject<T extends object> = {
   [K in keyof T]: T[K] extends Serializable ? T[K] : never
 }
 
