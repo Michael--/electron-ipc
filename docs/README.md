@@ -1,6 +1,6 @@
 # Electron IPC Code Generator
 
-Type-safe IPC communication generator for Electron applications.
+Type-safe IPC communication generator for Electron applications with streaming support.
 
 ## Overview
 
@@ -18,7 +18,7 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 ### How It Works
 
 1. **Define IPC Contracts** in your main process using TypeScript interfaces
-2. **Run the Generator** to create type-safe API code
+2. **Run the Generator** via YAML configuration to create type-safe API code
 3. **Use Generated API** in preload/renderer with full TypeScript support
 
 ## IPC Contract Types
@@ -161,25 +161,38 @@ export type StreamDownloadContracts = GenericStreamDownloadContract<{
 // export const mainBroadcast = createBroadcast<BroadcastContracts>()
 ```
 
-### 2. Generate API
+## Configuration File
 
-Run the generator:
+For managing IPC APIs, use a YAML configuration file:
 
-```bash
-npx electron-ipc-generate \
-  --input=./src/main/ipc-api.ts \
-  --output=./src/preload/api-generated.ts \
-  --invoke=InvokeContracts \
-  --event=EventContracts \
-  --send=BroadcastContracts \
-  --stream-invoke=StreamInvokeContracts \
-  --stream-upload=StreamUploadContracts \
-  --stream-download=StreamDownloadContracts \
-  --main-broadcast-output=./src/main/broadcast-generated.ts \
-  --api-name=myApi
+```yaml
+# ipc-config.yaml
+apis:
+  - name: api
+    input: ./src/main/ipc-api.ts
+    output: ./src/preload/api-generated.ts
+    contracts:
+      invoke: InvokeContracts
+      event: EventContracts
+      broadcast: BroadcastContracts
+    mainBroadcastOutput: ./src/main/broadcast-generated.ts
+
+  - name: streamApi
+    input: ./src/main/ipc-api-stream.ts
+    output: ./src/preload/api-stream-generated.ts
+    contracts:
+      streamInvoke: StreamInvokeContracts
+      streamUpload: StreamUploadContracts
+      streamDownload: StreamDownloadContracts
 ```
 
-This creates `src/preload/api-generated.ts` and `src/main/broadcast-generated.ts` with type-safe wrappers.
+Generate all APIs:
+
+```bash
+electron-ipc-generate --config=./ipc-config.yaml
+```
+
+Each API gets a unique expose function name (e.g., `exposeApi`, `exposeStreamApi`).
 
 ### 3. Use in Preload
 
@@ -246,25 +259,13 @@ while (true) {
 const { done, value } = await downloadReader.read()
 if (done) break
 console.log('Log:', value)
+}
 
 ```
 
-```
+**Note:** The generated broadcast API (`mainBroadcastOutput`) is optional but recommended for consistency with the renderer API. Both approaches are type-safe.
 
-**Note:** The generated broadcast API (`--main-broadcast-output`) is optional but recommended for consistency with the renderer API. Both approaches are type-safe.
-
-## Configuration File
-
-For better maintainability with multiple APIs, use a YAML configuration file:
-
-```yaml
-# ipc-config.yaml
-apis:
-  - name: api
-    input: ./src/main/ipc-api.ts
-    output: ./src/preload/api-generated.ts
-    contracts:
-      invoke: InvokeContracts
+### 5. Implement Handlers in Main
       event: EventContracts
       send: BroadcastContracts
     broadcastOutput: ./src/main/broadcast-generated.ts
@@ -278,15 +279,7 @@ apis:
       streamDownload: StreamDownloadContracts
 ```
 
-Generate all APIs:
-
-```bash
-electron-ipc-generate --config=./ipc-config.yaml
-```
-
-Each API gets a unique expose function name (e.g., `exposeApi`, `exposeStreamApi`).
-
-## Technology Stack
+**Note:** The generated broadcast API (`mainBroadcastOutput`) is optional but recommended for consistency with the renderer API. Both approaches are type-safe.
 
 ### 5. Implement Handlers in Main
 
@@ -388,44 +381,43 @@ mainBroadcast('About', mainWindow, undefined)
 
 ## CLI Usage
 
-The generator is available as a CLI tool:
+The generator uses YAML configuration files:
 
 ```bash
-electron-ipc-generate \
-  --input ./src/main/ipc-api.ts \
-  --output ./src/preload/api-generated.ts \
-  --invoke InvokeContracts \
-  --event EventContracts \
-  --send BroadcastContracts \
-  --main-broadcast-output ./src/main/broadcast-generated.ts \
-  --api-name myApi
+electron-ipc-generate --config=./ipc-config.yaml
 ```
 
-### CLI Options
+### Configuration Format
 
-- `--input=<path>` - Path to file containing IPC contract definitions
-- `--output=<path>` - Path where generated API code will be written
-- `--invoke=<name>` - Type name for invoke contracts (Renderer ↔ Main, request/response)
-- `--event=<name>` - Type name for event contracts (Renderer → Main, no response)
-- `--send=<name>` - Type name for send/broadcast contracts (Main → Renderer, one-way)
-- `--stream-invoke=<name>` - Type name for stream invoke contracts (Renderer ↔ Main with stream response)
-- `--stream-upload=<name>` - Type name for stream upload contracts (Renderer → Main)
-- `--stream-download=<name>` - Type name for stream download contracts (Main → Renderer)
-- `--main-broadcast-output=<path>` - **Optional:** Path where the main process broadcast API will be saved
-- `--api-name=<name>` - **Optional:** Name of the exported API object (default: 'api')
+```yaml
+# ipc-config.yaml
+apis:
+  - name: api # API name (used for expose function)
+    input: ./src/main/ipc-api.ts # Source file with contracts
+    output: ./src/preload/api-generated.ts # Generated preload API
+    contracts:
+      invoke: InvokeContracts # Optional: Invoke contract type
+      event: EventContracts # Optional: Event contract type
+      broadcast: BroadcastContracts # Optional: Broadcast contract type
+      streamInvoke: StreamInvokeContracts # Optional: Stream invoke contracts
+      streamUpload: StreamUploadContracts # Optional: Stream upload contracts
+      streamDownload: StreamDownloadContracts # Optional: Stream download contracts
+    mainBroadcastOutput: ./src/main/broadcast-generated.ts # Optional: Main broadcast API
+    reactHooks: true # Optional: Generate React hooks (default: true)
+```
 
-**Note:** At least one contract type must be specified. If multiple contracts of the same type are specified, the last one wins.
-
-The `--main-broadcast-output` option is optional. If omitted, you can use the runtime `createBroadcast()` helper instead.
+**Note:** At least one contract type must be specified per API. The `mainBroadcastOutput` is optional; if omitted, use the runtime `createBroadcast()` helper instead.
 
 ## Benefits
 
+✅ **Four Communication Patterns** - Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Streams (large data/real-time)
 ✅ **Compile-Time Type Safety** - Change a contract interface → TypeScript shows errors immediately in all usages  
 ✅ **No Runtime Surprises** - Catch signature mismatches before running the app  
 ✅ **IntelliSense Everywhere** - Auto-completion in main, preload, and renderer processes  
 ✅ **Refactoring Support** - Rename/change contracts → TypeScript guides you to fix all usages  
 ✅ **Zero Boilerplate** - Auto-generated IPC wrappers and type definitions  
 ✅ **Single Source of Truth** - IPC contracts defined once, validated everywhere
+✅ **React Hooks** - Automatic generation of `useXxx` hooks for renderer
 
 ### Example: Type Safety in Action
 
@@ -465,10 +457,15 @@ The same applies to:
 
 No need to run the app to find these bugs! 🎯
 
-## Development Setup### Prerequisites
+## Development Setup
+
+### Prerequisites
 
 - Node.js ≥18.0.0
 - pnpm ≥8.15.0
+- **Windows only:** Git Bash (for Git hooks)
+
+> **Note for Windows users:** This project uses Husky for Git hooks. Git Bash must be installed and available in your PATH for the pre-commit hooks to work properly.
 
 ### Installation
 
@@ -486,6 +483,19 @@ pnpm run test
 pnpm run dev
 ```
 
+### Working on Individual Packages
+
+```bash
+# electron-ipc library
+cd packages/electron-ipc
+pnpm run build
+pnpm run watch
+
+# test-app
+cd packages/test-app
+pnpm run dev
+```
+
 ### Project Structure
 
 ```
@@ -493,24 +503,25 @@ electron-ipc/
 ├── packages/
 │   ├── electron-ipc/          # Generator library (publishable)
 │   │   ├── src/
-│   │   │   ├── index.ts       # Public API
 │   │   │   ├── generator/     # Code generation logic
-│   │   │   └── bin/           # CLI entry point
+│   │   │   ├── interfaces/    # TypeScript interfaces
+│   │   │   └── index.ts
 │   │   └── package.json
 │   │
-│   └── test-app/              # Electron test environment
+│   └── test-app/              # Electron test application (private)
 │       ├── src/
-│       │   ├── main/          # Main process
+│       │   ├── main/          # Main process code
 │       │   ├── preload/       # Preload scripts
-│       │   └── renderer/      # React UI
+│       │   └── renderer/      # Renderer process (React)
+│       ├── public/            # React components
 │       └── package.json
 │
-├── docs/                      # Documentation
-├── .husky/                    # Git hooks
-└── package.json               # Workspace root
+├── docs/                      # Detailed documentation
+├── package.json               # Workspace root
+└── tsconfig.json              # Base TypeScript config
 ```
 
-## Technology Stack
+## 🛠 Technology Stack
 
 - **TypeScript** - Strict mode, ES2022
 - **Vite** - Build tool for library
@@ -521,8 +532,9 @@ electron-ipc/
 - **Prettier** - Code formatting (no semicolons)
 - **Husky** - Git hooks
 - **ts-morph** - TypeScript AST manipulation
+- **yaml** - YAML configuration parsing
 
-## Contributing
+## 🤝 Contributing
 
 1. Create feature branch
 2. Make changes
@@ -535,6 +547,6 @@ electron-ipc/
    - `test:` testing
    - `chore:` maintenance
 
-## License
+## 📝 License
 
 MIT
