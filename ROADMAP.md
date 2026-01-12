@@ -10,7 +10,7 @@
    Ziel: `mainBroadcastOutput` offiziell unterstützen (Schema + YAML + Generator), damit Main-Code keinen `ipcRenderer`-Import erhält. Doku anpassen, damit sie die echte API widerspiegelt.  
    Tests: Generator-Snapshots für Main/Preload-Ausgabe; Integrationstest im `test-app`, dass `mainBroadcast` im Main importiert und genutzt werden kann.
 
-2. ❌ **Robuster Contract-Resolver (re-exports, split files, path aliases)**  
+2. ✅ **Robuster Contract-Resolver (re-exports, split files, path aliases)**  
    Ziel: Weg von string-basiertem Parsing hin zu ts-morph/TS-Program mit `tsconfig`, damit Contracts aus Re-Exports und verteilten Dateien zuverlässig erkannt werden.  
    Tests: Fixture-Suite mit Re-Exports, Mapped Types, generics; erwartete API-Snapshots.
 

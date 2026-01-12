@@ -20,6 +20,7 @@ export interface ApiConfig {
   name: string
   input: string
   output: string
+  tsconfig?: string
   contracts?: {
     invoke?: string
     event?: string
@@ -47,6 +48,7 @@ export interface ProcessApiConfig {
   input: string
   output: string
   contracts: IContract[]
+  tsconfig?: string
   reactHooksOutput?: string
   mainBroadcastOutput?: string
 }

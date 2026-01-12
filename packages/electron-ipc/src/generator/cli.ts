@@ -27,11 +27,38 @@ export function processApiConfig({
   input,
   output,
   contracts,
+  tsconfig,
   reactHooksOutput,
   mainBroadcastOutput,
 }: ProcessApiConfig) {
-  const project = new Project()
   const resolvedInputPath = path.resolve(process.cwd(), input)
+
+  const resolveTsconfigPath = () => {
+    if (tsconfig) {
+      const resolved = path.resolve(process.cwd(), tsconfig)
+      if (!fs.existsSync(resolved)) {
+        console.error(`Error: tsconfig file not found: ${resolved}`)
+        process.exit(1)
+      }
+      return resolved
+    }
+
+    let currentDir = path.dirname(resolvedInputPath)
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const candidate = path.join(currentDir, 'tsconfig.json')
+      if (fs.existsSync(candidate)) return candidate
+      const parentDir = path.dirname(currentDir)
+      if (parentDir === currentDir) break
+      currentDir = parentDir
+    }
+    return undefined
+  }
+
+  const tsconfigPath = resolveTsconfigPath()
+  const project = tsconfigPath
+    ? new Project({ tsConfigFilePath: tsconfigPath, skipAddingFilesFromTsConfig: true })
+    : new Project()
 
   // Reset output state for this API
   resetOutput()
@@ -53,6 +80,7 @@ export function processApiConfig({
   const apiName = name
 
   const sourceFile = project.addSourceFileAtPath(resolvedInputPath)
+  project.resolveSourceFileDependencies()
   console.log(colors.green(`Read ${path.relative(process.cwd(), resolvedInputPath)}`))
 
   let code = processContracts(sourceFile, contracts, importPath, apiName)

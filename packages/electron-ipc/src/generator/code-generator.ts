@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import colors from 'colors'
-import { SourceFile } from 'ts-morph'
+import { InterfaceDeclaration, Node, SourceFile, TypeAliasDeclaration } from 'ts-morph'
 import {
   eventApi,
   invokeApi,
@@ -30,15 +30,39 @@ import { add, addBlob, generatedApiNames, output } from './utils'
 /**
  * Finds exported type aliases matching the exact typename
  */
+function resolveExportedDeclarations(sourceFile: SourceFile, typename: string): Node[] {
+  const exported = sourceFile.getExportedDeclarations().get(typename) ?? []
+  const resolved: Node[] = []
+
+  exported.forEach((decl) => {
+    if (Node.isExportSpecifier(decl)) {
+      decl.getLocalTargetDeclarations().forEach((target) => {
+        if (target) resolved.push(target as Node)
+      })
+      return
+    }
+    resolved.push(decl)
+  })
+
+  return resolved
+}
+
+/**
+ * Finds exported type aliases matching the exact typename (supports re-exports)
+ */
 function getTypeAliasesOf(sourceFile: SourceFile, typename: string) {
-  return sourceFile.getTypeAliases().filter((e) => e.isExported() && e.getName() === typename)
+  return resolveExportedDeclarations(sourceFile, typename).filter(
+    (node): node is TypeAliasDeclaration => Node.isTypeAliasDeclaration(node)
+  )
 }
 
 /**
  * Finds exported interfaces matching the exact typename
  */
 function getInterfacesOf(sourceFile: SourceFile, typename: string) {
-  return sourceFile.getInterfaces().filter((e) => e.isExported() && e.getName() === typename)
+  return resolveExportedDeclarations(sourceFile, typename).filter(
+    (node): node is InterfaceDeclaration => Node.isInterfaceDeclaration(node)
+  )
 }
 
 function processProperties(props: {

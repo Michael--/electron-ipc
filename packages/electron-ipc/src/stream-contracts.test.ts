@@ -323,13 +323,13 @@ describe('Stream IPC Contracts', () => {
         handlers: IPCStreamUploadHandlerType<UploadContract> = {
           UploadData: (request, onData, onEnd, onError) => {
             expect(request.id).toBe(42)
-            onData((chunk) => {
+            onData((_chunk) => {
               // Test callback
             })
             onEnd(() => {
               // Test end
             })
-            onError((err) => {
+            onError((_err) => {
               // Test error
             })
           },

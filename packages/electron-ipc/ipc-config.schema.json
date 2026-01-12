@@ -22,6 +22,10 @@
             "type": "string",
             "description": "Path where the generated API code will be written"
           },
+          "tsconfig": {
+            "type": "string",
+            "description": "Optional: Path to tsconfig.json for resolving path aliases and re-exports"
+          },
           "contracts": {
             "type": "object",
             "description": "Contract types to include in this API",

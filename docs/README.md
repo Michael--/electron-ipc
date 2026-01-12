@@ -171,6 +171,7 @@ apis:
   - name: api
     input: ./src/main/ipc-api.ts
     output: ./src/preload/api-generated.ts
+    tsconfig: ./tsconfig.json
     contracts:
       invoke: InvokeContracts
       event: EventContracts
@@ -395,6 +396,7 @@ apis:
   - name: api # API name (used for expose function)
     input: ./src/main/ipc-api.ts # Source file with contracts
     output: ./src/preload/api-generated.ts # Generated preload API
+    tsconfig: ./tsconfig.json # Optional: path aliases/re-exports
     contracts:
       invoke: InvokeContracts # Optional: Invoke contract type
       event: EventContracts # Optional: Event contract type

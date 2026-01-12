@@ -376,6 +376,7 @@ apis:
     output: ./src/preload/api-generated.ts
     reactHooksOutput: ./src/renderer/hooks/api-hooks.ts # Optional React hooks
     mainBroadcastOutput: ./src/main/broadcast-generated.ts # Optional main broadcast API
+    tsconfig: ./tsconfig.json # Optional: for path aliases/re-exports
     contracts:
       invoke: InvokeContracts # Request-response pattern
       event: EventContracts # Renderer → Main events
@@ -402,6 +403,7 @@ Each API definition supports the following properties:
 | `output`                   | string | ✅       | Output path for generated API code                 |
 | `reactHooksOutput`         | string | ❌       | Optional path for generated React hooks            |
 | `mainBroadcastOutput`      | string | ❌       | Optional path for main broadcast API               |
+| `tsconfig`                 | string | ❌       | Optional tsconfig path for path aliases/re-exports |
 | `contracts`                | object | ✅       | Contract type mappings (at least one required)     |
 | `contracts.invoke`         | string | ❌       | Type name for invoke contracts                     |
 | `contracts.event`          | string | ❌       | Type name for event contracts                      |

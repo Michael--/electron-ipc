@@ -210,6 +210,65 @@ describe('generate-api', () => {
 
       fs.rmSync(tempDir, { recursive: true, force: true })
     })
+
+    it('should resolve re-exported contracts via tsconfig path aliases', () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'electron-ipc-'))
+      const srcDir = path.join(tempDir, 'src')
+      const inputPath = path.join(srcDir, 'index.ts')
+      const contractsPath = path.join(srcDir, 'contracts.ts')
+      const outputPath = path.join(tempDir, 'api-generated.ts')
+      const tsconfigPath = path.join(tempDir, 'tsconfig.json')
+
+      fs.mkdirSync(srcDir, { recursive: true })
+      fs.writeFileSync(
+        tsconfigPath,
+        JSON.stringify(
+          {
+            compilerOptions: {
+              baseUrl: '.',
+              paths: {
+                '@ipc/*': ['src/*'],
+              },
+            },
+          },
+          null,
+          2
+        ),
+        'utf8'
+      )
+      fs.writeFileSync(
+        contractsPath,
+        `
+          export type InvokeContracts = {
+            AddNumbers: {
+              request: { a: number; b: number }
+              response: number
+            }
+          }
+        `,
+        'utf8'
+      )
+      fs.writeFileSync(
+        inputPath,
+        `
+          export type { InvokeContracts } from '@ipc/contracts'
+        `,
+        'utf8'
+      )
+
+      processApiConfig({
+        name: 'api',
+        input: inputPath,
+        output: outputPath,
+        tsconfig: tsconfigPath,
+        contracts: [{ type: 'invoke', name: 'InvokeContracts' }],
+      })
+
+      const preloadCode = fs.readFileSync(outputPath, 'utf8')
+      expect(preloadCode).toContain('invokeAddNumbers')
+
+      fs.rmSync(tempDir, { recursive: true, force: true })
+    })
   })
 
   describe('Stream Contracts', () => {

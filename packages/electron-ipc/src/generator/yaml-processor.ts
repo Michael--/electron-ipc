@@ -56,6 +56,7 @@ export function processYamlConfig(configPath: string) {
       input: api.input,
       output: api.output,
       contracts: contractNames,
+      tsconfig: api.tsconfig,
       reactHooksOutput: api.reactHooksOutput,
       mainBroadcastOutput: api.mainBroadcastOutput,
     })
