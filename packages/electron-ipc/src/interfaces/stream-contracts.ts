@@ -26,7 +26,7 @@
  * }>
  *
  * export type MyDownloadContracts = GenericStreamDownloadContract<{
- *   DownloadLogs: IStreamDownloadContract<{ since: Date }, string>
+ *   DownloadLogs: IStreamDownloadContract<{ sinceMs: number }, string>
  * }>
  * ```
  *
@@ -50,8 +50,8 @@
  *
  * class MyDownloadHandler extends AbstractRegisterStreamDownload {
  *   handlers: IPCStreamDownloadHandlerType<MyDownloadContracts> = {
- *     DownloadLogs: ({ since }, event) => {
- *       return createLogStream(since)
+ *     DownloadLogs: ({ sinceMs }, event) => {
+ *       return createLogStream(sinceMs)
  *     }
  *   }
  * }
@@ -60,19 +60,27 @@
  * Use in renderer:
  * ```typescript
  * // Stream invoke
- * const reader = await window.api.streamGetLargeData({ offset: 0 })
- * for await (const chunk of reader) {
- *   console.log('Chunk:', chunk)
- * }
+ * const stopStream = window.api.invokeStreamGetLargeData(
+ *   { offset: 0 },
+ *   {
+ *     onData: (chunk) => console.log('Chunk:', chunk),
+ *     onEnd: () => console.log('Stream complete'),
+ *     onError: (err) => console.error(err),
+ *   }
+ * )
  *
  * // Upload
- * await window.api.uploadUploadFile({ filename: 'data.txt' }, createUploadStream())
+ * const uploadStream = window.api.uploadUploadFile({ filename: 'data.txt' })
+ * await uploadStream.write(new Uint8Array([1, 2, 3]))
+ * await uploadStream.close()
  *
  * // Download
- * const reader = await window.api.downloadDownloadLogs({ since: new Date() })
- * for await (const log of reader) {
- *   console.log('Log:', log)
- * }
+ * const stopDownload = window.api.downloadDownloadLogs(
+ *   { sinceMs: Date.now() },
+ *   (log) => console.log('Log:', log),
+ *   () => console.log('Download complete'),
+ *   (err) => console.error(err)
+ * )
  * ```
  */
 

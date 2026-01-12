@@ -96,7 +96,7 @@ export type StreamUploadContracts = GenericStreamUploadContract<{
 
 // Stream Download: Main streams data to renderer
 export type StreamDownloadContracts = GenericStreamDownloadContract<{
-  DownloadLogs: IStreamDownloadContract<{ since: Date }, string>
+  DownloadLogs: IStreamDownloadContract<{ sinceMs: number }, string>
 }>
 ```
 
@@ -154,7 +154,7 @@ export type StreamUploadContracts = GenericStreamUploadContract<{
 }>
 
 export type StreamDownloadContracts = GenericStreamDownloadContract<{
-  DownloadLogs: IStreamDownloadContract<{ since: Date }, string>
+  DownloadLogs: IStreamDownloadContract<{ sinceMs: number }, string>
 }>
 
 // Optional: Create runtime broadcast helper (if not using generated API)
@@ -252,11 +252,13 @@ await uploadStream.write(new Uint8Array([1, 2, 3, 4, 5]))
 await uploadStream.close()
 
 const stopDownload = window.myApi.downloadStreamDownloadLogs(
-  { since: new Date() },
+  { sinceMs: Date.now() },
   (log) => console.log('Log:', log),
   () => console.log('Download complete'),
   (err) => console.error(err)
 )
+
+// Note: Date is not serializable; use timestamps or ISO strings instead.
 
 // Optional: stop stream early
 // stopStream()

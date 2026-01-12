@@ -22,7 +22,7 @@
    Ziel: `createExposeApi` ohne `require('electron')` für ESM-Preloads und Bundler (electron-vite) nutzbar machen.  
    Tests: TypeScript-Compile-Tests für ESM/TSNodeNext, optional bundler smoke test.
 
-5. ❌ **Serializable-Story konsolidieren (Docs + API)**  
+5. ✅ **Serializable-Story konsolidieren (Docs + API)**  
    Ziel: Doku und Typen angleichen (z. B. `Date` nicht verwenden oder Serializer-Option anbieten). Optional: Hook für Custom Serializer (SuperJSON o. ä.).  
    Tests: Typ-Tests/`dts`-Assertions für Serializable-Grenzen, plus optional Runtime-Guards.
 

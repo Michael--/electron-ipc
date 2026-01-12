@@ -137,7 +137,7 @@ export type StreamUploadContracts = GenericStreamUploadContract<{
 }>
 
 export type StreamDownloadContracts = GenericStreamDownloadContract<{
-  DownloadLogs: IStreamDownloadContract<{ since: Date }, string>
+  DownloadLogs: IStreamDownloadContract<{ sinceMs: number }, string>
 }>
 ```
 
@@ -224,11 +224,13 @@ await uploadStream.close()
 
 // Stream download (receive stream from main)
 const stopDownload = window.myApi.downloadStreamDownloadLogs(
-  { since: new Date() },
+  { sinceMs: Date.now() },
   (log) => console.log('Log:', log),
   () => console.log('Download complete'),
   (err) => console.error(err)
 )
+
+// Note: Date is not serializable; use timestamps or ISO strings instead.
 
 // Optional: stop stream early
 // stopStream()
