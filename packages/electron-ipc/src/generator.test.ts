@@ -27,6 +27,9 @@ describe('generate-api', () => {
       const contracts = [{ type: 'invoke' as const, name: 'InvokeContracts' }]
       const result = processContracts(sourceFile, contracts, './ipc-api')
 
+      expect(result).toContain('contextBridge')
+      expect(result).toContain('import { contextBridge, ipcRenderer } from "electron"')
+      expect(result).not.toContain("require('electron')")
       expect(result).toContain('const InvokeContractsApi = {')
       expect(result).toContain('invokeGetUser:')
       expect(result).toContain('invokeSaveData:')

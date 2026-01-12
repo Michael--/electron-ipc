@@ -13,7 +13,7 @@ export const createFileHeader = () => `/**
 /* prettier-ignore */
 // @ts-nocheck
 
-import { ipcRenderer } from "electron"
+import { contextBridge, ipcRenderer } from "electron"
 `
 
 /**
@@ -365,7 +365,7 @@ export const ${exposeFunctionName} = () => {
   // just add to the DOM global.
   if (process.contextIsolated) {
     try {
-      require('electron').contextBridge.exposeInMainWorld('${apiName}', ${apiName})
+      contextBridge.exposeInMainWorld('${apiName}', ${apiName})
     } catch (error) {
       console.error(error)
     }

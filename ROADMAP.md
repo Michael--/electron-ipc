@@ -18,7 +18,7 @@
    Ziel: Renderer-API mit klaren Cleanup-Mechanismen (unsubscribe/abort), optional `AsyncIterable`/`ReadableStream`-Wrapper auf Basis der IPC-Callbacks. Doku + Examples angleichen.  
    Tests: Stream-Tests für Cleanup, Error-Propagation, mehrere parallele Streams; vorhandene Tests erweitern.
 
-4. ❌ **ESM/Preload-Kompatibilität für expose-Funktion**  
+4. ✅ **ESM/Preload-Kompatibilität für expose-Funktion**  
    Ziel: `createExposeApi` ohne `require('electron')` für ESM-Preloads und Bundler (electron-vite) nutzbar machen.  
    Tests: TypeScript-Compile-Tests für ESM/TSNodeNext, optional bundler smoke test.
 
