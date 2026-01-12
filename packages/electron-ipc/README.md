@@ -197,7 +197,6 @@ The `exposeMyApi()` function uses Electron's `contextBridge` to securely expose 
 
 The API is now available in the renderer process with full type safety:
 
-````typescript
 ```typescript
 // Invoke methods (request-response)
 const result = await window.myApi.invokeAddNumbers({ a: 1, b: 2 })
@@ -209,30 +208,32 @@ window.myApi.sendLogMessage({ level: 'info', message: 'Hello!' })
 window.myApi.onPing((count) => console.log('Ping:', count))
 
 // Stream invoke (request with streaming response)
-const stream = await window.myApi.invokeStreamGetLargeData({ offset: 0 })
-const reader = stream.getReader()
-while (true) {
-  const { done, value } = await reader.read()
-  if (done) break
-  console.log('Received:', value)
-````
+const stopStream = window.myApi.invokeStreamGetLargeData(
+  { offset: 0 },
+  {
+    onData: (chunk) => console.log('Received:', chunk),
+    onEnd: () => console.log('Stream complete'),
+    onError: (err) => console.error(err),
+  }
+)
 
 // Stream upload (upload data to main)
 const uploadStream = window.myApi.uploadStreamUploadFile({ filename: 'data.txt' })
-const writer = uploadStream.getWriter()
-await writer.write(new Uint8Array([1, 2, 3, 4, 5]))
-await writer.close()
+await uploadStream.write(new Uint8Array([1, 2, 3, 4, 5]))
+await uploadStream.close()
 
 // Stream download (receive stream from main)
-const downloadStream = window.myApi.downloadStreamDownloadLogs({ since: new Date() })
-const downloadReader = downloadStream.getReader()
-while (true) {
-const { done, value } = await downloadReader.read()
-if (done) break
-console.log('Log:', value)
-}
+const stopDownload = window.myApi.downloadStreamDownloadLogs(
+  { since: new Date() },
+  (log) => console.log('Log:', log),
+  () => console.log('Download complete'),
+  (err) => console.error(err)
+)
 
-````
+// Optional: stop stream early
+// stopStream()
+// stopDownload()
+```
 
 ### 6. Handle in Main Process
 
@@ -328,7 +329,7 @@ RegisterEvent.register()
 RegisterStreamHandler.register()
 RegisterStreamUpload.register()
 RegisterStreamDownload.register()
-````
+```
 
 **Sending broadcasts from main to renderer:**
 

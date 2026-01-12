@@ -102,9 +102,9 @@ export type StreamDownloadContracts = GenericStreamDownloadContract<{
 
 **Generated method names:**
 
-- Stream Invoke: `invokeStreamGetLargeData()` → returns `ReadableStream`
-- Stream Upload: `uploadStreamUploadFile()` → returns `WritableStream`
-- Stream Download: `downloadStreamDownloadLogs()` → returns `ReadableStream`
+- Stream Invoke: `invokeStreamGetLargeData(request, callbacks)` → starts stream, returns cleanup
+- Stream Upload: `uploadStreamUploadFile(request)` → returns StreamWriter
+- Stream Download: `downloadStreamDownloadLogs(request, onData, onEnd?, onError?)` → starts stream, returns cleanup
 
 ## Workflow
 
@@ -224,7 +224,6 @@ contextBridge.exposeInMainWorld('myApi', myApi)
 
 Access the API with full TypeScript support (`src/renderer/App.tsx`):
 
-````typescript
 ```typescript
 // Invoke: Call main and await response (prefixed with 'invoke')
 const result = await window.myApi.invokeAddNumbers({ a: 5, b: 3 }) // result = 8
@@ -239,46 +238,48 @@ window.myApi.onPing((count) => console.log(`Ping ${count}`))
 window.myApi.onAbout(() => console.log('About dialog'))
 
 // Streams: Handle large data and real-time communication
-const stream = await window.myApi.invokeStreamGetLargeData({ offset: 0 })
-````
-
-const reader = stream.getReader()
-while (true) {
-const { done, value } = await reader.read()
-if (done) break
-console.log('Received:', value)
-}
+const stopStream = window.myApi.invokeStreamGetLargeData(
+  { offset: 0 },
+  {
+    onData: (chunk) => console.log('Received:', chunk),
+    onEnd: () => console.log('Stream complete'),
+    onError: (err) => console.error(err),
+  }
+)
 
 const uploadStream = window.myApi.uploadStreamUploadFile({ filename: 'data.txt' })
-const writer = uploadStream.getWriter()
-await writer.write(new Uint8Array([1, 2, 3, 4, 5]))
-await writer.close()
+await uploadStream.write(new Uint8Array([1, 2, 3, 4, 5]))
+await uploadStream.close()
 
-const downloadStream = window.myApi.downloadStreamDownloadLogs({ since: new Date() })
-const downloadReader = downloadStream.getReader()
-while (true) {
-const { done, value } = await downloadReader.read()
-if (done) break
-console.log('Log:', value)
-}
+const stopDownload = window.myApi.downloadStreamDownloadLogs(
+  { since: new Date() },
+  (log) => console.log('Log:', log),
+  () => console.log('Download complete'),
+  (err) => console.error(err)
+)
 
+// Optional: stop stream early
+// stopStream()
+// stopDownload()
 ```
 
 **Note:** The generated broadcast API (`mainBroadcastOutput`) is optional but recommended for consistency with the renderer API. Both approaches are type-safe.
 
 ### 5. Implement Handlers in Main
+
       event: EventContracts
       send: BroadcastContracts
     mainBroadcastOutput: ./src/main/broadcast-generated.ts
 
-  - name: streamApi
-    input: ./src/main/ipc-api-stream.ts
-    output: ./src/preload/api-stream-generated.ts
-    contracts:
-      streamInvoke: StreamInvokeContracts
-      streamUpload: StreamUploadContracts
-      streamDownload: StreamDownloadContracts
-```
+- name: streamApi
+  input: ./src/main/ipc-api-stream.ts
+  output: ./src/preload/api-stream-generated.ts
+  contracts:
+  streamInvoke: StreamInvokeContracts
+  streamUpload: StreamUploadContracts
+  streamDownload: StreamDownloadContracts
+
+````
 
 **Note:** The generated broadcast API (`mainBroadcastOutput`) is optional but recommended for consistency with the renderer API. Both approaches are type-safe.
 
@@ -376,7 +377,7 @@ import { createBroadcast } from '@number10/electron-ipc'
 const mainBroadcast = createBroadcast<BroadcastContracts>()
 mainBroadcast('Ping', mainWindow, 42)
 mainBroadcast('About', mainWindow, undefined)
-```
+````
 
 **Note:** The generated broadcast API (`mainBroadcastOutput`) is optional but recommended for consistency with the renderer API. Both approaches are type-safe.
 

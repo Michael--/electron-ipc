@@ -31,7 +31,7 @@ export const createReactHooksFileHeader = () => `/**
 /* prettier-ignore */
 // @ts-nocheck
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 `
 
 /**
@@ -107,8 +107,9 @@ type StreamCallbacks<TData> = {
 const invokeStream${contract} = <K extends keyof ${contract}>(
   channel: K,
   request: ${contract}[K]["request"],
-  callbacks: StreamCallbacks<${contract}[K]["stream"]>
-): void => {
+  callbacks: StreamCallbacks<${contract}[K]["stream"]>,
+  options?: { signal?: AbortSignal }
+): (() => void) => {
    const dataChannel = \`\${channel as string}-data\`
    const endChannel = \`\${channel as string}-end\`
    const errorChannel = \`\${channel as string}-error\`
@@ -129,14 +130,29 @@ const invokeStream${contract} = <K extends keyof ${contract}>(
      ipcRenderer.removeListener(dataChannel, dataHandler)
      ipcRenderer.removeListener(endChannel, endHandler)
      ipcRenderer.removeListener(errorChannel, errorHandler)
+     if (options?.signal) options.signal.removeEventListener('abort', handleAbort)
+   }
+
+   const handleAbort = () => {
+     cleanup()
    }
 
    ipcRenderer.on(dataChannel, dataHandler)
    ipcRenderer.on(endChannel, endHandler)
    ipcRenderer.on(errorChannel, errorHandler)
 
+   if (options?.signal) {
+     if (options.signal.aborted) {
+       cleanup()
+       return cleanup
+     }
+     options.signal.addEventListener('abort', handleAbort, { once: true })
+   }
+
    // Start the stream
    ipcRenderer.invoke(channel as string, request)
+
+   return cleanup
 }
 `
 
@@ -190,12 +206,47 @@ const download${contract} = <K extends keyof ${contract}>(
   request: ${contract}[K]["request"],
   callback: (data: ${contract}[K]["data"]) => void,
   onEnd?: () => void,
-  onError?: (err: any) => void
-): void => {
-   ipcRenderer.on(\`\${channel as string}-data\`, (_event, data: ${contract}[K]["data"]) => callback(data))
-   if (onEnd) ipcRenderer.on(\`\${channel as string}-end\`, onEnd)
-   if (onError) ipcRenderer.on(\`\${channel as string}-error\`, (_event, err) => onError(err))
+  onError?: (err: any) => void,
+  options?: { signal?: AbortSignal }
+): (() => void) => {
+   const dataChannel = \`\${channel as string}-data\`
+   const endChannel = \`\${channel as string}-end\`
+   const errorChannel = \`\${channel as string}-error\`
+
+   const dataHandler = (_event: any, data: ${contract}[K]["data"]) => callback(data)
+   const endHandler = () => {
+     onEnd?.()
+     cleanup()
+   }
+   const errorHandler = (_event: any, err: any) => {
+     onError?.(err)
+     cleanup()
+   }
+
+   const cleanup = () => {
+     ipcRenderer.removeListener(dataChannel, dataHandler)
+     ipcRenderer.removeListener(endChannel, endHandler)
+     ipcRenderer.removeListener(errorChannel, errorHandler)
+     if (options?.signal) options.signal.removeEventListener('abort', handleAbort)
+   }
+
+   const handleAbort = () => {
+     cleanup()
+   }
+
+   if (options?.signal) {
+     if (options.signal.aborted) {
+       cleanup()
+       return cleanup
+     }
+     options.signal.addEventListener('abort', handleAbort, { once: true })
+   }
+
+   ipcRenderer.on(dataChannel, dataHandler)
+   ipcRenderer.on(endChannel, endHandler)
+   ipcRenderer.on(errorChannel, errorHandler)
    ipcRenderer.invoke(channel as string, request) // Trigger the download with request
+   return cleanup
 }
 `
 
@@ -231,8 +282,8 @@ export const createApiMethod = (
   }
 
   if (returnType === 'stream') {
-    return `${prefix}${propName}: (${param}: ${typeAnnotation}, callbacks: StreamCallbacks<${contract}["${propName}"]["stream"]>): void => {
-   return ${prefix}${contract}("${propName}", ${param}, callbacks)
+    return `${prefix}${propName}: (${param}: ${typeAnnotation}, callbacks: StreamCallbacks<${contract}["${propName}"]["stream"]>, options?: { signal?: AbortSignal }): (() => void) => {
+   return ${prefix}${contract}("${propName}", ${param}, callbacks, options)
 },`
   }
 
@@ -243,8 +294,8 @@ export const createApiMethod = (
   }
 
   if (returnType === 'download') {
-    return `${prefix}${propName}: (${param}: ${typeAnnotation}, callback: (data: ${contract}["${propName}"]["data"]) => void, onEnd?: () => void, onError?: (err: any) => void): void => {
-   return ${prefix}${contract}("${propName}", ${param}, callback, onEnd, onError)
+    return `${prefix}${propName}: (${param}: ${typeAnnotation}, callback: (data: ${contract}["${propName}"]["data"]) => void, onEnd?: () => void, onError?: (err: any) => void, options?: { signal?: AbortSignal }): (() => void) => {
+   return ${prefix}${contract}("${propName}", ${param}, callback, onEnd, onError, options)
 },`
   }
 
@@ -452,36 +503,58 @@ export function use${contract}<K extends keyof ${contract}>(channel: K) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
   const [isComplete, setIsComplete] = useState(false)
+  const cleanupRef = useRef<(() => void) | null>(null)
 
   const invoke = useCallback((request: ${contract}[K]["request"]) => {
+    cleanupRef.current?.()
+    cleanupRef.current = null
     setLoading(true)
     setError(null)
     setData([])
     setIsComplete(false)
 
     const methodName = \`invokeStream\${channel}\` as keyof typeof window.${apiName}
-    ;(window.${apiName}[methodName] as any)(request, {
+    const cleanup = (window.${apiName}[methodName] as any)(request, {
       onData: (chunk: ${contract}[K]["stream"]) => {
         setData(prev => [...prev, chunk])
       },
       onEnd: () => {
         setLoading(false)
         setIsComplete(true)
+        cleanupRef.current = null
       },
       onError: (err: Error) => {
         setError(err)
         setLoading(false)
+        cleanupRef.current = null
       }
     })
+    cleanupRef.current = cleanup
   }, [channel])
 
+  const cancel = useCallback(() => {
+    cleanupRef.current?.()
+    cleanupRef.current = null
+    setLoading(false)
+    setIsComplete(false)
+  }, [])
+
   const reset = useCallback(() => {
+    cleanupRef.current?.()
+    cleanupRef.current = null
     setData([])
     setError(null)
     setIsComplete(false)
   }, [])
 
-  return { data, loading, error, isComplete, invoke, reset }
+  useEffect(() => {
+    return () => {
+      cleanupRef.current?.()
+      cleanupRef.current = null
+    }
+  }, [])
+
+  return { data, loading, error, isComplete, invoke, cancel, reset }
 }
 `
 }
@@ -582,37 +655,59 @@ export function use${contract}<K extends keyof ${contract}>(channel: K) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
   const [isComplete, setIsComplete] = useState(false)
+  const cleanupRef = useRef<(() => void) | null>(null)
 
   const download = useCallback((request: ${contract}[K]["request"]) => {
+    cleanupRef.current?.()
+    cleanupRef.current = null
     setLoading(true)
     setError(null)
     setData([])
     setIsComplete(false)
 
     const methodName = \`download\${channel}\` as keyof typeof window.${apiName}
-    ;(window.${apiName}[methodName] as any)(request,
+    const cleanup = (window.${apiName}[methodName] as any)(request,
       (chunk: ${contract}[K]["data"]) => {
         setData(prev => [...prev, chunk])
       },
       () => {
         setLoading(false)
         setIsComplete(true)
+        cleanupRef.current = null
       },
       (err: any) => {
         const error = err instanceof Error ? err : new Error(String(err))
         setError(error)
         setLoading(false)
+        cleanupRef.current = null
       }
     )
+    cleanupRef.current = cleanup
   }, [channel])
 
+  const cancel = useCallback(() => {
+    cleanupRef.current?.()
+    cleanupRef.current = null
+    setLoading(false)
+    setIsComplete(false)
+  }, [])
+
   const reset = useCallback(() => {
+    cleanupRef.current?.()
+    cleanupRef.current = null
     setData([])
     setError(null)
     setIsComplete(false)
   }, [])
 
-  return { data, loading, error, isComplete, download, reset }
+  useEffect(() => {
+    return () => {
+      cleanupRef.current?.()
+      cleanupRef.current = null
+    }
+  }, [])
+
+  return { data, loading, error, isComplete, download, cancel, reset }
 }
 `
 }

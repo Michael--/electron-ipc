@@ -14,7 +14,7 @@
    Ziel: Weg von string-basiertem Parsing hin zu ts-morph/TS-Program mit `tsconfig`, damit Contracts aus Re-Exports und verteilten Dateien zuverlässig erkannt werden.  
    Tests: Fixture-Suite mit Re-Exports, Mapped Types, generics; erwartete API-Snapshots.
 
-3. ❌ **Streaming-API ergonomisch + Leaks vermeiden**  
+3. ✅ **Streaming-API ergonomisch + Leaks vermeiden**  
    Ziel: Renderer-API mit klaren Cleanup-Mechanismen (unsubscribe/abort), optional `AsyncIterable`/`ReadableStream`-Wrapper auf Basis der IPC-Callbacks. Doku + Examples angleichen.  
    Tests: Stream-Tests für Cleanup, Error-Propagation, mehrere parallele Streams; vorhandene Tests erweitern.
 

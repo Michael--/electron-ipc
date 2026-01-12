@@ -301,7 +301,7 @@ describe('generate-api', () => {
       expect(result).toContain(
         'callbacks: StreamCallbacks<StreamInvokeContracts["GetLargeData"]["stream"]>'
       )
-      expect(result).toContain('): void =>')
+      expect(result).toContain('): (() => void) =>')
 
       // Should include in final API
       expect(result).toContain('...StreamInvokeContractsApi,')
@@ -338,6 +338,8 @@ describe('generate-api', () => {
 
       expect(result).toContain('const StreamDownloadContractsApi = {')
       expect(result).toContain('downloadDownloadLogs:')
+      expect(result).toContain('const cleanup = () =>')
+      expect(result).toContain('ipcRenderer.removeListener(dataChannel, dataHandler)')
     })
 
     it('should handle multiple stream contract types together', () => {
