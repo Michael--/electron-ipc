@@ -1,4 +1,5 @@
-import { EventContracts, InvokeContracts, mainBroadcast } from '@gen/ipc-api'
+import { EventContracts, InvokeContracts } from '@gen/ipc-api'
+import { mainBroadcast } from '@gen/ipc-api-main-broadcast'
 import {
   StreamDownloadContracts,
   StreamInvokeContracts,

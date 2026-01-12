@@ -1,5 +1,9 @@
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
 import { Project } from 'ts-morph'
 import { describe, expect, it } from 'vitest'
+import { processApiConfig } from './generator/cli'
 import { generateMainBroadcastApi, processContracts } from './generator/generate-api'
 
 describe('generate-api', () => {
@@ -167,6 +171,44 @@ describe('generate-api', () => {
 
       expect(result).toContain('export const mainBroadcast = {')
       // Note: } as const is no longer generated
+    })
+  })
+
+  describe('processApiConfig', () => {
+    it('should write main broadcast output separately when configured', () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'electron-ipc-'))
+      const inputPath = path.join(tempDir, 'ipc-api.ts')
+      const outputPath = path.join(tempDir, 'api-generated.ts')
+      const mainBroadcastPath = path.join(tempDir, 'broadcast-generated.ts')
+
+      fs.writeFileSync(
+        inputPath,
+        `
+          export type BroadcastContracts = {
+            Ping: { payload: number }
+          }
+        `,
+        'utf8'
+      )
+
+      processApiConfig({
+        name: 'api',
+        input: inputPath,
+        output: outputPath,
+        contracts: [{ type: 'send', name: 'BroadcastContracts' }],
+        mainBroadcastOutput: mainBroadcastPath,
+      })
+
+      const preloadCode = fs.readFileSync(outputPath, 'utf8')
+      const mainBroadcastCode = fs.readFileSync(mainBroadcastPath, 'utf8')
+
+      expect(preloadCode).toContain('ipcRenderer')
+      expect(preloadCode).not.toContain('mainBroadcast')
+      expect(mainBroadcastCode).toContain('export const mainBroadcast = {')
+      expect(mainBroadcastCode).toContain("import { BrowserWindow } from 'electron'")
+      expect(mainBroadcastCode).not.toContain('ipcRenderer')
+
+      fs.rmSync(tempDir, { recursive: true, force: true })
     })
   })
 

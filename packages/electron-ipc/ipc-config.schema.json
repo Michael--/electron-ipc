@@ -56,6 +56,10 @@
           "reactHooksOutput": {
             "type": "string",
             "description": "Optional: Path where React hooks will be generated"
+          },
+          "mainBroadcastOutput": {
+            "type": "string",
+            "description": "Optional: Path where main process broadcast API will be generated"
           }
         },
         "required": ["name", "input", "output"],

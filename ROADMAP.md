@@ -6,7 +6,7 @@
 
 ### Wichtig (in Reihenfolge)
 
-1. ❌ **Generator-Outputs sauber trennen (Main vs. Preload) + Doku/Schema fixen**  
+1. ✅ **Generator-Outputs sauber trennen (Main vs. Preload) + Doku/Schema fixen**  
    Ziel: `mainBroadcastOutput` offiziell unterstützen (Schema + YAML + Generator), damit Main-Code keinen `ipcRenderer`-Import erhält. Doku anpassen, damit sie die echte API widerspiegelt.  
    Tests: Generator-Snapshots für Main/Preload-Ausgabe; Integrationstest im `test-app`, dass `mainBroadcast` im Main importiert und genutzt werden kann.
 

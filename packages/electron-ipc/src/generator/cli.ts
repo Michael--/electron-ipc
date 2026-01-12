@@ -28,6 +28,7 @@ export function processApiConfig({
   output,
   contracts,
   reactHooksOutput,
+  mainBroadcastOutput,
 }: ProcessApiConfig) {
   const project = new Project()
   const resolvedInputPath = path.resolve(process.cwd(), input)
@@ -35,11 +36,20 @@ export function processApiConfig({
   // Reset output state for this API
   resetOutput()
 
-  const relativePath = path.relative(path.dirname(output), path.dirname(input))
-  const inputFileName = path.basename(input, path.extname(input))
-  const importPath = relativePath
-    ? `${relativePath.replace(/\\/g, '/')}/${inputFileName}`
-    : `./${inputFileName}`
+  const inputFileName = path.basename(resolvedInputPath, path.extname(resolvedInputPath))
+
+  const buildImportPath = (fromPath: string) => {
+    const resolvedFromPath = path.resolve(process.cwd(), fromPath)
+    const relativePath = path.relative(
+      path.dirname(resolvedFromPath),
+      path.dirname(resolvedInputPath)
+    )
+    return relativePath
+      ? `${relativePath.replace(/\\/g, '/')}/${inputFileName}`
+      : `./${inputFileName}`
+  }
+
+  const importPath = buildImportPath(output)
   const apiName = name
 
   const sourceFile = project.addSourceFileAtPath(resolvedInputPath)
@@ -47,25 +57,37 @@ export function processApiConfig({
 
   let code = processContracts(sourceFile, contracts, importPath, apiName)
 
-  // Add main broadcast API if broadcast contracts exist
-  const hasBroadcastContracts = contracts.some((c) => c.type === 'send')
-  if (hasBroadcastContracts) {
-    const broadcastContract = contracts.find((c) => c.type === 'send')
-    if (broadcastContract) {
-      const mainBroadcastCode = generateMainBroadcastApi(
-        broadcastContract.name,
-        importPath,
-        sourceFile
-      )
-      code += '\n\n' + mainBroadcastCode
-    }
-  }
-
   const resolvedOutputPath = path.resolve(process.cwd(), output)
   fs.writeFileSync(resolvedOutputPath, code, 'utf8')
   console.log(
     colors.green(`Generated code written to ${path.relative(process.cwd(), resolvedOutputPath)}`)
   )
+
+  if (mainBroadcastOutput) {
+    const broadcastContract = contracts.find((c) => c.type === 'send')
+    if (!broadcastContract) {
+      console.error(
+        `Error: mainBroadcastOutput requires a broadcast contract ("contracts.send") for API "${name}"`
+      )
+      process.exit(1)
+    }
+    const mainBroadcastImportPath = buildImportPath(mainBroadcastOutput)
+    const mainBroadcastCode = generateMainBroadcastApi(
+      broadcastContract.name,
+      mainBroadcastImportPath,
+      sourceFile
+    )
+    const resolvedMainBroadcastPath = path.resolve(process.cwd(), mainBroadcastOutput)
+    fs.writeFileSync(resolvedMainBroadcastPath, mainBroadcastCode, 'utf8')
+    console.log(
+      colors.green(
+        `Generated main broadcast API written to ${path.relative(
+          process.cwd(),
+          resolvedMainBroadcastPath
+        )}`
+      )
+    )
+  }
 
   // Generate React hooks if requested
   if (reactHooksOutput) {

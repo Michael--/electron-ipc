@@ -174,7 +174,7 @@ apis:
     contracts:
       invoke: InvokeContracts
       event: EventContracts
-      broadcast: BroadcastContracts
+      send: BroadcastContracts
     mainBroadcastOutput: ./src/main/broadcast-generated.ts
 
   - name: streamApi
@@ -268,7 +268,7 @@ console.log('Log:', value)
 ### 5. Implement Handlers in Main
       event: EventContracts
       send: BroadcastContracts
-    broadcastOutput: ./src/main/broadcast-generated.ts
+    mainBroadcastOutput: ./src/main/broadcast-generated.ts
 
   - name: streamApi
     input: ./src/main/ipc-api-stream.ts
@@ -377,7 +377,7 @@ mainBroadcast('Ping', mainWindow, 42)
 mainBroadcast('About', mainWindow, undefined)
 ```
 
-**Note:** The generated broadcast API (`--main-broadcast-output`) is optional but recommended for consistency with the renderer API. Both approaches are type-safe.
+**Note:** The generated broadcast API (`mainBroadcastOutput`) is optional but recommended for consistency with the renderer API. Both approaches are type-safe.
 
 ## CLI Usage
 
@@ -398,12 +398,12 @@ apis:
     contracts:
       invoke: InvokeContracts # Optional: Invoke contract type
       event: EventContracts # Optional: Event contract type
-      broadcast: BroadcastContracts # Optional: Broadcast contract type
+      send: BroadcastContracts # Optional: Broadcast contract type
       streamInvoke: StreamInvokeContracts # Optional: Stream invoke contracts
       streamUpload: StreamUploadContracts # Optional: Stream upload contracts
       streamDownload: StreamDownloadContracts # Optional: Stream download contracts
     mainBroadcastOutput: ./src/main/broadcast-generated.ts # Optional: Main broadcast API
-    reactHooks: true # Optional: Generate React hooks (default: true)
+    reactHooksOutput: ./src/preload/api-react-hooks.ts # Optional: Generated React hooks
 ```
 
 **Note:** At least one contract type must be specified per API. The `mainBroadcastOutput` is optional; if omitted, use the runtime `createBroadcast()` helper instead.

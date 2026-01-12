@@ -11,6 +11,7 @@ apis:
     input: ./src/main/ipc-api.ts
     output: ./dist/ipc-api.ts
     reactHooksOutput: ./dist/ipc-api-react-hooks.ts
+    mainBroadcastOutput: ./dist/ipc-api-main-broadcast.ts
     contracts:
       invoke: InvokeContracts
       event: EventContracts
