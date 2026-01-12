@@ -123,6 +123,7 @@ describe('Stream IPC Contracts', () => {
       TestStreamHandler.register()
 
       expect(ipcMain.handle).toHaveBeenCalledWith('TestStream', expect.any(Function))
+      expect(ipcMain.on).toHaveBeenCalledWith('TestStream-cancel', expect.any(Function))
 
       // Get the registered handler
       const handleCall = (ipcMain.handle as any).mock.calls[0]
@@ -404,6 +405,7 @@ describe('Stream IPC Contracts', () => {
       RegisterDownload.register()
 
       expect(ipcMain.handle).toHaveBeenCalledWith('GetLogs', expect.any(Function))
+      expect(ipcMain.on).toHaveBeenCalledWith('GetLogs-cancel', expect.any(Function))
     })
 
     it('should support multiple data types', () => {

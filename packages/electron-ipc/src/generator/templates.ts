@@ -126,15 +126,24 @@ const invokeStream${contract} = <K extends keyof ${contract}>(
      cleanup()
    }
 
+   let isCleanedUp = false
+
    const cleanup = () => {
+     if (isCleanedUp) return
+     isCleanedUp = true
      ipcRenderer.removeListener(dataChannel, dataHandler)
      ipcRenderer.removeListener(endChannel, endHandler)
      ipcRenderer.removeListener(errorChannel, errorHandler)
      if (options?.signal) options.signal.removeEventListener('abort', handleAbort)
    }
 
-   const handleAbort = () => {
+   const stop = () => {
+     ipcRenderer.send(\`\${channel as string}-cancel\`)
      cleanup()
+   }
+
+   const handleAbort = () => {
+     stop()
    }
 
    ipcRenderer.on(dataChannel, dataHandler)
@@ -143,8 +152,8 @@ const invokeStream${contract} = <K extends keyof ${contract}>(
 
    if (options?.signal) {
      if (options.signal.aborted) {
-       cleanup()
-       return cleanup
+       stop()
+       return stop
      }
      options.signal.addEventListener('abort', handleAbort, { once: true })
    }
@@ -152,7 +161,7 @@ const invokeStream${contract} = <K extends keyof ${contract}>(
    // Start the stream
    ipcRenderer.invoke(channel as string, request)
 
-   return cleanup
+   return stop
 }
 `
 
@@ -223,21 +232,30 @@ const download${contract} = <K extends keyof ${contract}>(
      cleanup()
    }
 
+   let isCleanedUp = false
+
    const cleanup = () => {
+     if (isCleanedUp) return
+     isCleanedUp = true
      ipcRenderer.removeListener(dataChannel, dataHandler)
      ipcRenderer.removeListener(endChannel, endHandler)
      ipcRenderer.removeListener(errorChannel, errorHandler)
      if (options?.signal) options.signal.removeEventListener('abort', handleAbort)
    }
 
-   const handleAbort = () => {
+   const stop = () => {
+     ipcRenderer.send(\`\${channel as string}-cancel\`)
      cleanup()
+   }
+
+   const handleAbort = () => {
+     stop()
    }
 
    if (options?.signal) {
      if (options.signal.aborted) {
-       cleanup()
-       return cleanup
+       stop()
+       return stop
      }
      options.signal.addEventListener('abort', handleAbort, { once: true })
    }
@@ -246,7 +264,7 @@ const download${contract} = <K extends keyof ${contract}>(
    ipcRenderer.on(endChannel, endHandler)
    ipcRenderer.on(errorChannel, errorHandler)
    ipcRenderer.invoke(channel as string, request) // Trigger the download with request
-   return cleanup
+   return stop
 }
 `
 

@@ -237,6 +237,8 @@ export abstract class AbstractRegisterStreamHandler {
    * @private
    */
   private registerHandler() {
+    const activeReaders = new Map<string, ReadableStreamDefaultReader<unknown>>()
+
     for (const [channel, handler] of Object.entries(this.handlers)) {
       ipcMain.handle(channel as string, async (event, args) => {
         const stream = handler(event, args)
@@ -245,6 +247,16 @@ export abstract class AbstractRegisterStreamHandler {
         if (typeof stream.getReader === 'function') {
           // Web Streams API
           const reader = stream.getReader()
+          const key = `${event.sender.id}:${channel}`
+          const existingReader = activeReaders.get(key)
+          if (existingReader) {
+            try {
+              await existingReader.cancel()
+            } catch {
+              // Ignore cancel errors
+            }
+          }
+          activeReaders.set(key, reader)
           try {
             // eslint-disable-next-line no-constant-condition
             while (true) {
@@ -256,6 +268,7 @@ export abstract class AbstractRegisterStreamHandler {
           } catch (err) {
             event.sender.send(`${channel}-error`, err)
           } finally {
+            activeReaders.delete(key)
             reader.releaseLock()
           }
         } else {
@@ -264,6 +277,19 @@ export abstract class AbstractRegisterStreamHandler {
             `${channel}-error`,
             new Error('Handler must return a Web Streams API ReadableStream')
           )
+        }
+      })
+
+      ipcMain.on(`${channel}-cancel`, async (event) => {
+        const key = `${event.sender.id}:${channel}`
+        const reader = activeReaders.get(key)
+        if (!reader) return
+        try {
+          await reader.cancel()
+        } catch {
+          // Ignore cancel errors
+        } finally {
+          activeReaders.delete(key)
         }
       })
     }

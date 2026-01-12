@@ -7,6 +7,7 @@ interface StreamDownloadUIProps {
   logLevel: 'info' | 'warn' | 'error'
   onLevelChange: (level: 'info' | 'warn' | 'error') => void
   onStartDownload: () => void
+  onStopDownload?: () => void
 }
 
 /**
@@ -21,6 +22,7 @@ export function StreamDownloadUI({
   logLevel,
   onLevelChange,
   onStartDownload,
+  onStopDownload,
 }: StreamDownloadUIProps) {
   const outputRef = useRef<HTMLDivElement>(null)
 
@@ -45,6 +47,7 @@ export function StreamDownloadUI({
         <button onClick={onStartDownload} disabled={isDownloading}>
           {isDownloading ? 'Downloading...' : 'Start Download'}
         </button>
+        {isDownloading && onStopDownload && <button onClick={onStopDownload}>Stop</button>}
       </div>
       {error && <div className="demo-error">Error: {error}</div>}
       <div className="demo-result stream-output" ref={outputRef}>

@@ -12,7 +12,8 @@ export function VideoStreamHooks() {
   const [selectedVideo, setSelectedVideo] = useState<string>(
     'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
   )
-  const { data, loading, error, isComplete, download } = useStreamDownloadContracts('StreamVideo')
+  const { data, loading, error, isComplete, download, cancel } =
+    useStreamDownloadContracts('StreamVideo')
 
   const handleStartStream = () => {
     if (videoUrl) {
@@ -57,6 +58,7 @@ export function VideoStreamHooks() {
       selectedVideo={selectedVideo}
       onVideoChange={setSelectedVideo}
       onStartStream={handleStartStream}
+      onStopStream={cancel}
     />
   )
 }

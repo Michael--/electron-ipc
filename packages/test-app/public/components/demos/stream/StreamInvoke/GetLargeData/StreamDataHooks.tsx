@@ -6,7 +6,7 @@ import { StreamDataUI } from './StreamDataUI'
  * @returns Hooks-based StreamData component
  */
 export function StreamDataHooks() {
-  const { data, loading, error, invoke } = useStreamInvokeContracts('GetLargeData')
+  const { data, loading, error, invoke, cancel } = useStreamInvokeContracts('GetLargeData')
 
   const handleStartStream = () => {
     invoke({ id: 'demo-stream' })
@@ -18,6 +18,7 @@ export function StreamDataHooks() {
       isStreaming={loading}
       error={error?.message || null}
       onStartStream={handleStartStream}
+      onStopStream={cancel}
     />
   )
 }

@@ -5,6 +5,7 @@ interface StreamDataUIProps {
   isStreaming: boolean
   error: string | null
   onStartStream: () => void
+  onStopStream?: () => void
 }
 
 /**
@@ -12,7 +13,13 @@ interface StreamDataUIProps {
  * @param props - UI properties
  * @returns StreamData UI component
  */
-export function StreamDataUI({ messages, isStreaming, error, onStartStream }: StreamDataUIProps) {
+export function StreamDataUI({
+  messages,
+  isStreaming,
+  error,
+  onStartStream,
+  onStopStream,
+}: StreamDataUIProps) {
   const outputRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -27,6 +34,7 @@ export function StreamDataUI({ messages, isStreaming, error, onStartStream }: St
         <button onClick={onStartStream} disabled={isStreaming}>
           {isStreaming ? 'Streaming...' : 'Start Stream'}
         </button>
+        {isStreaming && onStopStream && <button onClick={onStopStream}>Stop</button>}
       </div>
       {error && <div className="demo-error">Error: {error}</div>}
       <div className="demo-result stream-output" ref={outputRef}>

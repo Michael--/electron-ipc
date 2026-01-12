@@ -8,7 +8,7 @@ import { StreamDownloadUI } from './StreamDownloadUI'
  */
 export function StreamDownloadHooks() {
   const [logLevel, setLogLevel] = useState<'info' | 'warn' | 'error'>('info')
-  const { data, loading, error, download } = useStreamDownloadContracts('DownloadLogs')
+  const { data, loading, error, download, cancel } = useStreamDownloadContracts('DownloadLogs')
 
   const handleStartDownload = () => {
     download({ level: logLevel })
@@ -22,6 +22,7 @@ export function StreamDownloadHooks() {
       logLevel={logLevel}
       onLevelChange={setLogLevel}
       onStartDownload={handleStartDownload}
+      onStopDownload={cancel}
     />
   )
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { VideoStreamUI } from './VideoStreamUI'
 
 /**
@@ -13,6 +13,7 @@ export function VideoStreamNative() {
   const [selectedVideo, setSelectedVideo] = useState<string>(
     'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
   )
+  const stopRef = useRef<(() => void) | null>(null)
 
   const handleStartStream = () => {
     if (videoUrl) {
@@ -27,7 +28,8 @@ export function VideoStreamNative() {
     const chunks: Uint8Array[] = []
     let totalBytes = 0
 
-    window.streamApi.downloadStreamVideo(
+    stopRef.current?.()
+    stopRef.current = window.streamApi.downloadStreamVideo(
       { url: selectedVideo },
       (chunk: Uint8Array) => {
         chunks.push(chunk)
@@ -42,16 +44,25 @@ export function VideoStreamNative() {
           setVideoUrl(url)
           setProgress(`Complete: ${(totalBytes / 1024 / 1024).toFixed(2)} MB - Ready to play!`)
           setIsStreaming(false)
+          stopRef.current = null
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Failed to create video')
           setIsStreaming(false)
+          stopRef.current = null
         }
       },
       (err: Error) => {
         setError(err.message)
         setIsStreaming(false)
+        stopRef.current = null
       }
     )
+  }
+
+  const handleStopStream = () => {
+    stopRef.current?.()
+    stopRef.current = null
+    setIsStreaming(false)
   }
 
   return (
@@ -63,6 +74,7 @@ export function VideoStreamNative() {
       selectedVideo={selectedVideo}
       onVideoChange={setSelectedVideo}
       onStartStream={handleStartStream}
+      onStopStream={handleStopStream}
     />
   )
 }

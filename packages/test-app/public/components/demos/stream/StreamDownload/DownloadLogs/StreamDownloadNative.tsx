@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { StreamDownloadUI } from './StreamDownloadUI'
 
 /**
@@ -10,25 +10,35 @@ export function StreamDownloadNative() {
   const [isDownloading, setIsDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [logLevel, setLogLevel] = useState<'info' | 'warn' | 'error'>('info')
+  const stopRef = useRef<(() => void) | null>(null)
 
   const handleStartDownload = () => {
     setLogs([])
     setError(null)
     setIsDownloading(true)
 
-    window.streamApi.downloadDownloadLogs(
+    stopRef.current?.()
+    stopRef.current = window.streamApi.downloadDownloadLogs(
       { level: logLevel },
       (logEntry: string) => {
         setLogs((prev) => [...prev, logEntry])
       },
       () => {
         setIsDownloading(false)
+        stopRef.current = null
       },
       (err: Error) => {
         setError(err.message)
         setIsDownloading(false)
+        stopRef.current = null
       }
     )
+  }
+
+  const handleStopDownload = () => {
+    stopRef.current?.()
+    stopRef.current = null
+    setIsDownloading(false)
   }
 
   return (
@@ -39,6 +49,7 @@ export function StreamDownloadNative() {
       logLevel={logLevel}
       onLevelChange={setLogLevel}
       onStartDownload={handleStartDownload}
+      onStopDownload={handleStopDownload}
     />
   )
 }

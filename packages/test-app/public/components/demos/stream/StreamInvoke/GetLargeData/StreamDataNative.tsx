@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { StreamDataUI } from './StreamDataUI'
 
 /**
@@ -9,13 +9,15 @@ export function StreamDataNative() {
   const [messages, setMessages] = useState<string[]>([])
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const stopRef = useRef<(() => void) | null>(null)
 
   const handleStartStream = () => {
     setMessages([])
     setError(null)
     setIsStreaming(true)
 
-    window.streamApi.invokeStreamGetLargeData(
+    stopRef.current?.()
+    stopRef.current = window.streamApi.invokeStreamGetLargeData(
       { id: 'demo-stream' },
       {
         onData: (chunk) => {
@@ -23,13 +25,21 @@ export function StreamDataNative() {
         },
         onEnd: () => {
           setIsStreaming(false)
+          stopRef.current = null
         },
         onError: (err) => {
           setError(err.message)
           setIsStreaming(false)
+          stopRef.current = null
         },
       }
     )
+  }
+
+  const handleStopStream = () => {
+    stopRef.current?.()
+    stopRef.current = null
+    setIsStreaming(false)
   }
 
   return (
@@ -38,6 +48,7 @@ export function StreamDataNative() {
       isStreaming={isStreaming}
       error={error}
       onStartStream={handleStartStream}
+      onStopStream={handleStopStream}
     />
   )
 }

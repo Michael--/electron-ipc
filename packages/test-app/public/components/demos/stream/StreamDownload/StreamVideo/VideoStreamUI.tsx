@@ -8,6 +8,7 @@ interface VideoStreamUIProps {
   selectedVideo: string
   onVideoChange: (url: string) => void
   onStartStream: () => void
+  onStopStream?: () => void
 }
 
 /**
@@ -23,6 +24,7 @@ export function VideoStreamUI({
   selectedVideo,
   onVideoChange,
   onStartStream,
+  onStopStream,
 }: VideoStreamUIProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -47,6 +49,7 @@ export function VideoStreamUI({
         <button onClick={onStartStream} disabled={isStreaming}>
           {isStreaming ? 'Downloading...' : 'Stream Video'}
         </button>
+        {isStreaming && onStopStream && <button onClick={onStopStream}>Stop</button>}
       </div>
       {error && <div className="demo-error">Error: {error}</div>}
       {progress && <div className="demo-result">{progress}</div>}
