@@ -371,6 +371,52 @@ class RegisterStreamDownload extends AbstractRegisterStreamDownload {
 }
 ```
 
+**Optional: runtime validation helpers**
+
+If you want runtime checks (Zod/Valibot/etc.), wrap handlers with validators. This keeps your contracts unchanged, but fails fast when payloads do not match. The helpers are validator-agnostic; any function that returns `{ success, data }` works.
+
+```typescript
+import { z } from 'zod'
+import {
+  defineInvokeHandlers,
+  validatorFromSafeParse,
+  withInvokeValidation,
+} from '@number10/electron-ipc'
+
+const requestValidator = validatorFromSafeParse(
+  z.object({ a: z.number(), b: z.number() }).safeParse
+)
+const responseValidator = validatorFromSafeParse(z.number().safeParse)
+
+const invokeHandlers = defineInvokeHandlers<InvokeContracts>({
+  AddNumbers: withInvokeValidation(
+    { request: requestValidator, response: responseValidator },
+    async (_event, { a, b }) => a + b
+  ),
+})
+```
+
+```typescript
+import { defineStreamUploadHandlers, withStreamUploadValidation } from '@number10/electron-ipc'
+
+const uploadHandlers = defineStreamUploadHandlers<StreamUploadContracts>({
+  UploadFile: withStreamUploadValidation(
+    { request: requestValidator, data: validatorFromSafeParse(z.instanceof(Uint8Array).safeParse) },
+    (_request, onData, onEnd, onError) => {
+      onError((err) => console.error(err))
+      onData((chunk) => {
+        // Handle validated chunks
+      })
+      onEnd(() => {
+        // Finalize upload
+      })
+    }
+  ),
+})
+```
+
+**Note:** For stream invoke/download handlers, pass `{ data: validator }` to validate each stream chunk.
+
 **Sending broadcasts from main to renderer:**
 
 Use the generated broadcast API to send events to the renderer process:

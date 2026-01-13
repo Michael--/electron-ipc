@@ -1,3 +1,10 @@
+## [Unreleased]
+
+### Added
+
+- Runtime validation helpers for invoke/event/stream handlers (validator adapters + stream chunk validation)
+- Tests and documentation examples for runtime validation helpers
+
 ## [2.0.0] - 2025-11-11
 
 ### 🚨 Breaking Changes

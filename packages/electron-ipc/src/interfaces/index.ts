@@ -13,6 +13,7 @@ export * from './broadcast-contracts'
 export * from './event-contracts'
 export * from './invoke-contracts'
 export * from './stream-contracts'
+export * from './validation'
 
 // Export combined IPC contracts (for backwards compatibility)
 export * from './ipc-contracts'

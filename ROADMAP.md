@@ -40,9 +40,9 @@
    Ziel: Auto-Generation im Dev-Server + on-save.  
    Tests: Plugin-Smoketest mit minimalem Vite-Projekt.
 
-2. ❌ **Runtime-Validation (Zod/Valibot optional)**  
+2. ✅ **Runtime-Validation (Zod/Valibot optional)**  
    Ziel: Optionales Validieren von Requests/Responses zur Fehlerdiagnose.  
-   Tests: Contract-Validation Unit-Tests + Generator-Optionen.
+   Tests: Validation-Helper Unit-Tests.
 
 3. ❌ **Typed Main-Handler Stubs generieren**  
    Ziel: Generator erstellt Handler-Stubs für Main (Invoke/Event/Stream) als Startpunkt.  
