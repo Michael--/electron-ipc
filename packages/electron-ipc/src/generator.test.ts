@@ -2,12 +2,13 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { Project } from 'ts-morph'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { processApiConfig } from './generator/cli'
 import { generateMainBroadcastApi, processContracts } from './generator/generate-api'
 
 describe('generate-api', () => {
   const project = new Project()
+  const suppressConsoleError = () => vi.spyOn(console, 'error').mockImplementation(() => {})
 
   describe('processContracts', () => {
     it('should generate API for invoke contracts', () => {
@@ -110,6 +111,7 @@ describe('generate-api', () => {
     })
 
     it('should throw error for unknown contract type', () => {
+      const errorSpy = suppressConsoleError()
       const sourceCode = `
         export type TestContracts = {
           test: {
@@ -121,15 +123,24 @@ describe('generate-api', () => {
       const sourceFile = project.createSourceFile('test5.ts', sourceCode)
       const contracts = [{ type: 'invalid' as 'invoke' | 'event' | 'send', name: 'TestContracts' }]
 
-      expect(() => processContracts(sourceFile, contracts, './ipc-api')).toThrow()
+      try {
+        expect(() => processContracts(sourceFile, contracts, './ipc-api')).toThrow()
+      } finally {
+        errorSpy.mockRestore()
+      }
     })
 
     it('should throw error when contract not found', () => {
+      const errorSpy = suppressConsoleError()
       const sourceCode = `export type OtherContracts = {}`
       const sourceFile = project.createSourceFile('test6.ts', sourceCode)
       const contracts = [{ type: 'invoke' as const, name: 'NonExistentContracts' }]
 
-      expect(() => processContracts(sourceFile, contracts, './ipc-api')).toThrow()
+      try {
+        expect(() => processContracts(sourceFile, contracts, './ipc-api')).toThrow()
+      } finally {
+        errorSpy.mockRestore()
+      }
     })
   })
 
@@ -215,6 +226,7 @@ describe('generate-api', () => {
     })
 
     it('should report mismatches in check mode without writing outputs', () => {
+      const errorSpy = suppressConsoleError()
       const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'electron-ipc-'))
       const inputPath = path.join(tempDir, 'ipc-api.ts')
       const outputPath = path.join(tempDir, 'api-generated.ts')
@@ -229,18 +241,22 @@ describe('generate-api', () => {
         'utf8'
       )
 
-      const result = processApiConfig(
-        {
-          name: 'api',
-          input: inputPath,
-          output: outputPath,
-          contracts: [{ type: 'invoke', name: 'InvokeContracts' }],
-        },
-        { mode: 'check' }
-      )
+      try {
+        const result = processApiConfig(
+          {
+            name: 'api',
+            input: inputPath,
+            output: outputPath,
+            contracts: [{ type: 'invoke', name: 'InvokeContracts' }],
+          },
+          { mode: 'check' }
+        )
 
-      expect(result.matched).toBe(false)
-      expect(fs.existsSync(outputPath)).toBe(false)
+        expect(result.matched).toBe(false)
+        expect(fs.existsSync(outputPath)).toBe(false)
+      } finally {
+        errorSpy.mockRestore()
+      }
 
       fs.rmSync(tempDir, { recursive: true, force: true })
     })
