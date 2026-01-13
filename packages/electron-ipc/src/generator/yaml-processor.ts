@@ -9,6 +9,7 @@ type ProcessMode = 'write' | 'check'
 
 type ProcessOptions = {
   mode?: ProcessMode
+  cwd?: string
 }
 
 type ProcessResult = {
@@ -20,7 +21,8 @@ type ProcessResult = {
  * Processes YAML configuration file
  */
 export function processYamlConfig(configPath: string, options: ProcessOptions = {}): ProcessResult {
-  const resolvedConfigPath = path.resolve(process.cwd(), configPath)
+  const baseDir = options.cwd ?? process.cwd()
+  const resolvedConfigPath = path.resolve(baseDir, configPath)
 
   if (!fs.existsSync(resolvedConfigPath)) {
     console.error(`Error: Config file not found: ${resolvedConfigPath}`)
@@ -75,7 +77,7 @@ export function processYamlConfig(configPath: string, options: ProcessOptions = 
         reactHooksOutput: api.reactHooksOutput,
         mainBroadcastOutput: api.mainBroadcastOutput,
       },
-      { mode: options.mode }
+      { mode: options.mode, cwd: baseDir }
     )
 
     if (!result.matched) matched = false

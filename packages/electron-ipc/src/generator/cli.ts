@@ -21,6 +21,11 @@ type ProcessResult = {
   watchFiles: string[]
 }
 
+type ProcessOptions = {
+  mode?: ProcessMode
+  cwd?: string
+}
+
 /**
  * Prints CLI usage instructions
  */
@@ -35,31 +40,25 @@ function printUsage() {
   console.log(`  electron-ipc-generate --config=./ipc-config.yaml`)
 }
 
-function writeOutputs(outputs: OutputArtifact[]) {
+function writeOutputs(outputs: OutputArtifact[], baseDir: string) {
   outputs.forEach(({ outputPath, code, label }) => {
     fs.writeFileSync(outputPath, code, 'utf8')
-    console.log(
-      colors.green(`Generated ${label} written to ${path.relative(process.cwd(), outputPath)}`)
-    )
+    console.log(colors.green(`Generated ${label} written to ${path.relative(baseDir, outputPath)}`))
   })
 }
 
-function checkOutputs(outputs: OutputArtifact[]) {
+function checkOutputs(outputs: OutputArtifact[], baseDir: string) {
   let matched = true
 
   outputs.forEach(({ outputPath, code, label }) => {
     if (!fs.existsSync(outputPath)) {
-      console.error(
-        colors.red(`Missing ${label} output: ${path.relative(process.cwd(), outputPath)}`)
-      )
+      console.error(colors.red(`Missing ${label} output: ${path.relative(baseDir, outputPath)}`))
       matched = false
       return
     }
     const existing = fs.readFileSync(outputPath, 'utf8')
     if (existing !== code) {
-      console.error(
-        colors.red(`Outdated ${label} output: ${path.relative(process.cwd(), outputPath)}`)
-      )
+      console.error(colors.red(`Outdated ${label} output: ${path.relative(baseDir, outputPath)}`))
       matched = false
     }
   })
@@ -74,13 +73,14 @@ function checkOutputs(outputs: OutputArtifact[]) {
 function buildOutputs(
   config: ProcessApiConfig,
   sourceFile: ReturnType<Project['addSourceFileAtPath']>,
-  buildImportPath: (fromPath: string) => string
+  buildImportPath: (fromPath: string) => string,
+  baseDir: string
 ): OutputArtifact[] {
   const importPath = buildImportPath(config.output)
   const apiName = config.name
 
   const outputs: OutputArtifact[] = []
-  const resolvedOutputPath = path.resolve(process.cwd(), config.output)
+  const resolvedOutputPath = path.resolve(baseDir, config.output)
 
   const apiCode = processContracts(sourceFile, config.contracts, importPath, apiName)
   outputs.push({ outputPath: resolvedOutputPath, code: apiCode, label: 'API code' })
@@ -99,7 +99,7 @@ function buildOutputs(
       mainBroadcastImportPath,
       sourceFile
     )
-    const resolvedMainBroadcastPath = path.resolve(process.cwd(), config.mainBroadcastOutput)
+    const resolvedMainBroadcastPath = path.resolve(baseDir, config.mainBroadcastOutput)
     outputs.push({
       outputPath: resolvedMainBroadcastPath,
       code: mainBroadcastCode,
@@ -109,7 +109,7 @@ function buildOutputs(
 
   if (config.reactHooksOutput) {
     const reactHooksCode = generateReactHooks(config.contracts, importPath, sourceFile, apiName)
-    const resolvedReactHooksPath = path.resolve(process.cwd(), config.reactHooksOutput)
+    const resolvedReactHooksPath = path.resolve(baseDir, config.reactHooksOutput)
     outputs.push({
       outputPath: resolvedReactHooksPath,
       code: reactHooksCode,
@@ -133,13 +133,14 @@ export function processApiConfig(
     reactHooksOutput,
     mainBroadcastOutput,
   }: ProcessApiConfig,
-  options: { mode?: ProcessMode } = {}
+  options: ProcessOptions = {}
 ): ProcessResult {
-  const resolvedInputPath = path.resolve(process.cwd(), input)
+  const baseDir = options.cwd ?? process.cwd()
+  const resolvedInputPath = path.resolve(baseDir, input)
 
   const resolveTsconfigPath = () => {
     if (tsconfig) {
-      const resolved = path.resolve(process.cwd(), tsconfig)
+      const resolved = path.resolve(baseDir, tsconfig)
       if (!fs.existsSync(resolved)) {
         console.error(`Error: tsconfig file not found: ${resolved}`)
         process.exit(1)
@@ -170,7 +171,7 @@ export function processApiConfig(
   const inputFileName = path.basename(resolvedInputPath, path.extname(resolvedInputPath))
 
   const buildImportPath = (fromPath: string) => {
-    const resolvedFromPath = path.resolve(process.cwd(), fromPath)
+    const resolvedFromPath = path.resolve(baseDir, fromPath)
     const relativePath = path.relative(
       path.dirname(resolvedFromPath),
       path.dirname(resolvedInputPath)
@@ -182,7 +183,7 @@ export function processApiConfig(
 
   const sourceFile = project.addSourceFileAtPath(resolvedInputPath)
   project.resolveSourceFileDependencies()
-  console.log(colors.green(`Read ${path.relative(process.cwd(), resolvedInputPath)}`))
+  console.log(colors.green(`Read ${path.relative(baseDir, resolvedInputPath)}`))
 
   const outputs = buildOutputs(
     {
@@ -195,10 +196,14 @@ export function processApiConfig(
       mainBroadcastOutput,
     },
     sourceFile,
-    buildImportPath
+    buildImportPath,
+    baseDir
   )
 
-  const matched = options.mode === 'check' ? checkOutputs(outputs) : (writeOutputs(outputs), true)
+  const matched =
+    options.mode === 'check'
+      ? checkOutputs(outputs, baseDir)
+      : (writeOutputs(outputs, baseDir), true)
 
   const watchFiles = project.getSourceFiles().map((file) => file.getFilePath().toString())
   if (tsconfigPath) watchFiles.push(tsconfigPath)
@@ -240,7 +245,10 @@ export function main() {
       return
     }
 
-    const result = processYamlConfig(configPath, { mode: checkMode ? 'check' : 'write' })
+    const result = processYamlConfig(configPath, {
+      mode: checkMode ? 'check' : 'write',
+      cwd: process.cwd(),
+    })
     if (checkMode && !result.matched) {
       process.exit(1)
     }
@@ -286,7 +294,7 @@ function runWatch(configPath: string) {
   const runOnce = () => {
     cleanupWatchers()
     console.log(colors.cyan('Regenerating IPC API...'))
-    const result = processYamlConfig(resolvedConfigPath, { mode: 'write' })
+    const result = processYamlConfig(resolvedConfigPath, { mode: 'write', cwd: process.cwd() })
 
     const watchSet = new Set<string>([resolvedConfigPath])
     result.watchFiles.forEach((file) => watchSet.add(file))
