@@ -361,9 +361,9 @@ class RegisterStreamUpload extends AbstractRegisterStreamUpload {
 // Implement stream download handlers (main → renderer)
 class RegisterStreamDownload extends AbstractRegisterStreamDownload {
   handlers: IPCStreamDownloadHandlerType<StreamDownloadContracts> = {
-    DownloadLogs: async (_event, { since }) => {
+    DownloadLogs: async (_event, { sinceMs }) => {
       // Return a ReadableStream for logs
-      return createLogStream(since)
+      return createLogStream(sinceMs)
     },
   }
 }
@@ -418,6 +418,12 @@ apis:
 ```
 
 **Note:** At least one contract type must be specified per API. The `mainBroadcastOutput` is optional; if omitted, use the runtime `createBroadcast()` helper instead.
+
+## Examples & Templates
+
+- `docs/examples/electron-vite.md`
+- `docs/examples/electron-forge.md`
+- `packages/electron-ipc/templates/basic/`
 
 ## Benefits
 

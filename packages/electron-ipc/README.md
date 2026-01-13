@@ -318,9 +318,9 @@ class RegisterStreamUpload extends AbstractRegisterStreamUpload {
 // Implement stream download handlers (main → renderer)
 class RegisterStreamDownload extends AbstractRegisterStreamDownload {
   handlers: IPCStreamDownloadHandlerType<StreamDownloadContracts> = {
-    DownloadLogs: async (_event, { since }) => {
+    DownloadLogs: async (_event, { sinceMs }) => {
       // Return a ReadableStream for logs
-      return createLogStream(since)
+      return createLogStream(sinceMs)
     },
   }
 }
@@ -457,6 +457,12 @@ For detailed documentation, architecture, and advanced usage, see:
 
 - [📚 Complete Documentation](https://github.com/Michael--/electron-ipc/tree/main/docs) - Comprehensive guide with examples and best practices
 - [🏗️ Architecture Guide](https://github.com/Michael--/electron-ipc/blob/main/docs/ARCHITECTURE.md) - Technical details about the code generator design
+
+## Examples & Templates
+
+- `docs/examples/electron-vite.md`
+- `docs/examples/electron-forge.md`
+- `packages/electron-ipc/templates/basic/`
 
 ## Migration from v1.x
 

@@ -30,7 +30,7 @@
    Ziel: `--watch` (inkrementell) und `--check` (nur Validierung) für CI/Pre-Commit.  
    Tests: CLI-Tests für Argumente, Watch-Mode-Smoketest.
 
-7. ❌ **Integration-Examples & Templates**  
+7. ✅ **Integration-Examples & Templates**  
    Ziel: Offizielle Beispiele für electron-vite + electron-forge, plus `init`/template (Contracts, YAML, Preload, Window typings).  
    Tests: E2E-Smoke-Checks der Examples (Build + Start).
 

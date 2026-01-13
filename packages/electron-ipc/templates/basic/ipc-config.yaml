@@ -1,0 +1,14 @@
+# IPC Generator Configuration (template)
+
+apis:
+  - name: api
+    input: ./src/main/ipc-api.ts
+    output: ./src/preload/ipc-api.generated.ts
+    reactHooksOutput: ./src/renderer/ipc-api.hooks.ts
+    mainBroadcastOutput: ./src/main/ipc-broadcast.generated.ts
+    tsconfig: ./tsconfig.json
+    contracts:
+      invoke: InvokeContracts
+      event: EventContracts
+      send: BroadcastContracts
+      streamDownload: StreamDownloadContracts
