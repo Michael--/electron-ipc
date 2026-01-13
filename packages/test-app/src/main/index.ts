@@ -11,11 +11,11 @@ import {
   AbstractRegisterStreamDownload,
   AbstractRegisterStreamHandler,
   AbstractRegisterStreamUpload,
-  IPCEventType,
-  IPCHandlerType,
-  IPCStreamDownloadHandlerType,
-  IPCStreamHandlerType,
-  IPCStreamUploadHandlerType,
+  defineEventHandlers,
+  defineInvokeHandlers,
+  defineStreamDownloadHandlers,
+  defineStreamInvokeHandlers,
+  defineStreamUploadHandlers,
 } from '@number10/electron-ipc'
 import { app, BrowserWindow } from 'electron'
 import * as fs from 'fs'
@@ -33,7 +33,7 @@ function initializeEventHandler() {
 
   // implement all handler
   class RegisterHandler extends AbstractRegisterHandler {
-    handlers: IPCHandlerType<InvokeContracts> = {
+    handlers = defineInvokeHandlers<InvokeContracts>({
       AddNumbers: async (_event, v) => {
         // console.log(`AddNumbers: ${v.a} + ${v.b}`)
         return v.a + v.b
@@ -54,12 +54,12 @@ function initializeEventHandler() {
           }
         }
       },
-    }
+    })
   }
 
   // implement all events
   class RegisterEvent extends AbstractRegisterEvent {
-    events: IPCEventType<EventContracts> = {
+    events = defineEventHandlers<EventContracts>({
       Quit: (_event, _v) => {
         console.warn(`Quit`)
         app.quit()
@@ -72,12 +72,12 @@ function initializeEventHandler() {
         // eslint-disable-next-line no-console
         else console.log(`[Renderer] ${v.message}`)
       },
-    }
+    })
   }
 
   // implement stream handlers
   class RegisterStreamHandler extends AbstractRegisterStreamHandler {
-    handlers: IPCStreamHandlerType<StreamInvokeContracts> = {
+    handlers = defineStreamInvokeHandlers<StreamInvokeContracts>({
       GetLargeData: (_event, request) => {
         // Use globalThis.ReadableStream for Web Streams API compatibility
         return new globalThis.ReadableStream({
@@ -95,12 +95,12 @@ function initializeEventHandler() {
           },
         })
       },
-    }
+    })
   }
 
   // implement stream upload handlers (Renderer → Main)
   class RegisterStreamUpload extends AbstractRegisterStreamUpload {
-    handlers: IPCStreamUploadHandlerType<StreamUploadContracts> = {
+    handlers = defineStreamUploadHandlers<StreamUploadContracts>({
       UploadFile: (request, onData, onEnd, onError) => {
         // eslint-disable-next-line no-console
         console.log(`[Upload] Started receiving file: ${request.fileName}`)
@@ -124,12 +124,12 @@ function initializeEventHandler() {
           console.error('[Upload] Error:', err)
         })
       },
-    }
+    })
   }
 
   // implement stream download handlers (Main → Renderer)
   class RegisterStreamDownload extends AbstractRegisterStreamDownload {
-    handlers: IPCStreamDownloadHandlerType<StreamDownloadContracts> = {
+    handlers = defineStreamDownloadHandlers<StreamDownloadContracts>({
       DownloadLogs: (request) => {
         const level = request.level || 'info'
         // eslint-disable-next-line no-console
@@ -230,7 +230,7 @@ function initializeEventHandler() {
           },
         })
       },
-    }
+    })
   }
 
   // register handler and events
