@@ -125,6 +125,15 @@ export type IPCHandlerType<T extends GenericInvokeContract<T>> = {
 }
 
 /**
+ * Helper to define invoke handlers with full type checking.
+ */
+export function defineInvokeHandlers<T extends GenericInvokeContract<T>>(
+  handlers: IPCHandlerType<T>
+): IPCHandlerType<T> {
+  return handlers
+}
+
+/**
  * Defines a handler type for IPC stream invocation communication, returning a ReadableStream.
  *
  * @type {IPCStreamHandler}
@@ -144,6 +153,15 @@ type IPCStreamHandler<T extends GenericStreamInvokeContract<T>, K extends keyof 
  */
 export type IPCStreamHandlerType<T extends GenericStreamInvokeContract<T>> = {
   [K in keyof T]: IPCStreamHandler<T, K>
+}
+
+/**
+ * Helper to define stream invoke handlers with full type checking.
+ */
+export function defineStreamInvokeHandlers<T extends GenericStreamInvokeContract<T>>(
+  handlers: IPCStreamHandlerType<T>
+): IPCStreamHandlerType<T> {
+  return handlers
 }
 
 /**

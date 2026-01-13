@@ -375,6 +375,44 @@ RegisterStreamHandler.register()
 RegisterStreamUpload.register()
 RegisterStreamDownload.register()
 
+**Optional: typed handler helpers**
+
+You can keep handlers in plain objects and still get full typing:
+
+```typescript
+import {
+  defineEventHandlers,
+  defineInvokeHandlers,
+  defineStreamDownloadHandlers,
+} from '@number10/electron-ipc'
+
+const invokeHandlers = defineInvokeHandlers<InvokeContracts>({
+  AddNumbers: async (_event, params) => params.a + params.b,
+  GetVersion: async () => app.getVersion(),
+})
+
+const eventHandlers = defineEventHandlers<EventContracts>({
+  Quit: () => app.quit(),
+  LogMessage: (_event, message) => console.log(message),
+})
+
+const downloadHandlers = defineStreamDownloadHandlers<StreamDownloadContracts>({
+  DownloadLogs: async (_event, { sinceMs }) => createLogStream(sinceMs),
+})
+
+class RegisterHandler extends AbstractRegisterHandler {
+  handlers = invokeHandlers
+}
+
+class RegisterEvent extends AbstractRegisterEvent {
+  events = eventHandlers
+}
+
+class RegisterStreamDownload extends AbstractRegisterStreamDownload {
+  handlers = downloadHandlers
+}
+```
+
 // Option 1: Use generated main broadcast API (recommended)
 import { mainBroadcast } from './broadcast-generated'
 mainBroadcast.Ping(mainWindow, 42) // with payload

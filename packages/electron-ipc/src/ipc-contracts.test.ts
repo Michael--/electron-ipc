@@ -5,14 +5,20 @@ import {
   AbstractRegisterEvent,
   AbstractRegisterHandler,
   createBroadcast,
+  defineEventHandlers,
+  defineInvokeHandlers,
+  defineStreamDownloadHandlers,
   GenericBroadcastContract,
   GenericInvokeContract,
   GenericRendererEventContract,
+  GenericStreamDownloadContract,
   IBroadcastContract,
   IInvokeContract,
   IPCEventType,
   IPCHandlerType,
+  IPCStreamDownloadHandlerType,
   IRendererEventContract,
+  IStreamDownloadContract,
 } from './interfaces/ipc-contracts'
 
 // Mock Electron APIs
@@ -164,6 +170,56 @@ describe('IPC Contracts', () => {
 
       expect(contracts.Broadcast1.payload).toBe(75)
       expect(contracts.Broadcast2.payload).toEqual({ status: 'processing', progress: 75 })
+    })
+  })
+
+  describe('Handler Helpers', () => {
+    it('should return invoke handlers unchanged', () => {
+      type TestInvokeContract = GenericInvokeContract<{
+        TestInvoke: IInvokeContract<{ id: string }, string>
+      }>
+
+      const handlers: IPCHandlerType<TestInvokeContract> = {
+        TestInvoke: async (_event, request) => `ok:${request.id}`,
+      }
+
+      const result = defineInvokeHandlers<TestInvokeContract>(handlers)
+      expect(result).toBe(handlers)
+    })
+
+    it('should return event handlers unchanged', () => {
+      type TestEventContract = GenericRendererEventContract<{
+        TestEvent: IRendererEventContract<string>
+      }>
+
+      const handlers: IPCEventType<TestEventContract> = {
+        TestEvent: (_event, payload) => {
+          void payload
+        },
+      }
+
+      const result = defineEventHandlers<TestEventContract>(handlers)
+      expect(result).toBe(handlers)
+    })
+
+    it('should return stream download handlers unchanged', () => {
+      type TestDownloadContract = GenericStreamDownloadContract<{
+        DownloadLogs: IStreamDownloadContract<{ sinceMs: number }, string>
+      }>
+
+      const handlers: IPCStreamDownloadHandlerType<TestDownloadContract> = {
+        DownloadLogs: async () => {
+          return new globalThis.ReadableStream({
+            start(controller) {
+              controller.enqueue('ok')
+              controller.close()
+            },
+          })
+        },
+      }
+
+      const result = defineStreamDownloadHandlers<TestDownloadContract>(handlers)
+      expect(result).toBe(handlers)
     })
   })
 

@@ -136,6 +136,15 @@ export type IPCStreamUploadHandlerType<T extends GenericStreamUploadContract<T>>
 }
 
 /**
+ * Helper to define stream upload handlers with full type checking.
+ */
+export function defineStreamUploadHandlers<T extends GenericStreamUploadContract<T>>(
+  handlers: IPCStreamUploadHandlerType<T>
+): IPCStreamUploadHandlerType<T> {
+  return handlers
+}
+
+/**
  * An abstract class for registering IPC stream upload handlers.
  *
  * @abstract
@@ -288,6 +297,15 @@ type IPCStreamDownloadHandler<T extends GenericStreamDownloadContract<T>, K exte
  */
 export type IPCStreamDownloadHandlerType<T extends GenericStreamDownloadContract<T>> = {
   [K in keyof T]: IPCStreamDownloadHandler<T, K>
+}
+
+/**
+ * Helper to define stream download handlers with full type checking.
+ */
+export function defineStreamDownloadHandlers<T extends GenericStreamDownloadContract<T>>(
+  handlers: IPCStreamDownloadHandlerType<T>
+): IPCStreamDownloadHandlerType<T> {
+  return handlers
 }
 
 /**

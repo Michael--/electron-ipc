@@ -333,6 +333,44 @@ RegisterStreamUpload.register()
 RegisterStreamDownload.register()
 ```
 
+**Optional: typed handler helpers**
+
+You can keep handlers in plain objects and still get full typing:
+
+```typescript
+import {
+  defineEventHandlers,
+  defineInvokeHandlers,
+  defineStreamDownloadHandlers,
+} from '@number10/electron-ipc'
+
+const invokeHandlers = defineInvokeHandlers<InvokeContracts>({
+  AddNumbers: async (_event, params) => params.a + params.b,
+  GetVersion: async () => app.getVersion(),
+})
+
+const eventHandlers = defineEventHandlers<EventContracts>({
+  Quit: () => app.quit(),
+  LogMessage: (_event, message) => console.log(message),
+})
+
+const downloadHandlers = defineStreamDownloadHandlers<StreamDownloadContracts>({
+  DownloadLogs: async (_event, { sinceMs }) => createLogStream(sinceMs),
+})
+
+class RegisterHandler extends AbstractRegisterHandler {
+  handlers = invokeHandlers
+}
+
+class RegisterEvent extends AbstractRegisterEvent {
+  events = eventHandlers
+}
+
+class RegisterStreamDownload extends AbstractRegisterStreamDownload {
+  handlers = downloadHandlers
+}
+```
+
 **Sending broadcasts from main to renderer:**
 
 Use the generated broadcast API to send events to the renderer process:

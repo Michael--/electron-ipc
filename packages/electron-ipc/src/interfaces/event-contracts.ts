@@ -98,6 +98,15 @@ export type IPCEventType<T extends GenericRendererEventContract<T>> = {
 }
 
 /**
+ * Helper to define event handlers with full type checking.
+ */
+export function defineEventHandlers<T extends GenericRendererEventContract<T>>(
+  events: IPCEventType<T>
+): IPCEventType<T> {
+  return events
+}
+
+/**
  * An abstract class for registering IPC event handlers. It maintains a registry of event handler instances
  * and provides a mechanism to register handlers for specific IPC event channels, facilitating the organized
  * and type-safe handling of IPC events.
