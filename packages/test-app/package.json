@@ -42,7 +42,8 @@
   "dependencies": {
     "@number10/electron-ipc": "workspace:*",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "zod": "^3.23.8"
   },
   "build": {
     "appId": "com.example.electron-ipc-test",

@@ -16,15 +16,59 @@ import {
   defineStreamDownloadHandlers,
   defineStreamInvokeHandlers,
   defineStreamUploadHandlers,
+  validatorFromSafeParse,
+  withEventValidation,
+  withInvokeValidation,
+  withStreamDownloadValidation,
+  withStreamInvokeValidation,
+  withStreamUploadValidation,
 } from '@number10/electron-ipc'
 import { app, BrowserWindow } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
+import { z } from 'zod'
 
 let eventHandlerInitialized = false
 
 /// create type safe accessing to BroadcastContracts, this is the alternative way to send broadcast events
 // const mainBroadcast = createBroadcast<BroadcastContracts>()
+
+const voidValidator = validatorFromSafeParse(z.void().safeParse)
+const addNumbersRequestValidator = validatorFromSafeParse(
+  z.object({ a: z.number(), b: z.number() }).safeParse
+)
+const addNumbersResponseValidator = validatorFromSafeParse(z.number().safeParse)
+const appInfoResponseValidator = validatorFromSafeParse(
+  z.object({ name: z.string(), version: z.string() }).safeParse
+)
+const logMessageValidator = validatorFromSafeParse(
+  z.object({ level: z.enum(['info', 'warn', 'error']), message: z.string() }).safeParse
+)
+
+const streamInvokeRequestValidator = validatorFromSafeParse(z.object({ id: z.string() }).safeParse)
+const streamInvokeDataValidator = validatorFromSafeParse(z.string().safeParse)
+
+const uploadRequestValidator = validatorFromSafeParse(z.object({ fileName: z.string() }).safeParse)
+const uploadDataValidator = validatorFromSafeParse(
+  z.custom<Uint8Array<ArrayBufferLike>>(
+    (value) => value instanceof Uint8Array,
+    'Expected Uint8Array'
+  ).safeParse
+)
+
+const downloadLogsRequestValidator = validatorFromSafeParse(
+  z.object({ level: z.enum(['info', 'warn', 'error']).optional() }).safeParse
+)
+const downloadLogsDataValidator = validatorFromSafeParse(z.string().safeParse)
+const streamVideoRequestValidator = validatorFromSafeParse(
+  z.object({ url: z.string().url() }).safeParse
+)
+const streamVideoDataValidator = validatorFromSafeParse(
+  z.custom<Uint8Array<ArrayBufferLike>>(
+    (value) => value instanceof Uint8Array,
+    'Expected Uint8Array'
+  ).safeParse
+)
 
 function initializeEventHandler() {
   // check if already initialized
@@ -34,202 +78,220 @@ function initializeEventHandler() {
   // implement all handler
   class RegisterHandler extends AbstractRegisterHandler {
     handlers = defineInvokeHandlers<InvokeContracts>({
-      AddNumbers: async (_event, v) => {
-        // console.log(`AddNumbers: ${v.a} + ${v.b}`)
-        return v.a + v.b
-      },
-      GetAppInfo: async () => {
-        try {
-          const packageJsonPath = path.join(process.cwd(), 'package.json')
-          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
-          return {
-            name: packageJson.name,
-            version: packageJson.version,
-          }
-        } catch (error) {
-          // Fallback to app methods if package.json can't be read
-          return {
-            name: app.getName(),
-            version: app.getVersion(),
+      AddNumbers: withInvokeValidation(
+        { request: addNumbersRequestValidator, response: addNumbersResponseValidator },
+        async (_event, v) => {
+          // console.log(`AddNumbers: ${v.a} + ${v.b}`)
+          return v.a + v.b
+        }
+      ),
+      GetAppInfo: withInvokeValidation(
+        { request: voidValidator, response: appInfoResponseValidator },
+        async (_event, _request) => {
+          try {
+            const packageJsonPath = path.join(process.cwd(), 'package.json')
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
+            return {
+              name: packageJson.name,
+              version: packageJson.version,
+            }
+          } catch (error) {
+            // Fallback to app methods if package.json can't be read
+            return {
+              name: app.getName(),
+              version: app.getVersion(),
+            }
           }
         }
-      },
+      ),
     })
   }
 
   // implement all events
   class RegisterEvent extends AbstractRegisterEvent {
     events = defineEventHandlers<EventContracts>({
-      Quit: (_event, _v) => {
+      Quit: withEventValidation(voidValidator, (_event, _request) => {
         console.warn(`Quit`)
         app.quit()
-      },
-      LogMessage: (_event, v) => {
+      }),
+      LogMessage: withEventValidation(logMessageValidator, (_event, v) => {
         // eslint-disable-next-line no-console
         if (v.level === 'error') console.error(`[Renderer] ${v.message}`)
         // eslint-disable-next-line no-console
         else if (v.level === 'warn') console.warn(`[Renderer] ${v.message}`)
         // eslint-disable-next-line no-console
         else console.log(`[Renderer] ${v.message}`)
-      },
+      }),
     })
   }
 
   // implement stream handlers
   class RegisterStreamHandler extends AbstractRegisterStreamHandler {
     handlers = defineStreamInvokeHandlers<StreamInvokeContracts>({
-      GetLargeData: (_event, request) => {
-        // Use globalThis.ReadableStream for Web Streams API compatibility
-        return new globalThis.ReadableStream({
-          async start(controller) {
-            // Send 10 messages over 10 seconds
-            for (let i = 1; i <= 10; i++) {
-              const message = `[${new Date().toLocaleTimeString()}] Stream message ${i}/10 for ${request.id}`
-              controller.enqueue(message)
+      GetLargeData: withStreamInvokeValidation(
+        { request: streamInvokeRequestValidator, data: streamInvokeDataValidator },
+        (_event, request) => {
+          // Use globalThis.ReadableStream for Web Streams API compatibility
+          return new globalThis.ReadableStream({
+            async start(controller) {
+              // Send 10 messages over 10 seconds
+              for (let i = 1; i <= 10; i++) {
+                const message = `[${new Date().toLocaleTimeString()}] Stream message ${i}/10 for ${request.id}`
+                controller.enqueue(message)
 
-              // Wait 1 second before next message
-              await new Promise((resolve) => setTimeout(resolve, 1000))
-            }
+                // Wait 1 second before next message
+                await new Promise((resolve) => setTimeout(resolve, 1000))
+              }
 
-            controller.close()
-          },
-        })
-      },
+              controller.close()
+            },
+          })
+        }
+      ),
     })
   }
 
   // implement stream upload handlers (Renderer → Main)
   class RegisterStreamUpload extends AbstractRegisterStreamUpload {
     handlers = defineStreamUploadHandlers<StreamUploadContracts>({
-      UploadFile: (request, onData, onEnd, onError) => {
-        // eslint-disable-next-line no-console
-        console.log(`[Upload] Started receiving file: ${request.fileName}`)
-
-        // Set up the data handler
-        onData((chunk: Uint8Array) => {
+      UploadFile: withStreamUploadValidation(
+        { request: uploadRequestValidator, data: uploadDataValidator },
+        (request, onData, onEnd, onError) => {
           // eslint-disable-next-line no-console
-          console.log(`[Upload] Received chunk: ${chunk.length} bytes`)
-          // Here you would process the chunk (e.g., write to file, validate, etc.)
-        })
+          console.log(`[Upload] Started receiving file: ${request.fileName}`)
 
-        // Set up the end handler
-        onEnd(() => {
-          // eslint-disable-next-line no-console
-          console.log(`[Upload] Completed receiving file: ${request.fileName}`)
-        })
+          // Set up the data handler
+          onData((chunk) => {
+            // eslint-disable-next-line no-console
+            console.log(`[Upload] Received chunk: ${chunk.length} bytes`)
+            // Here you would process the chunk (e.g., write to file, validate, etc.)
+          })
 
-        // Set up the error handler
-        onError((err) => {
-          // eslint-disable-next-line no-console
-          console.error('[Upload] Error:', err)
-        })
-      },
+          // Set up the end handler
+          onEnd(() => {
+            // eslint-disable-next-line no-console
+            console.log(`[Upload] Completed receiving file: ${request.fileName}`)
+          })
+
+          // Set up the error handler
+          onError((err) => {
+            // eslint-disable-next-line no-console
+            console.error('[Upload] Error:', err)
+          })
+        }
+      ),
     })
   }
 
   // implement stream download handlers (Main → Renderer)
   class RegisterStreamDownload extends AbstractRegisterStreamDownload {
     handlers = defineStreamDownloadHandlers<StreamDownloadContracts>({
-      DownloadLogs: (request) => {
-        const level = request.level || 'info'
-        // eslint-disable-next-line no-console
-        console.log(`[DownloadLogs] Streaming logs with level filter: ${level}`)
+      DownloadLogs: withStreamDownloadValidation(
+        { request: downloadLogsRequestValidator, data: downloadLogsDataValidator },
+        (request) => {
+          const level = request.level || 'info'
+          // eslint-disable-next-line no-console
+          console.log(`[DownloadLogs] Streaming logs with level filter: ${level}`)
 
-        // Return a ReadableStream that sends 10 log entries over 10 seconds
-        return new globalThis.ReadableStream({
-          async start(controller) {
-            for (let i = 1; i <= 10; i++) {
-              const logEntry = `[${new Date().toLocaleTimeString()}] [${level.toUpperCase()}] Log entry ${i}/10 - System operational`
-              controller.enqueue(logEntry)
+          // Return a ReadableStream that sends 10 log entries over 10 seconds
+          return new globalThis.ReadableStream({
+            async start(controller) {
+              for (let i = 1; i <= 10; i++) {
+                const logEntry = `[${new Date().toLocaleTimeString()}] [${level.toUpperCase()}] Log entry ${i}/10 - System operational`
+                controller.enqueue(logEntry)
 
-              // Wait 1 second before next log
-              await new Promise((resolve) => setTimeout(resolve, 1000))
-            }
-
-            controller.close()
-          },
-        })
-      },
-      StreamVideo: (request) => {
-        const url = request.url
-        // eslint-disable-next-line no-console
-        console.log(`[StreamVideo] Fetching video from: ${url}`)
-
-        // Return ReadableStream directly (not Promise)
-        return new globalThis.ReadableStream({
-          async start(controller) {
-            try {
-              const response = await fetch(url)
-              if (!response.ok || !response.body) {
-                controller.error(
-                  new Error(`Failed to fetch video: ${response.status} ${response.statusText}`)
-                )
-                return
+                // Wait 1 second before next log
+                await new Promise((resolve) => setTimeout(resolve, 1000))
               }
 
-              const contentLength = response.headers.get('content-length')
-              // eslint-disable-next-line no-console
-              console.log(`[StreamVideo] Response OK, streaming ${contentLength} bytes`)
+              controller.close()
+            },
+          })
+        }
+      ),
+      StreamVideo: withStreamDownloadValidation(
+        { request: streamVideoRequestValidator, data: streamVideoDataValidator },
+        (request) => {
+          const url = request.url
+          // eslint-disable-next-line no-console
+          console.log(`[StreamVideo] Fetching video from: ${url}`)
 
-              const reader = response.body.getReader()
-              const chunkSize = 256 * 1024 // 256KB chunks for better MP4 compatibility
-              let buffer: Uint8Array[] = []
-              let bufferSize = 0
+          // Return ReadableStream directly (not Promise)
+          return new globalThis.ReadableStream({
+            async start(controller) {
+              try {
+                const response = await fetch(url)
+                if (!response.ok || !response.body) {
+                  controller.error(
+                    new Error(`Failed to fetch video: ${response.status} ${response.statusText}`)
+                  )
+                  return
+                }
 
-              // eslint-disable-next-line no-constant-condition
-              while (true) {
-                const { done, value } = await reader.read()
+                const contentLength = response.headers.get('content-length')
+                // eslint-disable-next-line no-console
+                console.log(`[StreamVideo] Response OK, streaming ${contentLength} bytes`)
 
-                if (done) {
-                  // Send remaining buffered data
-                  if (bufferSize > 0) {
+                const reader = response.body.getReader()
+                const chunkSize = 256 * 1024 // 256KB chunks for better MP4 compatibility
+                let buffer: Uint8Array[] = []
+                let bufferSize = 0
+
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                  const { done, value } = await reader.read()
+
+                  if (done) {
+                    // Send remaining buffered data
+                    if (bufferSize > 0) {
+                      const combined = new Uint8Array(bufferSize)
+                      let offset = 0
+                      for (const chunk of buffer) {
+                        combined.set(chunk, offset)
+                        offset += chunk.length
+                      }
+                      controller.enqueue(combined)
+                      // eslint-disable-next-line no-console
+                      console.log(`[StreamVideo] Sent final chunk: ${combined.length} bytes`)
+                    }
+
+                    // eslint-disable-next-line no-console
+                    console.log('[StreamVideo] Stream complete')
+                    controller.close()
+                    break
+                  }
+
+                  // Buffer chunks until we reach target size
+                  buffer.push(value)
+                  bufferSize += value.length
+
+                  if (bufferSize >= chunkSize) {
+                    // Combine buffered chunks
                     const combined = new Uint8Array(bufferSize)
                     let offset = 0
                     for (const chunk of buffer) {
                       combined.set(chunk, offset)
                       offset += chunk.length
                     }
+
                     controller.enqueue(combined)
                     // eslint-disable-next-line no-console
-                    console.log(`[StreamVideo] Sent final chunk: ${combined.length} bytes`)
+                    console.log(`[StreamVideo] Sent chunk: ${combined.length} bytes`)
+
+                    // Reset buffer
+                    buffer = []
+                    bufferSize = 0
                   }
-
-                  // eslint-disable-next-line no-console
-                  console.log('[StreamVideo] Stream complete')
-                  controller.close()
-                  break
                 }
-
-                // Buffer chunks until we reach target size
-                buffer.push(value)
-                bufferSize += value.length
-
-                if (bufferSize >= chunkSize) {
-                  // Combine buffered chunks
-                  const combined = new Uint8Array(bufferSize)
-                  let offset = 0
-                  for (const chunk of buffer) {
-                    combined.set(chunk, offset)
-                    offset += chunk.length
-                  }
-
-                  controller.enqueue(combined)
-                  // eslint-disable-next-line no-console
-                  console.log(`[StreamVideo] Sent chunk: ${combined.length} bytes`)
-
-                  // Reset buffer
-                  buffer = []
-                  bufferSize = 0
-                }
+              } catch (err) {
+                // eslint-disable-next-line no-console
+                console.error('[StreamVideo] Error:', err)
+                controller.error(err)
               }
-            } catch (err) {
-              // eslint-disable-next-line no-console
-              console.error('[StreamVideo] Error:', err)
-              controller.error(err)
-            }
-          },
-        })
-      },
+            },
+          })
+        }
+      ),
     })
   }
 
