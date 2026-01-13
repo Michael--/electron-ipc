@@ -19,15 +19,21 @@ This library provides a code generation approach to create type-safe IPC communi
 - ✅ **Four Communication Patterns**: Invoke, Event, Broadcast, and Streaming
 - ✅ **Streaming Support**: Handle large data transfers efficiently using Web Streams API
 - ✅ **React Hooks**: Automatic generation of React hooks for all contract types
+- ✅ **Runtime Validation (Optional)**: Validator helpers for Zod/Valibot and stream chunk checks
 - ✅ **YAML Configuration**: Clean, maintainable configuration for multiple APIs
+- ✅ **Generator Workflows**: `--watch` and `--check` modes for dev and CI
 - ✅ **Cross-Platform**: Full support for Windows, macOS, and Linux
-- ✅ **Zero Runtime Overhead**: All type safety at compile time
+- ✅ **Zero Runtime Overhead (Default)**: Type safety at compile time unless validation is enabled
 
 ## Installation
 
 ```bash
 npm install @number10/electron-ipc
 ```
+
+## 📝 Release Notes
+
+- [`RELEASE_NOTES.md`](../../RELEASE_NOTES.md)
 
 ## Quick Start
 

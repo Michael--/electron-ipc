@@ -1,9 +1,31 @@
-## [Unreleased]
+## [2.1.0] - 2026-01-13
 
 ### Added
 
-- Runtime validation helpers for invoke/event/stream handlers (validator adapters + stream chunk validation)
-- Tests and documentation examples for runtime validation helpers
+- Main/preload split outputs with `mainBroadcastOutput` support for main-side broadcast APIs
+- Generator `--watch` and `--check` workflows for dev and CI
+- Typed handler helper factories plus optional runtime validation helpers (validator adapters + stream chunk validation)
+- Integration templates and guides (electron-vite + electron-forge)
+
+### Changed
+
+- Contract resolution now uses ts-morph/tsconfig to handle re-exports and split files
+- Streaming APIs include stop/cleanup/cancel handling for better lifecycle control
+- `createExposeApi` uses contextBridge directly for ESM-friendly preloads
+
+### Fixed
+
+- Generator tests no longer emit noisy console errors
+
+### Documentation
+
+- Serializable guidance updated (timestamps + serialization-loss examples)
+- Runtime validation examples added
+
+### Tests
+
+- SerializableObject unit tests and template smoke tests
+- Runtime validation helper tests
 
 ## [2.0.0] - 2025-11-11
 

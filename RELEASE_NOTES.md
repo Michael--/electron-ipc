@@ -1,3 +1,52 @@
+# Release Notes - Version 2.1.0
+
+## 🎉 Minor Release: Runtime Validation + Generator Ergonomics
+
+This release focuses on developer ergonomics and safety. It adds optional runtime validation helpers, improves the generator workflow, and provides ready-to-use templates and examples.
+
+## ✨ Highlights
+
+- **Runtime validation helpers (optional)**: Adapter utilities for Zod/Valibot‑style validators and stream chunk validation.
+- **Generator workflows**: `--watch` for dev and `--check` for CI validation.
+- **Main/preload output split**: Dedicated `mainBroadcastOutput` for main‑side broadcast APIs.
+- **Streaming improvements**: Cleanup/stop/cancel support for stream lifecycles.
+- **Examples & templates**: electron‑vite + electron‑forge guides and a basic template.
+
+## 🧩 Runtime Validation Example
+
+```typescript
+import { z } from 'zod'
+import {
+  defineInvokeHandlers,
+  validatorFromSafeParse,
+  withInvokeValidation,
+} from '@number10/electron-ipc'
+
+const requestValidator = validatorFromSafeParse(
+  z.object({ a: z.number(), b: z.number() }).safeParse
+)
+const responseValidator = validatorFromSafeParse(z.number().safeParse)
+
+const handlers = defineInvokeHandlers<InvokeContracts>({
+  AddNumbers: withInvokeValidation(
+    { request: requestValidator, response: responseValidator },
+    async (_event, { a, b }) => a + b
+  ),
+})
+```
+
+## 📦 Installation
+
+```bash
+npm install @number10/electron-ipc@2.1.0
+```
+
+## 🔗 Resources
+
+- [Changelog](./CHANGELOG.md)
+- [Documentation](./packages/electron-ipc/README.md)
+- [Examples](./docs/README.md)
+
 # Release Notes - Version 2.0.0
 
 ## 🎉 Major Release: Streaming Support & Configuration Overhaul

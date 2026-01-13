@@ -1,6 +1,6 @@
 {
   "name": "electron-ipc-test-app",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "description": "Test application for electron-ipc library",
   "main": "dist/main/index.js",
