@@ -5,10 +5,21 @@ import { parse as parseYaml } from 'yaml'
 import { processApiConfig } from './cli'
 import { IContract, YamlConfig } from './types'
 
+type ProcessMode = 'write' | 'check'
+
+type ProcessOptions = {
+  mode?: ProcessMode
+}
+
+type ProcessResult = {
+  matched: boolean
+  watchFiles: string[]
+}
+
 /**
  * Processes YAML configuration file
  */
-export function processYamlConfig(configPath: string) {
+export function processYamlConfig(configPath: string, options: ProcessOptions = {}): ProcessResult {
   const resolvedConfigPath = path.resolve(process.cwd(), configPath)
 
   if (!fs.existsSync(resolvedConfigPath)) {
@@ -23,6 +34,9 @@ export function processYamlConfig(configPath: string) {
     console.error('Error: Invalid YAML config - "apis" array is required')
     process.exit(1)
   }
+
+  let matched = true
+  const watchFiles: string[] = []
 
   config.apis.forEach((api) => {
     if (!api.name || !api.input || !api.output) {
@@ -51,14 +65,22 @@ export function processYamlConfig(configPath: string) {
       process.exit(1)
     }
 
-    processApiConfig({
-      name: api.name,
-      input: api.input,
-      output: api.output,
-      contracts: contractNames,
-      tsconfig: api.tsconfig,
-      reactHooksOutput: api.reactHooksOutput,
-      mainBroadcastOutput: api.mainBroadcastOutput,
-    })
+    const result = processApiConfig(
+      {
+        name: api.name,
+        input: api.input,
+        output: api.output,
+        contracts: contractNames,
+        tsconfig: api.tsconfig,
+        reactHooksOutput: api.reactHooksOutput,
+        mainBroadcastOutput: api.mainBroadcastOutput,
+      },
+      { mode: options.mode }
+    )
+
+    if (!result.matched) matched = false
+    watchFiles.push(...result.watchFiles)
   })
+
+  return { matched, watchFiles }
 }

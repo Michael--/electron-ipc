@@ -26,7 +26,7 @@
    Ziel: Doku und Typen angleichen (z. B. `Date` nicht verwenden oder Serializer-Option anbieten). Optional: Hook für Custom Serializer (SuperJSON o. ä.).  
    Tests: Typ-Tests/`dts`-Assertions für Serializable-Grenzen, plus optional Runtime-Guards.
 
-6. ❌ **Generator-Workflow im Alltag (watch/check/ci)**  
+6. ✅ **Generator-Workflow im Alltag (watch/check/ci)**  
    Ziel: `--watch` (inkrementell) und `--check` (nur Validierung) für CI/Pre-Commit.  
    Tests: CLI-Tests für Argumente, Watch-Mode-Smoketest.
 

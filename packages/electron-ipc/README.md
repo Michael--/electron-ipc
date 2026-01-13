@@ -420,6 +420,12 @@ Each API definition supports the following properties:
 ```bash
 # Generate all APIs defined in the config file
 npx electron-ipc-generate --config=./ipc-config.yaml
+
+# Watch mode (auto-regenerate on changes)
+npx electron-ipc-generate --config=./ipc-config.yaml --watch
+
+# CI mode (verify outputs without writing)
+npx electron-ipc-generate --config=./ipc-config.yaml --check
 ```
 
 #### IntelliSense Support

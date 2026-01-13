@@ -14,6 +14,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,html,css}\"",
     "generate:all": "pnpm --filter electron-ipc run build && mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml",
+    "generate:watch": "pnpm --filter electron-ipc run build && mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml --watch",
+    "generate:check": "pnpm --filter electron-ipc run build && mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml --check",
     "package": "electron-builder",
     "package:mac": "electron-builder --mac",
     "package:win": "electron-builder --win",

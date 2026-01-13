@@ -191,6 +191,12 @@ Generate all APIs:
 
 ```bash
 electron-ipc-generate --config=./ipc-config.yaml
+
+# Watch mode (auto-regenerate on changes)
+electron-ipc-generate --config=./ipc-config.yaml --watch
+
+# CI mode (verify outputs without writing)
+electron-ipc-generate --config=./ipc-config.yaml --check
 ```
 
 Each API gets a unique expose function name (e.g., `exposeApi`, `exposeStreamApi`).

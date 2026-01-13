@@ -214,6 +214,37 @@ describe('generate-api', () => {
       fs.rmSync(tempDir, { recursive: true, force: true })
     })
 
+    it('should report mismatches in check mode without writing outputs', () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'electron-ipc-'))
+      const inputPath = path.join(tempDir, 'ipc-api.ts')
+      const outputPath = path.join(tempDir, 'api-generated.ts')
+
+      fs.writeFileSync(
+        inputPath,
+        `
+          export type InvokeContracts = {
+            Add: { request: { a: number; b: number }; response: number }
+          }
+        `,
+        'utf8'
+      )
+
+      const result = processApiConfig(
+        {
+          name: 'api',
+          input: inputPath,
+          output: outputPath,
+          contracts: [{ type: 'invoke', name: 'InvokeContracts' }],
+        },
+        { mode: 'check' }
+      )
+
+      expect(result.matched).toBe(false)
+      expect(fs.existsSync(outputPath)).toBe(false)
+
+      fs.rmSync(tempDir, { recursive: true, force: true })
+    })
+
     it('should resolve re-exported contracts via tsconfig path aliases', () => {
       const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'electron-ipc-'))
       const srcDir = path.join(tempDir, 'src')

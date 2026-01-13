@@ -8,29 +8,133 @@ import { ProcessApiConfig } from './types'
 import { resetOutput } from './utils'
 import { processYamlConfig } from './yaml-processor'
 
+type ProcessMode = 'write' | 'check'
+
+type OutputArtifact = {
+  outputPath: string
+  code: string
+  label: string
+}
+
+type ProcessResult = {
+  matched: boolean
+  watchFiles: string[]
+}
+
 /**
  * Prints CLI usage instructions
  */
 function printUsage() {
-  console.log(`Usage: electron-ipc-generate --config=<path>`)
+  console.log(`Usage: electron-ipc-generate --config=<path> [--watch] [--check]`)
   console.log(`\nRequired:`)
   console.log(`  --config=<path>  Path to YAML configuration file`)
+  console.log(`\nOptions:`)
+  console.log(`  --watch          Re-generate on file changes`)
+  console.log(`  --check          Validate generated output without writing files`)
   console.log(`\nExample:`)
   console.log(`  electron-ipc-generate --config=./ipc-config.yaml`)
+}
+
+function writeOutputs(outputs: OutputArtifact[]) {
+  outputs.forEach(({ outputPath, code, label }) => {
+    fs.writeFileSync(outputPath, code, 'utf8')
+    console.log(
+      colors.green(`Generated ${label} written to ${path.relative(process.cwd(), outputPath)}`)
+    )
+  })
+}
+
+function checkOutputs(outputs: OutputArtifact[]) {
+  let matched = true
+
+  outputs.forEach(({ outputPath, code, label }) => {
+    if (!fs.existsSync(outputPath)) {
+      console.error(
+        colors.red(`Missing ${label} output: ${path.relative(process.cwd(), outputPath)}`)
+      )
+      matched = false
+      return
+    }
+    const existing = fs.readFileSync(outputPath, 'utf8')
+    if (existing !== code) {
+      console.error(
+        colors.red(`Outdated ${label} output: ${path.relative(process.cwd(), outputPath)}`)
+      )
+      matched = false
+    }
+  })
+
+  if (matched) {
+    console.log(colors.green('All generated outputs are up to date.'))
+  }
+
+  return matched
+}
+
+function buildOutputs(
+  config: ProcessApiConfig,
+  sourceFile: ReturnType<Project['addSourceFileAtPath']>,
+  buildImportPath: (fromPath: string) => string
+): OutputArtifact[] {
+  const importPath = buildImportPath(config.output)
+  const apiName = config.name
+
+  const outputs: OutputArtifact[] = []
+  const resolvedOutputPath = path.resolve(process.cwd(), config.output)
+
+  const apiCode = processContracts(sourceFile, config.contracts, importPath, apiName)
+  outputs.push({ outputPath: resolvedOutputPath, code: apiCode, label: 'API code' })
+
+  if (config.mainBroadcastOutput) {
+    const broadcastContract = config.contracts.find((c) => c.type === 'send')
+    if (!broadcastContract) {
+      console.error(
+        `Error: mainBroadcastOutput requires a broadcast contract ("contracts.send") for API "${config.name}"`
+      )
+      process.exit(1)
+    }
+    const mainBroadcastImportPath = buildImportPath(config.mainBroadcastOutput)
+    const mainBroadcastCode = generateMainBroadcastApi(
+      broadcastContract.name,
+      mainBroadcastImportPath,
+      sourceFile
+    )
+    const resolvedMainBroadcastPath = path.resolve(process.cwd(), config.mainBroadcastOutput)
+    outputs.push({
+      outputPath: resolvedMainBroadcastPath,
+      code: mainBroadcastCode,
+      label: 'main broadcast API',
+    })
+  }
+
+  if (config.reactHooksOutput) {
+    const reactHooksCode = generateReactHooks(config.contracts, importPath, sourceFile, apiName)
+    const resolvedReactHooksPath = path.resolve(process.cwd(), config.reactHooksOutput)
+    outputs.push({
+      outputPath: resolvedReactHooksPath,
+      code: reactHooksCode,
+      label: 'React hooks',
+    })
+  }
+
+  return outputs
 }
 
 /**
  * Processes a single API configuration
  */
-export function processApiConfig({
-  name,
-  input,
-  output,
-  contracts,
-  tsconfig,
-  reactHooksOutput,
-  mainBroadcastOutput,
-}: ProcessApiConfig) {
+export function processApiConfig(
+  {
+    name,
+    input,
+    output,
+    contracts,
+    tsconfig,
+    reactHooksOutput,
+    mainBroadcastOutput,
+  }: ProcessApiConfig,
+  options: { mode?: ProcessMode } = {}
+): ProcessResult {
   const resolvedInputPath = path.resolve(process.cwd(), input)
 
   const resolveTsconfigPath = () => {
@@ -76,58 +180,30 @@ export function processApiConfig({
       : `./${inputFileName}`
   }
 
-  const importPath = buildImportPath(output)
-  const apiName = name
-
   const sourceFile = project.addSourceFileAtPath(resolvedInputPath)
   project.resolveSourceFileDependencies()
   console.log(colors.green(`Read ${path.relative(process.cwd(), resolvedInputPath)}`))
 
-  let code = processContracts(sourceFile, contracts, importPath, apiName)
-
-  const resolvedOutputPath = path.resolve(process.cwd(), output)
-  fs.writeFileSync(resolvedOutputPath, code, 'utf8')
-  console.log(
-    colors.green(`Generated code written to ${path.relative(process.cwd(), resolvedOutputPath)}`)
+  const outputs = buildOutputs(
+    {
+      name,
+      input,
+      output,
+      contracts,
+      tsconfig,
+      reactHooksOutput,
+      mainBroadcastOutput,
+    },
+    sourceFile,
+    buildImportPath
   )
 
-  if (mainBroadcastOutput) {
-    const broadcastContract = contracts.find((c) => c.type === 'send')
-    if (!broadcastContract) {
-      console.error(
-        `Error: mainBroadcastOutput requires a broadcast contract ("contracts.send") for API "${name}"`
-      )
-      process.exit(1)
-    }
-    const mainBroadcastImportPath = buildImportPath(mainBroadcastOutput)
-    const mainBroadcastCode = generateMainBroadcastApi(
-      broadcastContract.name,
-      mainBroadcastImportPath,
-      sourceFile
-    )
-    const resolvedMainBroadcastPath = path.resolve(process.cwd(), mainBroadcastOutput)
-    fs.writeFileSync(resolvedMainBroadcastPath, mainBroadcastCode, 'utf8')
-    console.log(
-      colors.green(
-        `Generated main broadcast API written to ${path.relative(
-          process.cwd(),
-          resolvedMainBroadcastPath
-        )}`
-      )
-    )
-  }
+  const matched = options.mode === 'check' ? checkOutputs(outputs) : (writeOutputs(outputs), true)
 
-  // Generate React hooks if requested
-  if (reactHooksOutput) {
-    const reactHooksCode = generateReactHooks(contracts, importPath, sourceFile, apiName)
-    const resolvedReactHooksPath = path.resolve(process.cwd(), reactHooksOutput)
-    fs.writeFileSync(resolvedReactHooksPath, reactHooksCode, 'utf8')
-    console.log(
-      colors.green(
-        `Generated React hooks written to ${path.relative(process.cwd(), resolvedReactHooksPath)}`
-      )
-    )
-  }
+  const watchFiles = project.getSourceFiles().map((file) => file.getFilePath().toString())
+  if (tsconfigPath) watchFiles.push(tsconfigPath)
+
+  return { matched, watchFiles }
 }
 
 /**
@@ -135,6 +211,13 @@ export function processApiConfig({
  */
 export function main() {
   const args = process.argv.slice(2)
+  const watchMode = args.includes('--watch')
+  const checkMode = args.includes('--check')
+
+  if (watchMode && checkMode) {
+    console.error('Error: --watch and --check cannot be used together.')
+    process.exit(1)
+  }
 
   // Check for YAML config file
   const configArg = args.find((arg) => arg.startsWith('--config='))
@@ -152,11 +235,70 @@ export function main() {
   }
 
   try {
-    processYamlConfig(configPath)
+    if (watchMode) {
+      runWatch(configPath)
+      return
+    }
+
+    const result = processYamlConfig(configPath, { mode: checkMode ? 'check' : 'write' })
+    if (checkMode && !result.matched) {
+      process.exit(1)
+    }
   } catch (error) {
     console.error(
       `Error processing configuration: ${error instanceof Error ? error.message : JSON.stringify(error)}`
     )
     process.exit(1)
   }
+}
+
+function runWatch(configPath: string) {
+  const resolvedConfigPath = path.resolve(process.cwd(), configPath)
+  let watchers: fs.FSWatcher[] = []
+  let watchFileTargets: string[] = []
+  let timeout: NodeJS.Timeout | null = null
+
+  const cleanupWatchers = () => {
+    watchers.forEach((watcher) => watcher.close())
+    watchers = []
+    watchFileTargets.forEach((target) => fs.unwatchFile(target))
+    watchFileTargets = []
+  }
+
+  const scheduleRun = () => {
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(runOnce, 100)
+  }
+
+  const watchPath = (targetPath: string) => {
+    try {
+      const watcher = fs.watch(targetPath, scheduleRun)
+      watchers.push(watcher)
+    } catch (error) {
+      console.warn(
+        colors.yellow(`Watch not supported for ${targetPath}: ${(error as Error).message}`)
+      )
+      fs.watchFile(targetPath, { interval: 500 }, scheduleRun)
+      watchFileTargets.push(targetPath)
+    }
+  }
+
+  const runOnce = () => {
+    cleanupWatchers()
+    console.log(colors.cyan('Regenerating IPC API...'))
+    const result = processYamlConfig(resolvedConfigPath, { mode: 'write' })
+
+    const watchSet = new Set<string>([resolvedConfigPath])
+    result.watchFiles.forEach((file) => watchSet.add(file))
+
+    watchSet.forEach((file) => {
+      try {
+        watchPath(file)
+      } catch (error) {
+        console.warn(colors.yellow(`Unable to watch ${file}: ${(error as Error).message}`))
+      }
+    })
+  }
+
+  runOnce()
 }
