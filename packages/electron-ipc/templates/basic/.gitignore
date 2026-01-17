@@ -1,3 +1,0 @@
-# Generated files by electron-ipc-generate
-*.generated.ts
-ipc-api-main-broadcast.ts

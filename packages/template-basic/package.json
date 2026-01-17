@@ -1,16 +1,17 @@
 {
-  "name": "electron-ipc-basic-template",
-  "version": "1.0.0",
+  "name": "@number10/template-basic",
+  "version": "2.1.0",
   "description": "Basic template for @number10/electron-ipc with code generation",
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "node ../../dist/bin/generate-api.js --config=ipc-config.yaml",
+    "generate": "electron-ipc-generate --config=ipc-config.yaml",
     "clean": "rm -f *.generated.ts ipc-api-main-broadcast.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@number10/electron-ipc": "workspace:*",
+    "@types/node": "^20.10.0",
     "electron": "^28.0.0",
     "typescript": "^5.3.3"
   }

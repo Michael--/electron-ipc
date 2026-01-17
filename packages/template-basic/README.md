@@ -27,7 +27,8 @@ to create its own IPC API, showing users the recommended workflow.
 ### 1. Copy Template to Your Project
 
 ```bash
-cp -r templates/basic/* your-electron-app/
+# From the monorepo or download from releases
+cp -r packages/template-basic/* your-electron-app/
 cd your-electron-app
 ```
 
@@ -38,37 +39,33 @@ pnpm install
 # or: npm install / yarn install
 ```
 
-### 3. Update tsconfig.json
+### 3. Adjust Configuration Files
 
-Remove the `paths` mapping (only needed for monorepo development):
+#### Remove Monorepo-Specific Settings
+
+**tsconfig.json** - Remove extends and references:
 
 ```jsonc
 {
+  // Remove this:
+  // "extends": "../../tsconfig.json",
+
   "compilerOptions": {
-    // ... other options ...
-    // Remove this paths section:
-    // "paths": {
-    //   "@number10/electron-ipc": ["../../src/index.ts"]
-    // }
+    // Your settings...
   },
+
+  // Remove this:
+  // "references": [
+  //   {
+  //     "path": "../electron-ipc"
+  //   }
+  // ]
 }
 ```
 
-### 4. Update package.json Scripts
+Use a standard Electron tsconfig instead.
 
-Change the generate script to use the globally/locally installed CLI:
-
-```json
-{
-  "scripts": {
-    "generate": "electron-ipc-generate --config=ipc-config.yaml",
-    "clean": "rm -f *.generated.ts ipc-api-main-broadcast.ts",
-    "typecheck": "tsc --noEmit"
-  }
-}
-```
-
-### 5. Generate IPC Code
+### 4. Generate IPC Code
 
 ```bash
 pnpm run generate

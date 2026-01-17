@@ -1,5 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../../../tsconfig.json",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -14,13 +15,13 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmit": true,
-    "paths": {
-      // Points to parent package for development/typecheck within monorepo
-      // When copied to user project, this should be removed (node_modules will be used)
-      "@number10/electron-ipc": ["../../src/index.ts"]
-    }
+    "noEmit": true
   },
   "include": ["*.ts"],
-  "exclude": ["*.generated.ts", "node_modules"]
+  "exclude": ["*.generated.ts", "node_modules"],
+  "references": [
+    {
+      "path": "../../"
+    }
+  ]
 }
