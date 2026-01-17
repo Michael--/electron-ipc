@@ -4,8 +4,8 @@ import path from 'path'
 import { Project } from 'ts-morph'
 import { describe, expect, it, vi } from 'vitest'
 import { processApiConfig } from './generator/cli'
-import { processYamlConfig } from './generator/yaml-processor'
 import { generateMainBroadcastApi, processContracts } from './generator/generate-api'
+import { processYamlConfig } from './generator/yaml-processor'
 
 describe('generate-api', () => {
   const project = new Project()
@@ -325,24 +325,17 @@ describe('generate-api', () => {
   describe('templates', () => {
     it('should generate outputs from the basic template', () => {
       const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'electron-ipc-'))
-      const templateDir = path.join(process.cwd(), 'templates', 'basic')
+      const templateDir = path.join(process.cwd(), '..', 'template-basic')
 
-      const srcDir = path.join(tempDir, 'src')
-      const mainDir = path.join(srcDir, 'main')
-      const preloadDir = path.join(srcDir, 'preload')
-      const rendererDir = path.join(srcDir, 'renderer')
-      fs.mkdirSync(mainDir, { recursive: true })
-      fs.mkdirSync(preloadDir, { recursive: true })
-      fs.mkdirSync(rendererDir, { recursive: true })
-
-      fs.copyFileSync(path.join(templateDir, 'ipc-api.ts'), path.join(mainDir, 'ipc-api.ts'))
+      // Copy template files to temp directory (flat structure)
+      fs.copyFileSync(path.join(templateDir, 'ipc-api.ts'), path.join(tempDir, 'ipc-api.ts'))
       fs.copyFileSync(
         path.join(templateDir, 'ipc-config.yaml'),
         path.join(tempDir, 'ipc-config.yaml')
       )
-      fs.copyFileSync(path.join(templateDir, 'preload.ts'), path.join(preloadDir, 'preload.ts'))
-      fs.copyFileSync(path.join(templateDir, 'main.ts'), path.join(mainDir, 'main.ts'))
-      fs.copyFileSync(path.join(templateDir, 'renderer.ts'), path.join(rendererDir, 'renderer.ts'))
+      fs.copyFileSync(path.join(templateDir, 'preload.ts'), path.join(tempDir, 'preload.ts'))
+      fs.copyFileSync(path.join(templateDir, 'main.ts'), path.join(tempDir, 'main.ts'))
+      fs.copyFileSync(path.join(templateDir, 'renderer.ts'), path.join(tempDir, 'renderer.ts'))
 
       fs.writeFileSync(
         path.join(tempDir, 'tsconfig.json'),
@@ -361,19 +354,17 @@ describe('generate-api', () => {
 
       processYamlConfig(path.join(tempDir, 'ipc-config.yaml'), { mode: 'write', cwd: tempDir })
 
-      const preloadOutput = path.join(preloadDir, 'ipc-api.generated.ts')
-      const hooksOutput = path.join(rendererDir, 'ipc-api.hooks.ts')
-      const broadcastOutput = path.join(mainDir, 'ipc-broadcast.generated.ts')
+      const generatedOutput = path.join(tempDir, 'ipc-api.generated.ts')
+      const broadcastOutput = path.join(tempDir, 'ipc-api-main-broadcast.ts')
 
-      expect(fs.existsSync(preloadOutput)).toBe(true)
-      expect(fs.existsSync(hooksOutput)).toBe(true)
+      expect(fs.existsSync(generatedOutput)).toBe(true)
       expect(fs.existsSync(broadcastOutput)).toBe(true)
 
-      const preloadCode = fs.readFileSync(preloadOutput, 'utf8')
+      const generatedCode = fs.readFileSync(generatedOutput, 'utf8')
       const broadcastCode = fs.readFileSync(broadcastOutput, 'utf8')
 
-      expect(preloadCode).toContain('exposeApi')
-      expect(preloadCode).toContain('downloadDownloadLogs')
+      expect(generatedCode).toContain('exposeApi')
+      expect(generatedCode).toContain('downloadDownloadLogs')
       expect(broadcastCode).toContain('mainBroadcast')
 
       fs.rmSync(tempDir, { recursive: true, force: true })
