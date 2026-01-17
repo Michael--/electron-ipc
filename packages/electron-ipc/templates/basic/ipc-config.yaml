@@ -1,12 +1,11 @@
-# IPC Generator Configuration (template)
+# IPC Generator Configuration for Basic Template
+# Run: electron-ipc-generate --config ipc-config.yaml
 
 apis:
   - name: api
-    input: ./src/main/ipc-api.ts
-    output: ./src/preload/ipc-api.generated.ts
-    reactHooksOutput: ./src/renderer/ipc-api.hooks.ts
-    mainBroadcastOutput: ./src/main/ipc-broadcast.generated.ts
-    tsconfig: ./tsconfig.json
+    input: ./ipc-api.ts
+    output: ./ipc-api.generated.ts
+    mainBroadcastOutput: ./ipc-api-main-broadcast.ts
     contracts:
       invoke: InvokeContracts
       event: EventContracts
