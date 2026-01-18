@@ -11,3 +11,9 @@ export {
 } from './registry'
 
 export { broadcastToApp, createBroadcastToAll, createBroadcastToRole } from './broadcast'
+export {
+  getWindowFromEvent,
+  getWindowRoleFromEvent,
+  getMainWindow,
+  getAllAppWindows,
+} from './helpers'
