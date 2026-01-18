@@ -25,9 +25,12 @@ let isPaused = false
 let searchQuery = ''
 let kindFilter = ''
 let statusFilter = ''
+let isDetailPinned = false
+let autoScrollEnabled = true
 
 // DOM Elements - will be initialized in init()
 let elements: {
+  main: HTMLElement
   statusBadge: HTMLElement
   statusText: HTMLElement
   pauseBtn: HTMLButtonElement
@@ -37,6 +40,7 @@ let elements: {
   searchInput: HTMLInputElement
   kindFilter: HTMLSelectElement
   statusFilter: HTMLSelectElement
+  autoScrollBtn: HTMLButtonElement
   eventCount: HTMLElement
   droppedCount: HTMLElement
   emptyState: HTMLElement
@@ -45,6 +49,7 @@ let elements: {
   detailPanel: HTMLElement
   detailContent: HTMLElement
   closeDetailBtn: HTMLButtonElement
+  pinDetailBtn: HTMLButtonElement
 }
 
 /**
@@ -72,6 +77,7 @@ function init() {
 
   // Initialize DOM elements using bodyNode.querySelector
   elements = {
+    main: bodyNode.querySelector('main') as HTMLElement,
     statusBadge: bodyNode.querySelector('#statusBadge') as HTMLElement,
     statusText: bodyNode.querySelector('#statusText') as HTMLElement,
     pauseBtn: bodyNode.querySelector('#pauseBtn') as HTMLButtonElement,
@@ -81,6 +87,7 @@ function init() {
     searchInput: bodyNode.querySelector('#searchInput') as HTMLInputElement,
     kindFilter: bodyNode.querySelector('#kindFilter') as HTMLSelectElement,
     statusFilter: bodyNode.querySelector('#statusFilter') as HTMLSelectElement,
+    autoScrollBtn: bodyNode.querySelector('#autoScrollBtn') as HTMLButtonElement,
     eventCount: bodyNode.querySelector('#eventCount') as HTMLElement,
     droppedCount: bodyNode.querySelector('#droppedCount') as HTMLElement,
     emptyState: bodyNode.querySelector('#emptyState') as HTMLElement,
@@ -89,6 +96,7 @@ function init() {
     detailPanel: bodyNode.querySelector('#detailPanel') as HTMLElement,
     detailContent: bodyNode.querySelector('#detailContent') as HTMLElement,
     closeDetailBtn: bodyNode.querySelector('#closeDetailBtn') as HTMLButtonElement,
+    pinDetailBtn: bodyNode.querySelector('#pinDetailBtn') as HTMLButtonElement,
   }
 
   // Check if API is available
@@ -102,6 +110,8 @@ function init() {
 
   // Setup event listeners
   setupEventListeners()
+  updatePinButton()
+  updateAutoScrollButton()
 
   // Listen for init message
   window.inspectorAPI.onInit((payload) => {
@@ -199,12 +209,23 @@ function setupEventListeners() {
 
   // Close detail panel
   elements.closeDetailBtn.addEventListener('click', () => {
-    elements.detailPanel.classList.remove('visible')
-    selectedEvent = null
-    // Remove selection highlight
-    document.querySelectorAll('tr.selected').forEach((row) => {
-      row.classList.remove('selected')
-    })
+    closeDetailPanel()
+  })
+
+  elements.pinDetailBtn.addEventListener('click', () => {
+    isDetailPinned = !isDetailPinned
+    updatePinButton()
+  })
+
+  elements.autoScrollBtn.addEventListener('click', () => {
+    autoScrollEnabled = !autoScrollEnabled
+    updateAutoScrollButton()
+  })
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && elements.detailPanel.classList.contains('visible')) {
+      closeDetailPanel()
+    }
   })
 }
 
@@ -238,6 +259,8 @@ function applyFilters() {
  * Render events table
  */
 function renderEvents() {
+  const shouldStick = autoScrollEnabled && elements.main && isNearBottom(elements.main, 24)
+
   if (filteredEvents.length === 0) {
     elements.emptyState.style.display = 'flex'
     elements.eventsTable.style.display = 'none'
@@ -255,8 +278,15 @@ function renderEvents() {
 
   events.forEach((event, index) => {
     const row = createEventRow(event, index)
+    if (selectedEvent && event.id === selectedEvent.id) {
+      row.classList.add('selected')
+    }
     elements.eventsBody.appendChild(row)
   })
+
+  if (shouldStick) {
+    scrollToBottom(elements.main)
+  }
 }
 
 /**
@@ -284,6 +314,7 @@ function createEventRow(event: TraceEvent, index: number): HTMLTableRowElement {
   const channelCell = document.createElement('td')
   channelCell.textContent = event.channel
   channelCell.title = event.channel
+  channelCell.classList.add('cell-truncate')
   row.appendChild(channelCell)
 
   // Direction
@@ -295,6 +326,9 @@ function createEventRow(event: TraceEvent, index: number): HTMLTableRowElement {
   const roleCell = document.createElement('td')
   const role = getEventRole(event)
   roleCell.textContent = role ?? '-'
+  if (role) {
+    roleCell.title = role
+  }
   row.appendChild(roleCell)
 
   // Duration
@@ -320,6 +354,9 @@ function createEventRow(event: TraceEvent, index: number): HTMLTableRowElement {
 
   // Click handler
   row.addEventListener('click', () => {
+    if (isDetailPinned && selectedEvent && selectedEvent.id !== event.id) {
+      return
+    }
     selectedEvent = event
     showDetailPanel(event)
     // Highlight selected row
@@ -334,7 +371,7 @@ function createEventRow(event: TraceEvent, index: number): HTMLTableRowElement {
  * Show detail panel for an event
  */
 function showDetailPanel(event: TraceEvent) {
-  elements.detailPanel.classList.add('visible')
+  openDetailPanel()
 
   let html = `
     <div class="detail-section">
@@ -423,6 +460,23 @@ function showDetailPanel(event: TraceEvent) {
   }
 
   elements.detailContent.innerHTML = html
+}
+
+function openDetailPanel() {
+  elements.detailPanel.classList.add('visible')
+  document.body.classList.add('detail-open')
+}
+
+function closeDetailPanel() {
+  elements.detailPanel.classList.remove('visible')
+  document.body.classList.remove('detail-open')
+  selectedEvent = null
+  isDetailPinned = false
+  updatePinButton()
+  // Remove selection highlight
+  document.querySelectorAll('tr.selected').forEach((row) => {
+    row.classList.remove('selected')
+  })
 }
 
 /**
@@ -550,6 +604,24 @@ function formatKind(kind: string): string {
     default:
       return kind
   }
+}
+
+function updatePinButton() {
+  elements.pinDetailBtn.textContent = isDetailPinned ? 'Pinned' : 'Pin'
+  elements.pinDetailBtn.classList.toggle('toggle-active', isDetailPinned)
+}
+
+function updateAutoScrollButton() {
+  elements.autoScrollBtn.textContent = autoScrollEnabled ? 'Auto-scroll: On' : 'Auto-scroll: Off'
+  elements.autoScrollBtn.classList.toggle('toggle-active', autoScrollEnabled)
+}
+
+function isNearBottom(element: HTMLElement, threshold: number): boolean {
+  return element.scrollTop + element.clientHeight >= element.scrollHeight - threshold
+}
+
+function scrollToBottom(element: HTMLElement) {
+  element.scrollTop = element.scrollHeight
 }
 
 /**

@@ -200,12 +200,18 @@
         flex: 1;
         overflow: auto;
         position: relative;
+        transition: margin-right 0.2s ease;
+      }
+
+      body.detail-open main {
+        margin-right: 400px;
       }
 
       table {
         width: 100%;
         border-collapse: collapse;
         font-size: 13px;
+        table-layout: fixed;
       }
 
       thead {
@@ -310,6 +316,12 @@
         line-height: 1.6;
       }
 
+      .cell-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
       .detail-panel {
         position: fixed;
         right: 0;
@@ -321,6 +333,7 @@
         display: none;
         flex-direction: column;
         z-index: 100;
+        box-shadow: -8px 0 24px rgba(0, 0, 0, 0.35);
       }
 
       .detail-panel.visible {
@@ -333,6 +346,18 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+      }
+
+      .detail-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .toggle-active {
+        background: #3e3e42;
+        border-color: #007acc;
+        color: #d4d4d4;
       }
 
       .detail-content {
@@ -383,6 +408,16 @@
         font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
         color: #ce9178;
       }
+
+      @media (max-width: 900px) {
+        body.detail-open main {
+          margin-right: 0;
+        }
+
+        .detail-panel {
+          width: 100%;
+        }
+      }
     </style>
   </head>
   <body>
@@ -426,6 +461,9 @@
         <option value="timeout">Timeout</option>
         <option value="cancelled">Cancelled</option>
       </select>
+      <button id="autoScrollBtn" class="toggle-active" title="Toggle auto-scroll">
+        Auto-scroll: On
+      </button>
       <div class="stats">
         <span id="eventCount">0 events</span>
         <span id="droppedCount"></span>
@@ -462,7 +500,10 @@
     <div id="detailPanel" class="detail-panel">
       <div class="detail-header">
         <h2>Event Details</h2>
-        <button id="closeDetailBtn">✕</button>
+        <div class="detail-actions">
+          <button id="pinDetailBtn" title="Pin details">Pin</button>
+          <button id="closeDetailBtn">✕</button>
+        </div>
       </div>
       <div class="detail-content" id="detailContent"></div>
     </div>
