@@ -16,7 +16,7 @@ npm install
 npm run build
 
 # From this package
-cd packages/test-app
+cd apps/test-app
 npm run dev
 ```
 

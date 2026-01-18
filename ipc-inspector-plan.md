@@ -454,7 +454,7 @@ Zusätzlich: `packages/electron-ipc/src/generator/cli.ts` und `packages/electron
 ### -1.5 Integration in test-app
 
 ```ts
-// packages/test-app/src/main/index.ts
+// apps/test-app/src/main/index.ts
 import { createBroadcastToAll, getWindowRegistry } from '@number10/electron-ipc/window-manager'
 
 function createWindow() {
@@ -783,7 +783,7 @@ enableIpcInspector({ openOnStart: true })
 - [x] **createBroadcastToRole()** funktioniert
 - [x] **Backward compatibility** mit bestehendem `createBroadcast(mainWindow, ...)`
 - [x] **Tests** für Registry + Broadcast (>85% Coverage)
-- [ ] **Dokumentation** für Window Management
+- [x] **Dokumentation** für Window Management
 - [x] **test-app Demo** mit mehreren Windows
 
 ### Phase 0-5: Inspector

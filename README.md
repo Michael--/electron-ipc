@@ -31,7 +31,7 @@ The main library - a TypeScript code generator that creates type-safe IPC commun
 
 **Status:** Production ready
 
-### `packages/test-app`
+### `apps/test-app`
 
 A full Electron application that serves as a test environment and reference implementation for the `electron-ipc` library.
 
@@ -70,7 +70,7 @@ pnpm run build
 pnpm run watch
 
 # test-app
-cd packages/test-app
+cd apps/test-app
 pnpm run dev
 ```
 

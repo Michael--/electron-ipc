@@ -589,7 +589,7 @@ pnpm run build
 pnpm run watch
 
 # test-app
-cd packages/test-app
+cd apps/test-app
 pnpm run dev
 ```
 

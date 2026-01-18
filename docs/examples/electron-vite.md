@@ -1,6 +1,6 @@
 # Example: electron-vite
 
-This example mirrors the `packages/test-app` setup and keeps generation in a separate terminal.
+This example mirrors the `apps/test-app` setup and keeps generation in a separate terminal.
 
 ## 1) Add template files
 

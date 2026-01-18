@@ -4,16 +4,16 @@
     {
       "type": "npm",
       "script": "build",
-      "path": "packages/test-app",
-      "label": "npm: build - packages/test-app",
+      "path": "apps/test-app",
+      "label": "npm: build - apps/test-app",
       "detail": "electron-vite build",
       "problemMatcher": []
     },
     {
       "type": "npm",
       "script": "dev",
-      "path": "packages/test-app",
-      "label": "npm: dev - packages/test-app",
+      "path": "apps/test-app",
+      "label": "npm: dev - apps/test-app",
       "detail": "electron-vite dev",
       "isBackground": true,
       "problemMatcher": {

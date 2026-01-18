@@ -374,7 +374,7 @@ broadcast('Empty') // ✅ OK (void payload)
 
 See the test-app for a complete working example:
 
-- `packages/test-app/src/main/index.ts`: Multi-window setup with menu
+- `apps/test-app/src/main/index.ts`: Multi-window setup with menu
 - Window menu with "Open Secondary Window" command
 - Registry info logging
 - Broadcast to all windows demo
