@@ -26,6 +26,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
+    "./window-manager": {
+      "types": "./dist/window-manager/index.d.ts",
+      "import": "./dist/window-manager/index.mjs",
+      "require": "./dist/window-manager/index.cjs"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

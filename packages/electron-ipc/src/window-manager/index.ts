@@ -12,8 +12,8 @@ export {
 
 export { broadcastToApp, createBroadcastToAll, createBroadcastToRole } from './broadcast'
 export {
+  getAllAppWindows,
+  getMainWindow,
   getWindowFromEvent,
   getWindowRoleFromEvent,
-  getMainWindow,
-  getAllAppWindows,
 } from './helpers'

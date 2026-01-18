@@ -776,13 +776,13 @@ enableIpcInspector({ openOnStart: true })
 
 ### Phase -1: Window Management
 
-- [ ] **WindowRegistry implementiert** mit register/unregister/getAll
-- [ ] **Auto-cleanup** bei window.on('closed')
-- [ ] **Role-based filtering** (main, secondary, inspector)
-- [ ] **createBroadcastToAll()** funktioniert
-- [ ] **createBroadcastToRole()** funktioniert
-- [ ] **Backward compatibility** mit bestehendem `createBroadcast(mainWindow, ...)`
-- [ ] **Tests** für Registry + Broadcast (>85% Coverage)
+- [x] **WindowRegistry implementiert** mit register/unregister/getAll
+- [x] **Auto-cleanup** bei window.on('closed')
+- [x] **Role-based filtering** (main, secondary, inspector)
+- [x] **createBroadcastToAll()** funktioniert
+- [x] **createBroadcastToRole()** funktioniert
+- [x] **Backward compatibility** mit bestehendem `createBroadcast(mainWindow, ...)`
+- [x] **Tests** für Registry + Broadcast (>85% Coverage)
 - [ ] **Dokumentation** für Window Management
 - [ ] **test-app Demo** mit mehreren Windows
 

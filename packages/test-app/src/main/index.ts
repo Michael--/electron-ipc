@@ -1,5 +1,4 @@
-import { EventContracts, InvokeContracts } from '@gen/ipc-api'
-import { mainBroadcast } from '@gen/ipc-api-main-broadcast'
+import { BroadcastContracts, EventContracts, InvokeContracts } from '@gen/ipc-api'
 import {
   StreamDownloadContracts,
   StreamInvokeContracts,
@@ -23,7 +22,8 @@ import {
   withStreamInvokeValidation,
   withStreamUploadValidation,
 } from '@number10/electron-ipc'
-import { app, BrowserWindow } from 'electron'
+import { createBroadcastToAll, getWindowRegistry } from '@number10/electron-ipc/window-manager'
+import { app, BrowserWindow, Menu } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 import { z } from 'zod'
@@ -308,6 +308,7 @@ function initializeEventHandler() {
  */
 
 let mainWindow: BrowserWindow | null = null
+let secondaryWindow: BrowserWindow | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -320,6 +321,10 @@ function createWindow(): void {
       sandbox: true,
     },
   })
+
+  // Register as main window
+  getWindowRegistry().register(mainWindow, 'main')
+
   initializeEventHandler()
 
   // Load the index.html from dist/renderer
@@ -332,18 +337,16 @@ function createWindow(): void {
 
   mainWindow.webContents.on('did-finish-load', () => {
     // Example: Send 'About' event to renderer once per 20s
+    // Using new broadcast API to send to ALL windows
+    const broadcastAll = createBroadcastToAll<BroadcastContracts>()
     setInterval(() => {
-      if (mainWindow) {
-        mainBroadcast.About(mainWindow)
-      }
+      broadcastAll('About')
     }, 20000)
 
-    // send ping event every second for demo purposes
+    // Send ping event every second for demo purposes to ALL windows
     let pingCount = 0
     setInterval(() => {
-      if (mainWindow) {
-        mainBroadcast.Ping(mainWindow, pingCount++)
-      }
+      broadcastAll('Ping', pingCount++)
     }, 1000)
   })
 
@@ -352,8 +355,76 @@ function createWindow(): void {
   })
 }
 
+function createSecondaryWindow(): void {
+  secondaryWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    title: 'Secondary Window',
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/index.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+    },
+  })
+
+  // Register as secondary window
+  getWindowRegistry().register(secondaryWindow, 'secondary')
+
+  // Load same content (would typically be different)
+  secondaryWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
+
+  if (process.env.NODE_ENV === 'development') {
+    secondaryWindow.webContents.openDevTools()
+  }
+
+  secondaryWindow.on('closed', () => {
+    secondaryWindow = null
+  })
+}
+
 app.whenReady().then(() => {
   createWindow()
+
+  // Create application menu with Window Management demo
+  const menu = Menu.buildFromTemplate([
+    {
+      label: 'Window',
+      submenu: [
+        {
+          label: 'Open Secondary Window',
+          accelerator: 'CmdOrCtrl+N',
+          click: () => {
+            if (!secondaryWindow) {
+              createSecondaryWindow()
+            } else {
+              secondaryWindow.focus()
+            }
+          },
+        },
+        {
+          label: 'Show Window Registry Info',
+          click: () => {
+            const registry = getWindowRegistry()
+            const windows = registry.getAll()
+            const info = windows
+              .map(
+                (w) =>
+                  `ID: ${w.id}, Role: ${w.role}, Created: ${new Date(w.createdAt).toLocaleTimeString()}`
+              )
+              .join('\n')
+            // eslint-disable-next-line no-console
+            console.log('Window Registry:\n' + info)
+          },
+        },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [{ role: 'reload' }, { role: 'toggleDevTools' }],
+    },
+  ])
+  Menu.setApplicationMenu(menu)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
