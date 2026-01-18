@@ -40,6 +40,47 @@ function calculateBytes(data: any): number {
   }
 }
 
+/** Gets current payload mode from main process */
+let cachedPayloadMode: 'none' | 'redacted' | 'full' = 'redacted'
+try {
+  // Try to get initial mode from main process
+  ipcRenderer.invoke('INSPECTOR:GET_PAYLOAD_MODE').then((mode) => {
+    if (mode) cachedPayloadMode = mode
+  }).catch(() => {})
+} catch {}
+
+/** Creates a payload preview based on current mode */
+function createPayloadPreview(data: any): { mode: 'none' | 'redacted' | 'full', bytes?: number, summary?: string, data?: any } {
+  const bytes = calculateBytes(data)
+
+  // Mode: none - no payload data at all
+  if (cachedPayloadMode === 'none') {
+    return { mode: 'none', bytes }
+  }
+
+  // Mode: full - include complete data
+  if (cachedPayloadMode === 'full') {
+    return { mode: 'full', bytes, data }
+  }
+
+  // Mode: redacted (default) - preview only
+  let summary = ''
+  try {
+    const json = JSON.stringify(data)
+    // Preview: first 100 chars
+    summary = json.length > 100 ? json.slice(0, 100) + '...' : json
+  } catch {
+    summary = '[Non-serializable data]'
+  }
+
+  return { mode: 'redacted', bytes, summary }
+}
+
+/** Updates cached payload mode from main process */
+ipcRenderer.on('INSPECTOR:PAYLOAD_MODE_CHANGED', (_event: any, mode: 'none' | 'redacted' | 'full') => {
+  cachedPayloadMode = mode
+})
+
 /** Traces an invoke IPC call */
 async function traceInvoke<TRequest, TResponse>(
   channel: string,
@@ -62,7 +103,7 @@ async function traceInvoke<TRequest, TResponse>(
       status: 'ok',
       tsStart,
       source: { webContentsId: -1 },
-      request: { mode: 'full', bytes: calculateBytes(request), data: request }
+      request: createPayloadPreview(request)
     })
   } catch {}
 
@@ -81,8 +122,8 @@ async function traceInvoke<TRequest, TResponse>(
         tsEnd,
         durationMs: tsEnd - tsStart,
         source: { webContentsId: -1 },
-        request: { mode: 'full', bytes: calculateBytes(request), data: request },
-        response: { mode: 'full', bytes: calculateBytes(response), data: response }
+        request: createPayloadPreview(request),
+        response: createPayloadPreview(response)
       })
     } catch {}
 
@@ -101,10 +142,11 @@ async function traceInvoke<TRequest, TResponse>(
         tsEnd,
         durationMs: tsEnd - tsStart,
         source: { webContentsId: -1 },
-        request: { mode: 'full', bytes: calculateBytes(request), data: request },
+        request: createPayloadPreview(request),
         error: {
           name: error instanceof Error ? error.name : 'Error',
-          message: error instanceof Error ? error.message : String(error)
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
         }
       })
     } catch {}
@@ -126,7 +168,7 @@ function traceEvent<TPayload>(channel: string, payload: TPayload): void {
       status: 'ok',
       tsStart: Date.now(),
       source: { webContentsId: -1 },
-      payload: { mode: 'full', bytes: calculateBytes(payload), data: payload }
+      payload: createPayloadPreview(payload)
     })
   } catch {}
 }
@@ -144,7 +186,7 @@ function traceBroadcast<TPayload>(channel: string, payload: TPayload): void {
       status: 'ok',
       tsStart: Date.now(),
       target: { webContentsId: -1 },
-      payload: { mode: 'full', bytes: calculateBytes(payload), data: payload }
+      payload: createPayloadPreview(payload)
     })
   } catch {}
 }
@@ -165,7 +207,7 @@ function traceStreamInvoke(channel: string, request: any): string {
       status: 'streaming',
       tsStart,
       source: { webContentsId: -1 },
-      request: { mode: 'full', bytes: calculateBytes(request), data: request }
+      request: createPayloadPreview(request)
     })
   } catch {}
 
@@ -185,7 +227,7 @@ function traceStreamInvokeChunk(traceId: string, channel: string, chunk: any): v
       status: 'streaming',
       tsStart: Date.now(),
       source: { webContentsId: -1 },
-      stream: { mode: 'full', bytes: calculateBytes(chunk), data: chunk }
+      stream: createPayloadPreview(chunk)
     })
   } catch {}
 }
@@ -230,7 +272,8 @@ function traceStreamInvokeError(traceId: string, channel: string, tsStart: numbe
       source: { webContentsId: -1 },
       error: {
         name: error instanceof Error ? error.name : 'Error',
-        message: error instanceof Error ? error.message : String(error)
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       }
     })
   } catch {}
@@ -251,7 +294,7 @@ function traceStreamUploadStart(channel: string, request: any): string {
       status: 'streaming',
       tsStart: Date.now(),
       source: { webContentsId: -1 },
-      request: { mode: 'full', bytes: calculateBytes(request), data: request }
+      request: createPayloadPreview(request)
     })
   } catch {}
 
@@ -271,7 +314,7 @@ function traceStreamUploadData(traceId: string, channel: string, chunk: any): vo
       status: 'streaming',
       tsStart: Date.now(),
       source: { webContentsId: -1 },
-      data: { mode: 'full', bytes: calculateBytes(chunk), data: chunk }
+      data: createPayloadPreview(chunk)
     })
   } catch {}
 }
@@ -306,7 +349,7 @@ function traceStreamDownload(channel: string, chunk: any): void {
       status: 'ok',
       tsStart: Date.now(),
       target: { webContentsId: -1 },
-      data: { mode: 'full', bytes: calculateBytes(chunk), data: chunk }
+      data: createPayloadPreview(chunk)
     })
   } catch {}
 }

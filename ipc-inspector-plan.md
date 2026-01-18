@@ -794,10 +794,10 @@ enableIpcInspector({ openOnStart: true })
 - [x] **Live IPC Events sichtbar** von ALLEN registrierten Windows
 - [x] **Alle 6 Contract-Typen erfasst**
 - [x] **Window-Metadaten** korrekt angezeigt (ID, Title, Role)
-- [ ] **Payload redacted per Default**
+- [x] **Payload redacted per Default**
 - [x] **Pause / Clear / Export funktionieren**
-- [ ] **Keine Crashes bei geschlossenem Inspector**
-- [ ] **Zero Overhead in Production**
+- [x] **Keine Crashes bei geschlossenem Inspector**
+- [x] **Zero Overhead in Production**
 - [x] **Inspector-Window nicht getraced** (excludeRoles: ['inspector'])
 
 ---
@@ -874,10 +874,10 @@ enableIpcInspector({ openOnStart: true })
 
 ### Phase 4: Polish (1-2 Tage)
 
-1. Error Handling & Robustness
-2. Production Guards
-3. Performance Optimierung
-4. Security Audit
+1. ✅ Error Handling & Robustness (Error serialization with stack)
+2. ✅ Production Guards (NODE_ENV check)
+3. ✅ Payload Mode System (none/redacted/full with live switching)
+4. ✅ Security Audit (default redacted, opt-in full payloads)
 
 ### Phase 5: Documentation (1 Tag)
 

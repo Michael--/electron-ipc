@@ -109,10 +109,30 @@ export class InspectorServer {
   setPayloadMode(mode: PayloadMode): void {
     this.options.payloadMode = mode
 
+    // Broadcast status update to inspector windows
     this.broadcast({
       channel: 'INSPECTOR:STATUS',
       payload: this.getStatus(),
     })
+
+    // Broadcast mode change to ALL app windows (not just inspector)
+    // Dynamic import to avoid circular dependency.
+    void import('../window-manager/registry')
+      .then(({ getWindowRegistry }) => {
+        const registry = getWindowRegistry()
+        const allWindows = registry.getAll()
+
+        allWindows.forEach((meta) => {
+          if (!meta.window.isDestroyed() && !meta.window.webContents.isDestroyed()) {
+            try {
+              meta.window.webContents.send('INSPECTOR:PAYLOAD_MODE_CHANGED', mode)
+            } catch {
+              // Send failed, window may have been destroyed
+            }
+          }
+        })
+      })
+      .catch(() => undefined)
   }
 
   /**

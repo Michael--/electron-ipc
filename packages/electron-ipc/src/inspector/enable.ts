@@ -1,14 +1,10 @@
 import type { IpcMainEvent } from 'electron'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
-import type {
-  InspectorCommand,
-  InspectorCommandPayload,
-  InspectorHelloPayload,
-} from './inspector-contracts'
+import type { InspectorCommand, InspectorCommandPayload } from './inspector-contracts'
 import { getInspectorServer } from './server'
 import { setTraceSink } from './trace'
-import type { InspectorOptions } from './types'
+import type { InspectorOptions, TraceEvent } from './types'
 import { DEFAULT_INSPECTOR_OPTIONS } from './types'
 
 /**
@@ -30,6 +26,12 @@ let inspectorWindow: BrowserWindow | null = null
  */
 export function enableIpcInspector(options: InspectorOptions = {}): BrowserWindow | null {
   const config = { ...DEFAULT_INSPECTOR_OPTIONS, ...options }
+
+  // Production guard: never enable in production
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('[IPC Inspector] Inspector disabled in production')
+    return null
+  }
 
   // Only enable in development by default
   if (!config.enabled) {
@@ -122,7 +124,7 @@ function createInspectorWindow(_options: Required<InspectorOptions>): BrowserWin
  */
 function registerIpcHandlers(server: ReturnType<typeof getInspectorServer>): void {
   // HELLO: Inspector UI connects
-  ipcMain.on('INSPECTOR:HELLO', (event: IpcMainEvent, payload: InspectorHelloPayload) => {
+  ipcMain.on('INSPECTOR:HELLO', (event: IpcMainEvent) => {
     // Send initial snapshot now that renderer is ready
     const subscriber = server.getSubscriber(event.sender)
     if (subscriber) {
@@ -131,17 +133,23 @@ function registerIpcHandlers(server: ReturnType<typeof getInspectorServer>): voi
   })
 
   // TRACE: Receive trace events from renderer
-  ipcMain.on('INSPECTOR:TRACE', (event: IpcMainEvent, traceEvent: any) => {
+  ipcMain.on('INSPECTOR:TRACE', (event: IpcMainEvent, traceEvent: TraceEvent) => {
     // Enrich trace event with actual webContents ID
-    if (traceEvent.source) {
-      traceEvent.source.webContentsId = event.sender.id
+    if ('source' in traceEvent) {
+      const source = traceEvent.source
+      source.webContentsId = event.sender.id
     }
-    if (traceEvent.target) {
+    if ('target' in traceEvent && traceEvent.target) {
       traceEvent.target.webContentsId = event.sender.id
     }
 
     // Push to server
     server.push(traceEvent)
+  })
+
+  // GET_PAYLOAD_MODE: Renderer requests current payload mode
+  ipcMain.handle('INSPECTOR:GET_PAYLOAD_MODE', () => {
+    return server.getOptions().payloadMode
   })
 
   // COMMAND: Inspector UI sends commands

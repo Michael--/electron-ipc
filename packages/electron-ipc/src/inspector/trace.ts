@@ -17,6 +17,11 @@ let globalTraceSink: TraceSink | null = null
 let tracingEnabled = false
 
 /**
+ * Current payload mode
+ */
+let currentPayloadMode: PayloadMode = 'redacted'
+
+/**
  * Sets the global trace sink
  *
  * @param sink - Function to receive trace events, or null to disable
@@ -24,6 +29,24 @@ let tracingEnabled = false
 export function setTraceSink(sink: TraceSink | null): void {
   globalTraceSink = sink
   tracingEnabled = sink !== null
+}
+
+/**
+ * Sets the current payload mode
+ *
+ * @param mode - Payload mode to use for new traces
+ */
+export function setPayloadMode(mode: PayloadMode): void {
+  currentPayloadMode = mode
+}
+
+/**
+ * Gets the current payload mode
+ *
+ * @returns Current payload mode
+ */
+export function getPayloadMode(): PayloadMode {
+  return currentPayloadMode
 }
 
 /**

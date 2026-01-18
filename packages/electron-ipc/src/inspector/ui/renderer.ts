@@ -33,6 +33,7 @@ let elements: {
   pauseBtn: HTMLButtonElement
   clearBtn: HTMLButtonElement
   exportBtn: HTMLButtonElement
+  payloadModeSelect: HTMLSelectElement
   searchInput: HTMLInputElement
   kindFilter: HTMLSelectElement
   statusFilter: HTMLSelectElement
@@ -76,6 +77,7 @@ function init() {
     pauseBtn: bodyNode.querySelector('#pauseBtn') as HTMLButtonElement,
     clearBtn: bodyNode.querySelector('#clearBtn') as HTMLButtonElement,
     exportBtn: bodyNode.querySelector('#exportBtn') as HTMLButtonElement,
+    payloadModeSelect: bodyNode.querySelector('#payloadModeSelect') as HTMLSelectElement,
     searchInput: bodyNode.querySelector('#searchInput') as HTMLInputElement,
     kindFilter: bodyNode.querySelector('#kindFilter') as HTMLSelectElement,
     statusFilter: bodyNode.querySelector('#statusFilter') as HTMLSelectElement,
@@ -119,7 +121,7 @@ function init() {
 
   // Listen for status updates
   window.inspectorAPI.onStatus((payload) => {
-    updateStatus(payload.isTracing, payload.eventCount, payload.droppedCount)
+    updateStatus(payload.isTracing, payload.eventCount, payload.droppedCount, payload.payloadMode)
   })
 
   // Listen for command responses
@@ -169,6 +171,12 @@ function setupEventListeners() {
   // Export button
   elements.exportBtn.addEventListener('click', () => {
     window.inspectorAPI.sendCommand({ type: 'export', format: 'json' })
+  })
+
+  // Payload mode selector
+  elements.payloadModeSelect.addEventListener('change', (e) => {
+    const mode = (e.target as HTMLSelectElement).value as 'none' | 'redacted' | 'full'
+    window.inspectorAPI.sendCommand({ type: 'setPayloadMode', mode })
   })
 
   // Search input
@@ -451,7 +459,12 @@ function updateStats(eventCount: number, droppedCount?: number) {
 /**
  * Update status display
  */
-function updateStatus(isTracing: boolean, eventCount: number, droppedCount?: number) {
+function updateStatus(
+  isTracing: boolean,
+  eventCount: number,
+  droppedCount?: number,
+  payloadMode?: 'none' | 'redacted' | 'full'
+) {
   if (!isTracing && !isPaused) {
     elements.statusBadge.classList.remove('active')
     elements.statusBadge.classList.add('paused')
@@ -467,6 +480,11 @@ function updateStatus(isTracing: boolean, eventCount: number, droppedCount?: num
   }
 
   updateStats(eventCount, droppedCount)
+
+  // Update payload mode selector
+  if (payloadMode && elements.payloadModeSelect.value !== payloadMode) {
+    elements.payloadModeSelect.value = payloadMode
+  }
 }
 
 /**

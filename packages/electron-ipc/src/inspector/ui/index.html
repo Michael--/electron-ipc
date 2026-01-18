@@ -79,6 +79,27 @@
         align-items: center;
       }
 
+      select {
+        padding: 6px 12px;
+        border: 1px solid #3e3e42;
+        background: #2d2d30;
+        color: #cccccc;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+      }
+
+      select:hover {
+        background: #3e3e42;
+        border-color: #007acc;
+      }
+
+      select:focus {
+        outline: none;
+        border-color: #007acc;
+      }
+
       button {
         padding: 6px 12px;
         border: 1px solid #3e3e42;
@@ -374,6 +395,11 @@
         </span>
       </h1>
       <div class="controls">
+        <select id="payloadModeSelect" title="Payload Display Mode">
+          <option value="redacted">Redacted (Preview)</option>
+          <option value="full">Full Payloads</option>
+          <option value="none">No Payloads</option>
+        </select>
         <button id="pauseBtn">Pause</button>
         <button id="clearBtn" class="danger">Clear</button>
         <button id="exportBtn">Export JSON</button>
