@@ -784,7 +784,7 @@ enableIpcInspector({ openOnStart: true })
 - [x] **Backward compatibility** mit bestehendem `createBroadcast(mainWindow, ...)`
 - [x] **Tests** für Registry + Broadcast (>85% Coverage)
 - [ ] **Dokumentation** für Window Management
-- [ ] **test-app Demo** mit mehreren Windows
+- [x] **test-app Demo** mit mehreren Windows
 
 ### Phase 0-5: Inspector
 
