@@ -790,15 +790,15 @@ enableIpcInspector({ openOnStart: true })
 
 - [x] **Phase 0: Foundation** - Types, Contracts, Trace System (32 tests)
 - [x] **Phase 1: Main-Side** - RingBuffer, InspectorServer, enableIpcInspector() (41 tests)
-- [ ] **Inspector öffnet sich als eigenes Fenster** mit React UI
-- [ ] **Live IPC Events sichtbar** von ALLEN registrierten Windows
-- [ ] **Alle 6 Contract-Typen erfasst**
-- [ ] **Window-Metadaten** korrekt angezeigt (ID, Title, Role)
+- [x] **Inspector öffnet sich als eigenes Fenster** mit React UI
+- [x] **Live IPC Events sichtbar** von ALLEN registrierten Windows
+- [x] **Alle 6 Contract-Typen erfasst**
+- [x] **Window-Metadaten** korrekt angezeigt (ID, Title, Role)
 - [ ] **Payload redacted per Default**
-- [ ] **Pause / Clear / Export funktionieren**
+- [x] **Pause / Clear / Export funktionieren**
 - [ ] **Keine Crashes bei geschlossenem Inspector**
 - [ ] **Zero Overhead in Production**
-- [ ] **Inspector-Window nicht getraced** (excludeRoles: ['inspector'])
+- [x] **Inspector-Window nicht getraced** (excludeRoles: ['inspector'])
 
 ---
 
