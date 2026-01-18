@@ -13,6 +13,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "dev": "pnpm --filter test-app run dev",
+    "dev:multi-window": "pnpm --filter electron-ipc-multi-window run dev",
     "dev:lib": "pnpm --filter electron-ipc run dev",
     "typecheck": "pnpm -r run typecheck",
     "spell": "cspell \"**/*.{ts,tsx,js,jsx,json,md}\"",

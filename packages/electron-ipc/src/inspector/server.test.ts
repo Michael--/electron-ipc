@@ -315,7 +315,7 @@ describe('InspectorServer', () => {
 
       expect(server.getSubscriberCount()).toBe(1)
 
-      server.unsubscribe(1)
+      server.unsubscribe(1 as unknown as Electron.BrowserWindow)
 
       expect(server.getSubscriberCount()).toBe(0)
     })
