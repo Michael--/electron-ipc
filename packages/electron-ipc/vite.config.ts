@@ -16,6 +16,7 @@ export default defineConfig({
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
         'window-manager/index': resolve(__dirname, 'src/window-manager/index.ts'),
+        'inspector/index': resolve(__dirname, 'src/inspector/index.ts'),
         'bin/generate-api': resolve(__dirname, 'src/bin/generate-api.ts'),
       },
       formats: ['es', 'cjs'],

@@ -788,6 +788,7 @@ enableIpcInspector({ openOnStart: true })
 
 ### Phase 0-5: Inspector
 
+- [x] **Phase 0: Foundation** - Types, Contracts, Trace System (32 tests)
 - [ ] **Inspector öffnet sich als eigenes Fenster** mit React UI
 - [ ] **Live IPC Events sichtbar** von ALLEN registrierten Windows
 - [ ] **Alle 6 Contract-Typen erfasst**
