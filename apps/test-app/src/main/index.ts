@@ -22,6 +22,7 @@ import {
   withStreamInvokeValidation,
   withStreamUploadValidation,
 } from '@number10/electron-ipc'
+import { enableIpcInspector } from '@number10/electron-ipc/inspector'
 import { createBroadcastToAll, getWindowRegistry } from '@number10/electron-ipc/window-manager'
 import { app, BrowserWindow, Menu } from 'electron'
 import * as fs from 'fs'
@@ -415,6 +416,18 @@ app.whenReady().then(() => {
               .join('\n')
             // eslint-disable-next-line no-console
             console.log('Window Registry:\n' + info)
+          },
+        },
+      ],
+    },
+    {
+      label: 'Developer',
+      submenu: [
+        {
+          label: 'Open IPC Inspector',
+          accelerator: 'CmdOrCtrl+Shift+I',
+          click: () => {
+            enableIpcInspector({ openOnStart: true })
           },
         },
       ],

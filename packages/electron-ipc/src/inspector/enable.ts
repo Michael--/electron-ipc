@@ -1,5 +1,6 @@
 import type { IpcMainEvent } from 'electron'
 import { app, BrowserWindow, ipcMain } from 'electron'
+import { join } from 'path'
 import type {
   InspectorCommand,
   InspectorCommandPayload,
@@ -30,9 +31,15 @@ let inspectorWindow: BrowserWindow | null = null
 export function enableIpcInspector(options: InspectorOptions = {}): BrowserWindow | null {
   const config = { ...DEFAULT_INSPECTOR_OPTIONS, ...options }
 
+  // eslint-disable-next-line no-console
+  console.log('[Inspector] enableIpcInspector called with options:', options)
+  // eslint-disable-next-line no-console
+  console.log('[Inspector] merged config:', config)
+
   // Only enable in development by default
   if (!config.enabled) {
-    // Inspector is disabled
+    // eslint-disable-next-line no-console
+    console.log('[Inspector] Disabled - config.enabled is false')
     return null
   }
 
@@ -49,9 +56,14 @@ export function enableIpcInspector(options: InspectorOptions = {}): BrowserWindo
 
   // Create inspector window if requested
   if (config.openOnStart) {
+    // eslint-disable-next-line no-console
+    console.log('[Inspector] Creating inspector window...')
     inspectorWindow = createInspectorWindow(config)
     return inspectorWindow
   }
+
+  // eslint-disable-next-line no-console
+  console.log('[Inspector] openOnStart is false, not creating window')
 
   // Register keyboard shortcut to open inspector
   if (config.shortcut) {
@@ -68,11 +80,19 @@ export function enableIpcInspector(options: InspectorOptions = {}): BrowserWindo
  * @returns The created inspector window
  */
 function createInspectorWindow(_options: Required<InspectorOptions>): BrowserWindow {
+  // eslint-disable-next-line no-console
+  console.log('[Inspector] createInspectorWindow called')
+
   // If window already exists and is not destroyed, focus it
   if (inspectorWindow && !inspectorWindow.isDestroyed()) {
+    // eslint-disable-next-line no-console
+    console.log('[Inspector] Window already exists, focusing')
     inspectorWindow.focus()
     return inspectorWindow
   }
+
+  // eslint-disable-next-line no-console
+  console.log('[Inspector] Creating new BrowserWindow...')
 
   const window = new BrowserWindow({
     width: 1200,
@@ -81,9 +101,13 @@ function createInspectorWindow(_options: Required<InspectorOptions>): BrowserWin
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: true,
+      sandbox: false, // Need access to Node APIs in preload
+      preload: join(__dirname, 'ui', 'preload.js'),
     },
   })
+
+  // eslint-disable-next-line no-console
+  console.log('[Inspector] BrowserWindow created')
 
   // Enable DevTools for the inspector itself
   window.webContents.openDevTools({ mode: 'detach' })
@@ -96,19 +120,30 @@ function createInspectorWindow(_options: Required<InspectorOptions>): BrowserWin
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       require('../window-manager/registry') as typeof import('../window-manager/registry')
     getWindowRegistry().register(window, 'inspector')
+    // eslint-disable-next-line no-console
+    console.log('[Inspector] Registered with window manager')
   } catch {
+    // eslint-disable-next-line no-console
+    console.log('[Inspector] Window manager not available')
     // Window manager not available, continue without it
   }
 
   // Subscribe to inspector server
   const server = getInspectorServer()
   server.subscribe(window)
+  // eslint-disable-next-line no-console
+  console.log('[Inspector] Subscribed to server')
 
-  // Load inspector UI (placeholder for now)
-  window.loadURL('data:text/html,<h1>IPC Inspector</h1><p>UI coming in Phase 2</p>')
+  // Load inspector UI
+  const uiPath = join(__dirname, 'ui', 'index.html')
+  // eslint-disable-next-line no-console
+  console.log('[Inspector] Loading UI from:', uiPath)
+  window.loadFile(uiPath)
 
   // Clean up on close
   window.on('closed', () => {
+    // eslint-disable-next-line no-console
+    console.log('[Inspector] Window closed')
     inspectorWindow = null
   })
 
@@ -127,7 +162,16 @@ function registerIpcHandlers(server: ReturnType<typeof getInspectorServer>): voi
     // eslint-disable-next-line no-console
     console.log('[Inspector] UI connected:', payload)
 
-    // Response is sent automatically via subscribe() in createInspectorWindow
+    // Send initial snapshot now that renderer is ready
+    const subscriber = server.getSubscriber(event.sender)
+    if (subscriber) {
+      // eslint-disable-next-line no-console
+      console.log('[Inspector] Sending INIT to BrowserWindow', subscriber.window.id)
+      server.sendInit(subscriber)
+    } else {
+      // eslint-disable-next-line no-console
+      console.error('[Inspector] No subscriber found for webContents', event.sender.id)
+    }
   })
 
   // COMMAND: Inspector UI sends commands

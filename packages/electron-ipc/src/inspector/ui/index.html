@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
+    />
+    <title>IPC Inspector</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+          sans-serif;
+        background: #1e1e1e;
+        color: #d4d4d4;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      header {
+        background: #252526;
+        border-bottom: 1px solid #3e3e42;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+
+      h1 {
+        font-size: 16px;
+        font-weight: 500;
+        color: #cccccc;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+      }
+
+      .status-badge.active {
+        background: #1e5e1e;
+        color: #89d185;
+      }
+
+      .status-badge.paused {
+        background: #5e5e1e;
+        color: #d1d185;
+      }
+
+      .status-indicator {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      button {
+        padding: 6px 12px;
+        border: 1px solid #3e3e42;
+        background: #2d2d30;
+        color: #cccccc;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+      }
+
+      button:hover {
+        background: #3e3e42;
+        border-color: #007acc;
+      }
+
+      button:active {
+        background: #007acc;
+        border-color: #007acc;
+        color: white;
+      }
+
+      button.primary {
+        background: #007acc;
+        border-color: #007acc;
+        color: white;
+      }
+
+      button.primary:hover {
+        background: #005a9e;
+        border-color: #005a9e;
+      }
+
+      button.danger {
+        background: #a1260d;
+        border-color: #a1260d;
+        color: white;
+      }
+
+      button.danger:hover {
+        background: #7a1d0a;
+        border-color: #7a1d0a;
+      }
+
+      .toolbar {
+        background: #252526;
+        border-bottom: 1px solid #3e3e42;
+        padding: 8px 16px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      .search-box {
+        flex: 1;
+        max-width: 300px;
+      }
+
+      input[type='text'] {
+        width: 100%;
+        padding: 6px 12px;
+        background: #3c3c3c;
+        border: 1px solid #3e3e42;
+        color: #cccccc;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+
+      input[type='text']:focus {
+        outline: none;
+        border-color: #007acc;
+        background: #2d2d30;
+      }
+
+      select {
+        padding: 6px 12px;
+        background: #3c3c3c;
+        border: 1px solid #3e3e42;
+        color: #cccccc;
+        border-radius: 4px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      select:focus {
+        outline: none;
+        border-color: #007acc;
+      }
+
+      .stats {
+        font-size: 12px;
+        color: #858585;
+        margin-left: auto;
+      }
+
+      main {
+        flex: 1;
+        overflow: auto;
+        position: relative;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      thead {
+        position: sticky;
+        top: 0;
+        background: #252526;
+        z-index: 10;
+      }
+
+      th {
+        text-align: left;
+        padding: 8px 12px;
+        font-weight: 500;
+        border-bottom: 1px solid #3e3e42;
+        color: #858585;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      td {
+        padding: 8px 12px;
+        border-bottom: 1px solid #2d2d30;
+      }
+
+      tr:hover {
+        background: #2a2a2a;
+      }
+
+      tr.selected {
+        background: #37373d;
+      }
+
+      .kind-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 500;
+      }
+
+      .kind-invoke {
+        background: #1e3a5f;
+        color: #7fb5e8;
+      }
+      .kind-event {
+        background: #5f1e5f;
+        color: #e87fb5;
+      }
+      .kind-broadcast {
+        background: #5f5f1e;
+        color: #e8e87f;
+      }
+      .kind-stream {
+        background: #1e5f5f;
+        color: #7fe8e8;
+      }
+
+      .status-badge-cell {
+        text-align: center;
+      }
+
+      .status-ok {
+        color: #89d185;
+      }
+      .status-error {
+        color: #f48771;
+      }
+      .status-timeout {
+        color: #d1d185;
+      }
+      .status-cancelled {
+        color: #858585;
+      }
+
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #858585;
+        padding: 48px;
+        text-align: center;
+      }
+
+      .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      .empty-state h2 {
+        font-size: 18px;
+        font-weight: 400;
+        margin-bottom: 8px;
+        color: #cccccc;
+      }
+
+      .empty-state p {
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .detail-panel {
+        position: fixed;
+        right: 0;
+        top: 0;
+        width: 400px;
+        height: 100%;
+        background: #252526;
+        border-left: 1px solid #3e3e42;
+        display: none;
+        flex-direction: column;
+        z-index: 100;
+      }
+
+      .detail-panel.visible {
+        display: flex;
+      }
+
+      .detail-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid #3e3e42;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .detail-content {
+        flex: 1;
+        overflow: auto;
+        padding: 16px;
+      }
+
+      .detail-section {
+        margin-bottom: 24px;
+      }
+
+      .detail-section h3 {
+        font-size: 12px;
+        font-weight: 500;
+        color: #858585;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+      }
+
+      .detail-row {
+        display: flex;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+
+      .detail-label {
+        color: #858585;
+        min-width: 100px;
+      }
+
+      .detail-value {
+        color: #cccccc;
+        word-break: break-all;
+      }
+
+      pre {
+        background: #1e1e1e;
+        padding: 12px;
+        border-radius: 4px;
+        overflow-x: auto;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      code {
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+        color: #ce9178;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>
+        IPC Inspector
+        <span id="statusBadge" class="status-badge active">
+          <span class="status-indicator"></span>
+          <span id="statusText">Active</span>
+        </span>
+      </h1>
+      <div class="controls">
+        <button id="pauseBtn">Pause</button>
+        <button id="clearBtn" class="danger">Clear</button>
+        <button id="exportBtn">Export JSON</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search by channel..." />
+      </div>
+      <select id="kindFilter">
+        <option value="">All Types</option>
+        <option value="invoke">Invoke</option>
+        <option value="event">Event</option>
+        <option value="broadcast">Broadcast</option>
+        <option value="streamInvoke">Stream Invoke</option>
+        <option value="streamUpload">Stream Upload</option>
+        <option value="streamDownload">Stream Download</option>
+      </select>
+      <select id="statusFilter">
+        <option value="">All Status</option>
+        <option value="ok">OK</option>
+        <option value="error">Error</option>
+        <option value="timeout">Timeout</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+      <div class="stats">
+        <span id="eventCount">0 events</span>
+        <span id="droppedCount"></span>
+      </div>
+    </div>
+
+    <main>
+      <div id="emptyState" class="empty-state">
+        <div class="empty-state-icon">📡</div>
+        <h2>No IPC Events Yet</h2>
+        <p>
+          Waiting for IPC communication to be traced...<br />Make sure tracing is enabled in your
+          application.
+        </p>
+      </div>
+
+      <table id="eventsTable" style="display: none">
+        <thead>
+          <tr>
+            <th style="width: 140px">Time</th>
+            <th style="width: 100px">Type</th>
+            <th style="width: 200px">Channel</th>
+            <th style="width: 150px">Direction</th>
+            <th style="width: 80px">Duration</th>
+            <th style="width: 80px">Size</th>
+            <th style="width: 80px">Status</th>
+          </tr>
+        </thead>
+        <tbody id="eventsBody"></tbody>
+      </table>
+    </main>
+
+    <div id="detailPanel" class="detail-panel">
+      <div class="detail-header">
+        <h2>Event Details</h2>
+        <button id="closeDetailBtn">✕</button>
+      </div>
+      <div class="detail-content" id="detailContent"></div>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

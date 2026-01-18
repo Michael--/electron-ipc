@@ -39,7 +39,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "vite build && shx chmod +x dist/bin/generate-api.js",
+    "build": "vite build && shx chmod +x dist/bin/generate-api.js && shx cp src/inspector/ui/index.html dist/inspector/ui/",
     "dev": "vite build --watch",
     "clean": "rimraf dist *.tsbuildinfo",
     "test": "vitest run",

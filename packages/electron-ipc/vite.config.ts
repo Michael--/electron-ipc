@@ -17,11 +17,17 @@ export default defineConfig({
         index: resolve(__dirname, 'src/index.ts'),
         'window-manager/index': resolve(__dirname, 'src/window-manager/index.ts'),
         'inspector/index': resolve(__dirname, 'src/inspector/index.ts'),
+        'inspector/ui/preload': resolve(__dirname, 'src/inspector/ui/preload.ts'),
+        'inspector/ui/renderer': resolve(__dirname, 'src/inspector/ui/renderer.ts'),
         'bin/generate-api': resolve(__dirname, 'src/bin/generate-api.ts'),
       },
       formats: ['es', 'cjs'],
       fileName: (format, entryName) => {
         if (entryName.includes('bin/')) {
+          return `${entryName}.js`
+        }
+        if (entryName.includes('inspector/ui/')) {
+          // UI files always as .js
           return `${entryName}.js`
         }
         return `${entryName}.${format === 'es' ? 'mjs' : 'cjs'}`

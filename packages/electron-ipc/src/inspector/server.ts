@@ -7,8 +7,7 @@ import { DEFAULT_INSPECTOR_OPTIONS } from './types'
  * Subscriber for inspector events
  */
 interface InspectorSubscriber {
-  webContents: WebContents
-  windowId: number
+  window: BrowserWindow
 }
 
 /**
@@ -141,33 +140,40 @@ export class InspectorServer {
    * @param window - Inspector window to subscribe
    */
   subscribe(window: BrowserWindow): void {
+    // eslint-disable-next-line no-console
+    console.log('[InspectorServer] subscribe() called for window:', window.id)
+
     if (window.isDestroyed()) {
+      // eslint-disable-next-line no-console
+      console.log('[InspectorServer] Window already destroyed')
       return
     }
 
     const subscriber: InspectorSubscriber = {
-      webContents: window.webContents,
-      windowId: window.id,
+      window,
     }
 
     this.subscribers.set(window.id, subscriber)
+    // eslint-disable-next-line no-console
+    console.log('[InspectorServer] Subscriber added, total subscribers:', this.subscribers.size)
 
     // Auto-cleanup when window is destroyed
     window.once('closed', () => {
-      this.unsubscribe(window.id)
+      this.unsubscribe(window)
     })
 
-    // Send initial snapshot
-    this.sendInit(subscriber)
+    // Don't send initial snapshot here - wait for HELLO from renderer
+    // eslint-disable-next-line no-console
+    console.log('[InspectorServer] Waiting for HELLO from renderer...')
   }
 
   /**
    * Unsubscribes an inspector window
    *
-   * @param windowId - Window ID to unsubscribe
+   * @param window - Inspector window to unsubscribe
    */
-  unsubscribe(windowId: number): void {
-    this.subscribers.delete(windowId)
+  unsubscribe(window: BrowserWindow): void {
+    this.subscribers.delete(window.id)
   }
 
   /**
@@ -178,15 +184,39 @@ export class InspectorServer {
   }
 
   /**
+   * Gets a subscriber by WebContents
+   *
+   * @param webContents - WebContents to find subscriber for
+   * @returns The subscriber if found
+   */
+  getSubscriber(webContents: WebContents): InspectorSubscriber | undefined {
+    // Find BrowserWindow that owns this webContents
+    const window = BrowserWindow.fromWebContents(webContents)
+    if (!window) return undefined
+    return this.subscribers.get(window.id)
+  }
+
+  /**
    * Sends initial state to a subscriber
    */
-  private sendInit(subscriber: InspectorSubscriber): void {
-    if (subscriber.webContents.isDestroyed()) {
+  sendInit(subscriber: InspectorSubscriber): void {
+    if (subscriber.window.isDestroyed() || subscriber.window.webContents.isDestroyed()) {
+      // eslint-disable-next-line no-console
+      console.log('[InspectorServer] sendInit: window or webContents already destroyed')
       return
     }
 
-    subscriber.webContents.send('INSPECTOR:INIT', {
-      events: this.snapshot(),
+    const events = this.snapshot()
+    // eslint-disable-next-line no-console
+    console.log(
+      '[InspectorServer] sendInit: Sending',
+      events.length,
+      'events to window',
+      subscriber.window.id
+    )
+
+    subscriber.window.webContents.send('INSPECTOR:INIT', {
+      events,
       config: {
         enabled: this.options.enabled,
         maxEvents: this.options.maxEvents,
@@ -195,6 +225,9 @@ export class InspectorServer {
       },
       timestamp: Date.now(),
     })
+
+    // eslint-disable-next-line no-console
+    console.log('[InspectorServer] sendInit: INSPECTOR:INIT message sent')
   }
 
   /**
@@ -205,13 +238,13 @@ export class InspectorServer {
     const toRemove: number[] = []
 
     this.subscribers.forEach((subscriber, windowId) => {
-      if (subscriber.webContents.isDestroyed()) {
+      if (subscriber.window.isDestroyed() || subscriber.window.webContents.isDestroyed()) {
         toRemove.push(windowId)
         return
       }
 
       try {
-        subscriber.webContents.send(message.channel, message.payload)
+        subscriber.window.webContents.send(message.channel, message.payload)
       } catch (error) {
         console.error('[InspectorServer] Failed to broadcast:', error)
         toRemove.push(windowId)
