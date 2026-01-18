@@ -271,24 +271,24 @@ import { getWindowRegistry } from './registry'
  * Creates a broadcast function that sends to ALL registered windows
  */
 type BroadcastPayload<T, K extends keyof T> = T[K] extends { payload: infer P } ? P : never
-type BroadcastArgs<T, K extends keyof T> = T[K] extends { payload: void }
-  ? [channel: K] | [channel: K, payload?: void]
-  : [channel: K, payload: BroadcastPayload<T, K>]
-type BroadcastAllArgs<T, K extends keyof T> = T[K] extends { payload: void }
-  ?
-      | BroadcastArgs<T, K>
-      | [channel: K, payload: void | undefined, options: { excludeRoles?: string[] }]
-  :
-      | BroadcastArgs<T, K>
-      | [channel: K, payload: BroadcastPayload<T, K>, options: { excludeRoles?: string[] }]
 
 export function createBroadcastToAll<T>() {
-  return <K extends keyof T>(...args: BroadcastAllArgs<T, K>): void => {
-    const [channel, payload, options] = args as [
-      K,
-      BroadcastPayload<T, K> | undefined,
-      { excludeRoles?: string[] } | undefined,
-    ]
+  // Overload: with payload and options
+  function broadcast<K extends keyof T>(
+    channel: K,
+    payload: BroadcastPayload<T, K>,
+    options?: { excludeRoles?: string[] }
+  ): void
+
+  // Overload: void payload (no payload argument needed)
+  function broadcast<K extends keyof T>(channel: K): void
+
+  // Implementation
+  function broadcast<K extends keyof T>(
+    channel: K,
+    payload?: BroadcastPayload<T, K>,
+    options?: { excludeRoles?: string[] }
+  ): void {
     const registry = getWindowRegistry()
     const windows = registry.getAll()
 
@@ -301,6 +301,8 @@ export function createBroadcastToAll<T>() {
       }
     })
   }
+
+  return broadcast
 }
 
 /**
@@ -398,38 +400,54 @@ export function getAllAppWindows(): BrowserWindow[] {
 **Modifikation:** `packages/electron-ipc/src/generator/code-generator.ts` → `generateMainBroadcastApi()`
 
 ```ts
-// Legacy generation (kept for backward compatibility)
+// Generiert BEIDE Varianten für maximale Flexibilität
 export const generateMainBroadcastApi = (...) => {
-  // ...
+  // Legacy API (immer generieren für Backward Compatibility)
   method = `${propName}: (mainWindow: BrowserWindow, payload: ${payloadType}): void => {
     mainWindow.webContents.send('${propName}', payload)
   }`
-  // ...
-}
 
-// New option: --broadcast-to-all flag
-export const generateMainBroadcastApi = (...options) => {
-  if (options.broadcastToAll) {
+  // Neue Multi-Window API (mit Suffix)
+  if (options.includeMultiWindow) {
     add(`import { getWindowRegistry } from '@number10/electron-ipc/window-manager'`)
 
-    method = `${propName}: (payload: ${payloadType}): void => {
+    methodAll = `${propName}All: (payload: ${payloadType}, options?: { excludeRoles?: string[] }): void => {
       const windows = getWindowRegistry().getAll()
+      windows.forEach(meta => {
+        if (options?.excludeRoles?.includes(meta.role)) return
+        if (!meta.window.isDestroyed()) {
+          meta.window.webContents.send('${propName}', payload)
+        }
+      })
+    }`
+
+    // Optional: Role-specific variant
+    methodToRole = `${propName}ToRole: (role: string, payload: ${payloadType}): void => {
+      const windows = getWindowRegistry().getByRole(role)
       windows.forEach(meta => {
         if (!meta.window.isDestroyed()) {
           meta.window.webContents.send('${propName}', payload)
         }
       })
     }`
-  } else {
-    // Legacy API
-    method = `${propName}: (mainWindow: BrowserWindow, payload: ${payloadType}): void => {
-      mainWindow.webContents.send('${propName}', payload)
-    }`
   }
 }
 ```
 
-Zusätzlich: `packages/electron-ipc/src/generator/cli.ts` und `packages/electron-ipc/src/generator/types.ts` erweitern, damit `--broadcast-to-all` bis `generateMainBroadcastApi()` durchgereicht wird.
+**CLI Flag:** `--multi-window` (nicht `--broadcast-to-all`) generiert zusätzliche Suffixed Functions
+
+**Ergebnis:**
+
+```ts
+// Generated API (mit --multi-window)
+export const mainBroadcast = {
+  Ping: (mainWindow: BrowserWindow, payload: number) => { ... },  // legacy
+  PingAll: (payload: number, options?: { excludeRoles?: string[] }) => { ... },  // new
+  PingToRole: (role: string, payload: number) => { ... }  // new
+}
+```
+
+Zusätzlich: `packages/electron-ipc/src/generator/cli.ts` und `packages/electron-ipc/src/generator/types.ts` erweitern, damit `--multi-window` bis `generateMainBroadcastApi()` durchgereicht wird.
 
 ---
 
@@ -690,15 +708,28 @@ Inspector: registriert Sink
 
 ```ts
 estimateBytes(value):
-- Uint8Array → byteLength
-- string → TextEncoder
-- JSON.stringify (best effort)
+- Uint8Array/ArrayBuffer → byteLength
+- string → TextEncoder (cached instance)
+- Objects: Quick sampling approach:
+  * typeof check (primitive → 8 bytes estimate)
+  * Array.isArray → length * 8 (rough estimate)
+  * Object → sample first 10 keys only
+  * Fallback: Buffer.byteLength(JSON.stringify(value).slice(0, 1000))
+- Max iteration limit: 1000 (prevent DoS on huge objects)
 ```
+
+**Performance Safeguards:**
+
+- Avoid full `JSON.stringify()` on large objects
+- Use sampling for nested structures
+- Cached TextEncoder instance (avoid re-creation)
+- Early exit after 1ms computation time
 
 Payload Preview:
 
 - truncate > maxPayloadPreviewBytes
 - redacted summary (keys, type, length)
+- Never block main thread > 1ms
 
 ---
 
@@ -751,7 +782,7 @@ enableIpcInspector({ openOnStart: true })
 - [ ] **createBroadcastToAll()** funktioniert
 - [ ] **createBroadcastToRole()** funktioniert
 - [ ] **Backward compatibility** mit bestehendem `createBroadcast(mainWindow, ...)`
-- [ ] **Tests** für Registry + Broadcast (>90% Coverage)
+- [ ] **Tests** für Registry + Broadcast (>85% Coverage)
 - [ ] **Dokumentation** für Window Management
 - [ ] **test-app Demo** mit mehreren Windows
 
@@ -828,14 +859,16 @@ enableIpcInspector({ openOnStart: true })
 5. Export Funktionalität
 6. **Multi-Window View** (Window-Selector/Filter)
 
-### Phase 3: Instrumentation (3-4 Tage)
+### Phase 3: Instrumentation (4-6 Tage)
 
 1. Template-Modifikationen (invokeContracts, etc.)
 2. Main-Side Handler Wrapping (handle, on, createBroadcast)
-3. Stream Contract Tracing
+3. Stream Contract Tracing (komplex: Chunks, Cleanup, Errors)
 4. **Window-Metadaten aus Registry** holen
 5. CLI `--trace` Flag
-6. Integration Tests
+6. Payload Estimation mit Performance Safeguards
+7. Integration Tests
+8. Performance Testing (ensure < 1ms overhead)
 
 ### Phase 4: Polish (1-2 Tage)
 
@@ -852,7 +885,9 @@ enableIpcInspector({ openOnStart: true })
 4. Test-App Demo (erweitert)
 5. Migration Guide
 
-**Total: ~13-19 Tage** (inkl. Window Management)
+**Total: ~14-21 Tage** (inkl. Window Management)
+
+**Hinweis:** Phase 3 (Instrumentation) ist der kritische Pfad - Stream Tracing und Performance Optimierung komplex
 
 ---
 
@@ -895,18 +930,26 @@ enableIpcInspector({ openOnStart: true })
 
 - Inspector-Window registriert als role='inspector'
 - `excludeRoles: ['inspector']` im Trace-Check
-- Separate Channel-Prefix optional
-- Explicit exclusion in `shouldTrace()`
+- **Prefix-Check:** `if (channel.startsWith('INSPECTOR:')) return` (skip tracing)
+- Explicit exclusion in `shouldTrace()`:
+  ```ts
+  function shouldTrace(channel: string, windowRole?: string): boolean {
+    if (channel.startsWith('INSPECTOR:')) return false // Explicit prefix check
+    if (windowRole === 'inspector') return false // Role-based exclusion
+    return tracingEnabled
+  }
+  ```
 
 ### Risiko 4: Window Leaks
 
-**Problem:** Registry hält referenzen, verhindert GC
+**Problem:** Registry hält Referenzen, könnte GC verhindern
 **Mitigation:**
 
-- Auto-cleanup via window.on('closed')
-- Explizite isDestroyed() checks
-- Optional: WeakRef + FinalizationRegistry (keine WeakMap, da nicht iterierbar)
-- Tests für Memory Leaks
+- Auto-cleanup via `window.on('closed')` (deterministisch, zuverlässig)
+- Explizite `isDestroyed()` checks vor jedem Zugriff
+- **WeakRef nicht geeignet:** FinalizationRegistry ist nicht deterministisch, GC-Timing unpredictable
+- **Strategie:** Starke Referenzen + explizites Cleanup (Best Practice für Electron)
+- Tests für Memory Leaks (BrowserWindow.getAllWindows() nach cleanup)
 
 ### Risiko 5: Multi-Window Complexity
 
