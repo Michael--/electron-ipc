@@ -88,18 +88,21 @@ Ein **Devtool für Electron**, das IPC sichtbar macht – ähnlich dem Network-T
 1. **Window Registry System**  
    `@number10/electron-ipc/window-manager`
    - Zentrale Window-Verwaltung
-   - `getAllWindows()`, `getMainWindow()`, `registerWindow()`
+   - `getAll()`, `getMain()`, `register()`
    - Lifecycle Tracking (created, focused, destroyed)
 
 2. **Enhanced Broadcast API**
-   - `broadcastToAll(channel, payload)` - zu allen registrierten Windows
-   - `broadcastToRole(role, channel, payload)` - z.B. nur zu "main" oder "secondary"
+   - `createBroadcastToAll(channel, payload)` - zu allen registrierten Windows
+   - `createBroadcastToRole(role, channel, payload)` - z.B. nur zu "main" oder "secondary"
    - Backward-compatible mit bestehendem `createBroadcast()`
 
 ### Phase 0-5: Inspector Implementation
 
-1. **Subpath Export** in bestehendem Paket:  
-   `@number10/electron-ipc/inspector`
+1. **Subpath Exports** im bestehenden Paket:
+   - `@number10/electron-ipc/inspector`
+   - `@number10/electron-ipc/window-manager`
+   - Update `packages/electron-ipc/package.json#exports` und `packages/electron-ipc/vite.config.ts` (lib entry points)
+   - Neue Entry-Dateien: `packages/electron-ipc/src/inspector/index.ts` und `packages/electron-ipc/src/window-manager/index.ts`
 
 2. **Main-seitiger Inspector Server**
    - Ringbuffer für Trace Events
@@ -262,18 +265,30 @@ export function resetWindowRegistry(): void {
 ### -1.2 Enhanced Broadcast API (`packages/electron-ipc/src/window-manager/broadcast.ts`)
 
 ```ts
-import { BrowserWindow } from 'electron'
 import { getWindowRegistry } from './registry'
 
 /**
  * Creates a broadcast function that sends to ALL registered windows
  */
+type BroadcastPayload<T, K extends keyof T> = T[K] extends { payload: infer P } ? P : never
+type BroadcastArgs<T, K extends keyof T> = T[K] extends { payload: void }
+  ? [channel: K] | [channel: K, payload?: void]
+  : [channel: K, payload: BroadcastPayload<T, K>]
+type BroadcastAllArgs<T, K extends keyof T> = T[K] extends { payload: void }
+  ?
+      | BroadcastArgs<T, K>
+      | [channel: K, payload: void | undefined, options: { excludeRoles?: string[] }]
+  :
+      | BroadcastArgs<T, K>
+      | [channel: K, payload: BroadcastPayload<T, K>, options: { excludeRoles?: string[] }]
+
 export function createBroadcastToAll<T>() {
-  return <K extends keyof T>(
-    channel: K,
-    payload: T[K] extends { payload: infer P } ? P : never,
-    options?: { excludeRoles?: string[] }
-  ): void => {
+  return <K extends keyof T>(...args: BroadcastAllArgs<T, K>): void => {
+    const [channel, payload, options] = args as [
+      K,
+      BroadcastPayload<T, K> | undefined,
+      { excludeRoles?: string[] } | undefined,
+    ]
     const registry = getWindowRegistry()
     const windows = registry.getAll()
 
@@ -292,10 +307,8 @@ export function createBroadcastToAll<T>() {
  * Creates a broadcast function for a specific window role
  */
 export function createBroadcastToRole<T>(role: string) {
-  return <K extends keyof T>(
-    channel: K,
-    payload: T[K] extends { payload: infer P } ? P : never
-  ): void => {
+  return <K extends keyof T>(...args: BroadcastArgs<T, K>): void => {
+    const [channel, payload] = args
     const registry = getWindowRegistry()
     const windows = registry.getByRole(role)
 
@@ -318,16 +331,16 @@ export function broadcastToApp<T>() {
 **Backward Compatibility:**
 
 ```ts
-// OLD API (still works)
+// Old API (still works)
 const broadcast = createBroadcast<BroadcastContracts>()
 broadcast('Ping', mainWindow, 42)
 
-// NEW API (multi-window)
+// New API (multi-window)
 const broadcastAll = createBroadcastToAll<BroadcastContracts>()
-broadcastAll('Ping', 42) // zu ALLEN Windows
+broadcastAll('Ping', 42) // to ALL windows
 
 const broadcastMain = createBroadcastToRole<BroadcastContracts>('main')
-broadcastMain('Ping', 42) // nur zu main windows
+broadcastMain('Ping', 42) // main windows only
 ```
 
 ---
@@ -335,20 +348,22 @@ broadcastMain('Ping', 42) // nur zu main windows
 ### -1.3 Helper Functions (`packages/electron-ipc/src/window-manager/helpers.ts`)
 
 ```ts
-import { BrowserWindow, IpcMainInvokeEvent } from 'electron'
+import { BrowserWindow, IpcMainEvent, IpcMainInvokeEvent } from 'electron'
 import { getWindowRegistry } from './registry'
 
 /**
- * Gets window metadata from IpcMainInvokeEvent
+ * Gets window metadata from main process events
  */
-export function getWindowFromEvent(event: IpcMainInvokeEvent): BrowserWindow | null {
+export function getWindowFromEvent(event: IpcMainEvent | IpcMainInvokeEvent): BrowserWindow | null {
   return BrowserWindow.fromWebContents(event.sender)
 }
 
 /**
  * Gets window role from event
  */
-export function getWindowRoleFromEvent(event: IpcMainInvokeEvent): string | undefined {
+export function getWindowRoleFromEvent(
+  event: IpcMainEvent | IpcMainInvokeEvent
+): string | undefined {
   const window = getWindowFromEvent(event)
   if (!window) return undefined
 
@@ -383,7 +398,7 @@ export function getAllAppWindows(): BrowserWindow[] {
 **Modifikation:** `packages/electron-ipc/src/generator/code-generator.ts` → `generateMainBroadcastApi()`
 
 ```ts
-// ALTE Generierung (bleibt für backward compatibility)
+// Legacy generation (kept for backward compatibility)
 export const generateMainBroadcastApi = (...) => {
   // ...
   method = `${propName}: (mainWindow: BrowserWindow, payload: ${payloadType}): void => {
@@ -392,7 +407,7 @@ export const generateMainBroadcastApi = (...) => {
   // ...
 }
 
-// NEUE Option: --broadcast-to-all Flag
+// New option: --broadcast-to-all flag
 export const generateMainBroadcastApi = (...options) => {
   if (options.broadcastToAll) {
     add(`import { getWindowRegistry } from '@number10/electron-ipc/window-manager'`)
@@ -414,13 +429,15 @@ export const generateMainBroadcastApi = (...options) => {
 }
 ```
 
+Zusätzlich: `packages/electron-ipc/src/generator/cli.ts` und `packages/electron-ipc/src/generator/types.ts` erweitern, damit `--broadcast-to-all` bis `generateMainBroadcastApi()` durchgereicht wird.
+
 ---
 
 ### -1.5 Integration in test-app
 
 ```ts
 // packages/test-app/src/main/index.ts
-import { getWindowRegistry } from '@number10/electron-ipc/window-manager'
+import { createBroadcastToAll, getWindowRegistry } from '@number10/electron-ipc/window-manager'
 
 function createWindow() {
   const mainWindow = new BrowserWindow({ ... })
@@ -431,7 +448,7 @@ function createWindow() {
   // ... rest of window setup
 }
 
-// Erstellen eines zweiten Windows
+// Create a second window
 function createSecondaryWindow() {
   const secondWindow = new BrowserWindow({ ... })
 
@@ -439,7 +456,7 @@ function createSecondaryWindow() {
   getWindowRegistry().register(secondWindow, 'secondary')
 }
 
-// Broadcasting mit neuer API
+// Broadcasting with the new API
 setInterval(() => {
   const broadcastAll = createBroadcastToAll<BroadcastContracts>()
   broadcastAll('Ping', Date.now(), { excludeRoles: ['inspector'] })
@@ -705,7 +722,7 @@ Payload Preview:
 ### 5.1 Nutzer-Integration (2 Zeilen)
 
 ```ts
-import { enableIpcInspector } from '@number10/electron-ipc-inspector'
+import { enableIpcInspector } from '@number10/electron-ipc/inspector'
 
 enableIpcInspector({ openOnStart: true })
 ```
@@ -888,7 +905,7 @@ enableIpcInspector({ openOnStart: true })
 
 - Auto-cleanup via window.on('closed')
 - Explizite isDestroyed() checks
-- WeakMap statt Map (falls nötig)
+- Optional: WeakRef + FinalizationRegistry (keine WeakMap, da nicht iterierbar)
 - Tests für Memory Leaks
 
 ### Risiko 5: Multi-Window Complexity
@@ -936,13 +953,13 @@ enableIpcInspector({ openOnStart: true })
 - ✅ **Non-blocking Tracing**
 - ✅ **Lazy Loading** (Inspector UI nur bei Bedarf)
 - ✅ **Memory Bounded** (Fixed Ringbuffer)
-- ✅ **WeakMap für Window-Refs** (GC-safe)
+- ✅ **Cleanup + destroyed checks** (GC-safe)
 
 ### Security
 
 - ✅ **Production-safe**
 - ✅ **Privacy-first** (redacted default)
-- ✅ **No Leaks** (WeakRefs, Cleanup)
+- ✅ **No Leaks** (Cleanup + destroyed checks)
 - ✅ **Documented Risks**
 
 ---
