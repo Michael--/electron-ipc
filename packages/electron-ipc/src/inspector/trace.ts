@@ -89,9 +89,9 @@ export function generateTraceId(): string {
  * Uses sampling and shortcuts to avoid performance impact on large objects
  *
  * @param value - Value to estimate
- * @param maxIterations - Maximum number of properties to sample (default: 1000)
+ * @param _maxIterations - Maximum number of properties to sample (default: 1000, currently unused)
  */
-export function estimatePayloadBytes(value: unknown, maxIterations = 1000): number {
+export function estimatePayloadBytes(value: unknown, _maxIterations = 1000): number {
   // Handle primitives and special cases
   if (value === null || value === undefined) {
     return 0

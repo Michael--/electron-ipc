@@ -52,3 +52,12 @@ export {
   setTraceSink,
   shouldTrace,
 } from './trace'
+
+// Export ring buffer
+export { RingBuffer } from './ring-buffer'
+
+// Export server
+export { InspectorServer, getInspectorServer, resetInspectorServer } from './server'
+
+// Export enable function
+export { closeInspector, enableIpcInspector, getInspectorWindow } from './enable'
