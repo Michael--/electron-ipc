@@ -21,6 +21,15 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 2. **Run the Generator** via YAML configuration to create type-safe API code
 3. **Use Generated API** in preload/renderer with full TypeScript support
 
+## Additional Modules
+
+The generator ships with optional runtime modules:
+
+- **Window Management**: Central registry + multi-window broadcast helpers.  
+  See [`docs/window-manager.md`](window-manager.md).
+- **IPC Inspector**: Dev-only IPC tracing UI with payload previews and export.  
+  See [`docs/inspector.md`](inspector.md).
+
 ## IPC Contract Types
 
 The generator supports four types of IPC communication:

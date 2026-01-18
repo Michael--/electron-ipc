@@ -27,6 +27,8 @@ The main library - a TypeScript code generator that creates type-safe IPC commun
 - ✅ Generator watch/check workflow for CI
 - ✅ Templates + integration examples (electron-vite/forge)
 - ✅ YAML-based configuration
+- ✅ Window management registry + multi-window broadcast helpers
+- ✅ IPC Inspector for tracing and debugging (dev-only)
 - ✅ Full Windows/macOS/Linux support
 
 **Status:** Production ready
@@ -118,7 +120,11 @@ electron-ipc/
 
 ## 📚 Documentation
 
-For detailed usage, API reference, and examples, see [`docs/README.md`](docs/README.md) and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+For detailed usage, API reference, and examples, see:
+- [`docs/README.md`](docs/README.md)
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- [`docs/window-manager.md`](docs/window-manager.md)
+- [`docs/inspector.md`](docs/inspector.md)
 
 ## 📝 Release Notes
 
