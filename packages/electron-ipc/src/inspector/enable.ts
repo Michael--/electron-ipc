@@ -6,6 +6,7 @@ import { getInspectorServer } from './server'
 import { setTraceSink } from './trace'
 import type { InspectorOptions, TraceEvent } from './types'
 import { DEFAULT_INSPECTOR_OPTIONS } from './types'
+import { getWindowRegistry } from '../window-manager/registry'
 
 /**
  * Inspector window instance
@@ -88,16 +89,16 @@ function createInspectorWindow(_options: Required<InspectorOptions>): BrowserWin
     },
   })
 
+  window.webContents.on('devtools-opened', () => {
+    window.webContents.closeDevTools()
+  })
+
   // Register with window manager if available
   try {
-    // Dynamic import to avoid circular dependency
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-    const { getWindowRegistry } =
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      require('../window-manager/registry') as typeof import('../window-manager/registry')
     getWindowRegistry().register(window, 'inspector')
   } catch {
     // Window manager not available, continue without it
+    void 0
   }
 
   // Subscribe to inspector server
@@ -134,13 +135,33 @@ function registerIpcHandlers(server: ReturnType<typeof getInspectorServer>): voi
 
   // TRACE: Receive trace events from renderer
   ipcMain.on('INSPECTOR:TRACE', (event: IpcMainEvent, traceEvent: TraceEvent) => {
+    const senderWindow = BrowserWindow.fromWebContents(event.sender)
+    const senderMeta = senderWindow ? getWindowRegistry().getById(senderWindow.id) : undefined
+    const windowId = senderWindow?.id
+    const windowRole = senderMeta?.role
+
     // Enrich trace event with actual webContents ID
     if ('source' in traceEvent) {
       const source = traceEvent.source
       source.webContentsId = event.sender.id
+      if (windowId) {
+        source.windowId = windowId
+      }
+      if (windowRole) {
+        source.windowRole = windowRole
+      }
+      if (senderWindow) {
+        source.title = senderWindow.getTitle()
+      }
     }
     if ('target' in traceEvent && traceEvent.target) {
       traceEvent.target.webContentsId = event.sender.id
+      if (windowId) {
+        traceEvent.target.windowId = windowId
+      }
+      if (windowRole) {
+        traceEvent.target.windowRole = windowRole
+      }
     }
 
     // Push to server

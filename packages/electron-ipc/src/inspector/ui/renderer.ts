@@ -380,21 +380,17 @@ function showDetailPanel(event: TraceEvent) {
     </div>
   `
 
-  // Add type-specific sections
-  if (event.kind === 'invoke' && 'source' in event) {
-    html += `
-      <div class="detail-section">
-        <h3>Source</h3>
-        <div class="detail-row">
-          <div class="detail-label">WebContents ID:</div>
-          <div class="detail-value">${event.source.webContentsId}</div>
-        </div>
-        ${event.source.windowId ? `<div class="detail-row"><div class="detail-label">Window ID:</div><div class="detail-value">${event.source.windowId}</div></div>` : ''}
-        ${event.source.windowRole ? `<div class="detail-row"><div class="detail-label">Window Role:</div><div class="detail-value">${event.source.windowRole}</div></div>` : ''}
-      </div>
-    `
+  if ('source' in event && event.source) {
+    html += formatEndpointSection('Source', event.source)
+  }
 
-    if ('request' in event && event.request) {
+  if ('target' in event && event.target) {
+    html += formatEndpointSection('Target', event.target)
+  }
+
+  // Add type-specific sections
+  if (event.kind === 'invoke' && 'request' in event) {
+    if (event.request) {
       html += formatPayloadSection('Request', event.request)
     }
 
@@ -412,7 +408,40 @@ function showDetailPanel(event: TraceEvent) {
     }
   }
 
+  if (
+    (event.kind === 'event' || event.kind === 'broadcast') &&
+    'payload' in event &&
+    event.payload
+  ) {
+    html += formatPayloadSection('Payload', event.payload)
+  }
+
   elements.detailContent.innerHTML = html
+}
+
+/**
+ * Format endpoint section for source/target details
+ */
+function formatEndpointSection(
+  title: string,
+  endpoint: { webContentsId?: number; windowId?: number; windowRole?: string }
+): string {
+  let html = `<div class="detail-section"><h3>${title}</h3>`
+
+  if (endpoint.webContentsId !== undefined) {
+    html += `<div class="detail-row"><div class="detail-label">WebContents ID:</div><div class="detail-value">${endpoint.webContentsId}</div></div>`
+  }
+
+  if (endpoint.windowId !== undefined) {
+    html += `<div class="detail-row"><div class="detail-label">Window ID:</div><div class="detail-value">${endpoint.windowId}</div></div>`
+  }
+
+  if (endpoint.windowRole) {
+    html += `<div class="detail-row"><div class="detail-label">Window Role:</div><div class="detail-value">${endpoint.windowRole}</div></div>`
+  }
+
+  html += `</div>`
+  return html
 }
 
 /**

@@ -2,6 +2,44 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug Multi-Window Main",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/multi-window",
+      "runtimeExecutable": "${workspaceFolder}/apps/multi-window/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceFolder}/apps/multi-window/node_modules/.bin/electron.cmd"
+      },
+      "args": ["${workspaceFolder}/apps/multi-window/dist/main/index.js", "--remote-debugging-port=9224"],
+      "outputCapture": "std",
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/apps/multi-window/dist/**/*.js"
+      ],
+      "sourceMapPathOverrides": {
+        "../../*": "${workspaceFolder}/apps/multi-window/*"
+      },
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/apps/multi-window/**",
+        "!**/node_modules/**"
+      ],
+      "preLaunchTask": "npm: build - apps/multi-window",
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug Multi-Window Renderer",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9224,
+      "webRoot": "${workspaceFolder}/apps/multi-window",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "../../../*": "${workspaceFolder}/apps/multi-window/*"
+      },
+      "timeout": 30000
+    },
+    {
       "name": "Debug Renderer Process",
       "type": "chrome",
       "request": "attach",
@@ -41,6 +79,15 @@
     },
   ],
   "compounds": [
+    {
+      "name": "Debug Multi-Window (Main + Renderer)",
+      "configurations": ["Debug Multi-Window Main", "Debug Multi-Window Renderer"],
+      "presentation": {
+        "hidden": false,
+        "group": "electron",
+        "order": 0
+      }
+    },
     {
       "name": "Debug Main + Renderer",
       "configurations": ["Debug Main Process", "Debug Renderer Process"],

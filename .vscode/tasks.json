@@ -37,6 +37,39 @@
     {
       "type": "npm",
       "script": "build",
+      "path": "apps/multi-window",
+      "label": "npm: build - apps/multi-window",
+      "detail": "electron-vite build",
+      "problemMatcher": []
+    },
+    {
+      "type": "npm",
+      "script": "dev",
+      "path": "apps/multi-window",
+      "label": "npm: dev - apps/multi-window",
+      "detail": "electron-vite dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "typescript",
+        "fileLocation": "relative",
+        "pattern": {
+          "regexp": "^([^\\s].*)\\((\\d+|\\d+,\\d+|\\d+,\\d+,\\d+,\\d+)\\):\\s+(error|warning|info)\\s+(TS\\d+)\\s*:\\s*(.*)$",
+          "file": 1,
+          "location": 2,
+          "severity": 3,
+          "code": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*building.*$",
+          "endsPattern": "^.*built in.*$"
+        }
+      }
+    },
+    {
+      "type": "npm",
+      "script": "build",
       "path": "packages/electron-ipc",
       "label": "npm: build - packages/electron-ipc",
       "detail": "vite build",
