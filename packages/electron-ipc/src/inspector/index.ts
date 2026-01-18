@@ -53,6 +53,9 @@ export {
   shouldTrace,
 } from './trace'
 
+// Export renderer-side trace helpers (for generated code)
+export { traceBroadcast, traceEvent, traceInvoke } from './trace-renderer'
+
 // Export ring buffer
 export { RingBuffer } from './ring-buffer'
 

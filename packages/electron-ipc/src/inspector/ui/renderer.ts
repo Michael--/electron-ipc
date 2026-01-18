@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 /**
  * Inspector UI Renderer
  *
@@ -17,6 +19,7 @@ declare global {
 // State
 let allEvents: TraceEvent[] = []
 let filteredEvents: TraceEvent[] = []
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let selectedEvent: TraceEvent | null = null
 let isPaused = false
 let searchQuery = ''
@@ -47,9 +50,6 @@ let elements: {
  * Initialize inspector UI
  */
 function init() {
-  console.log('[Inspector UI] Initializing...')
-  console.log('[Inspector UI] window.location.href:', window.location.href)
-
   // WORKAROUND: document.body is null even though BODY node exists in childNodes
   // This appears to be an Electron/Chromium context issue
   // Access body directly from childNodes
@@ -59,7 +59,6 @@ function init() {
       const node = document.documentElement.childNodes[i]
       if (node.nodeName === 'BODY') {
         bodyNode = node as HTMLElement
-        console.log('[Inspector UI] Found BODY node in childNodes:', bodyNode)
         break
       }
     }
@@ -69,11 +68,6 @@ function init() {
     console.error('[Inspector UI] BODY node not found!')
     return
   }
-
-  // Now use bodyNode.querySelector instead of document.getElementById
-  console.log('[Inspector UI] Testing querySelector on body...')
-  const testEmpty = bodyNode.querySelector('#emptyState')
-  console.log('[Inspector UI] TEST bodyNode.querySelector("#emptyState"):', testEmpty)
 
   // Initialize DOM elements using bodyNode.querySelector
   elements = {
@@ -95,22 +89,11 @@ function init() {
     closeDetailBtn: bodyNode.querySelector('#closeDetailBtn') as HTMLButtonElement,
   }
 
-  console.log('[Inspector UI] Elements initialized')
-  console.log('[Inspector UI] elements.emptyState after init:', elements.emptyState)
-
   // Check if API is available
   if (!window.inspectorAPI) {
     console.error('[Inspector UI] window.inspectorAPI is not available!')
     return
   }
-
-  console.log('[Inspector UI] API available, sending HELLO')
-
-  // Check if all DOM elements exist
-  console.log('[Inspector UI] Checking DOM elements...')
-  console.log('[Inspector UI] emptyState:', elements.emptyState)
-  console.log('[Inspector UI] eventsTable:', elements.eventsTable)
-  console.log('[Inspector UI] eventsBody:', elements.eventsBody)
 
   // Send HELLO to main process
   window.inspectorAPI.hello()
@@ -118,22 +101,15 @@ function init() {
   // Setup event listeners
   setupEventListeners()
 
-  console.log('[Inspector UI] Event listeners setup complete')
-
   // Listen for init message
   window.inspectorAPI.onInit((payload) => {
-    console.log('[Inspector UI] Received INIT:', payload)
-    console.log('[Inspector UI] Events array length:', payload.events?.length)
     allEvents = payload.events || []
-    console.log('[Inspector UI] allEvents set to:', allEvents.length, 'events')
     applyFilters()
-    console.log('[Inspector UI] After applyFilters, filteredEvents:', filteredEvents.length)
     updateStats(payload.events?.length || 0, 0)
   })
 
   // Listen for live events
   window.inspectorAPI.onEvent((payload) => {
-    console.log('[Inspector UI] Received EVENT:', payload.event)
     if (!isPaused) {
       allEvents.push(payload.event)
       applyFilters()
@@ -143,17 +119,15 @@ function init() {
 
   // Listen for status updates
   window.inspectorAPI.onStatus((payload) => {
-    console.log('[Inspector UI] Received STATUS:', payload)
     updateStatus(payload.isTracing, payload.eventCount, payload.droppedCount)
   })
 
   // Listen for command responses
   window.inspectorAPI.onCommandResponse((payload) => {
-    console.log('[Inspector UI] Received COMMAND_RESPONSE:', payload)
     if (!payload.success) {
       console.error('Command failed:', payload.error)
       alert(`Command failed: ${payload.error}`)
-    } else if (payload.data && 'data' in payload.data) {
+    } else if (payload.data && typeof payload.data === 'object' && 'data' in payload.data) {
       // Export command
       downloadJSON(payload.data.data as string)
     }
@@ -256,18 +230,12 @@ function applyFilters() {
  * Render events table
  */
 function renderEvents() {
-  console.log('[Inspector UI] renderEvents called, filteredEvents.length:', filteredEvents.length)
-
   if (filteredEvents.length === 0) {
-    console.log('[Inspector UI] Showing empty state')
-    console.log('[Inspector UI] emptyState element:', elements.emptyState)
-    console.log('[Inspector UI] eventsTable element:', elements.eventsTable)
     elements.emptyState.style.display = 'flex'
     elements.eventsTable.style.display = 'none'
     return
   }
 
-  console.log('[Inspector UI] Showing events table')
   elements.emptyState.style.display = 'none'
   elements.eventsTable.style.display = 'table'
 
@@ -298,7 +266,8 @@ function createEventRow(event: TraceEvent, index: number): HTMLTableRowElement {
   // Type
   const typeCell = document.createElement('td')
   const kindBadge = document.createElement('span')
-  kindBadge.className = `kind-badge kind-${event.kind.toLowerCase().replace(/stream/, '')}`
+  const kindClass = event.kind.startsWith('stream') ? 'stream' : event.kind.toLowerCase()
+  kindBadge.className = `kind-badge kind-${kindClass}`
   kindBadge.textContent = formatKind(event.kind)
   typeCell.appendChild(kindBadge)
   row.appendChild(typeCell)
@@ -441,6 +410,7 @@ function showDetailPanel(event: TraceEvent) {
 /**
  * Format payload section for detail panel
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatPayloadSection(title: string, payload: any): string {
   let html = `<div class="detail-section"><h3>${title}</h3>`
 
@@ -552,8 +522,15 @@ function getEventBytes(event: TraceEvent): number | undefined {
     return event.payload.bytes
   }
 
-  if (event.kind.startsWith('stream') && 'totalBytes' in event) {
-    return event.totalBytes
+  // Stream events
+  if (event.kind === 'streamInvoke' && 'stream' in event) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (event.stream as any)?.bytes || 0
+  }
+
+  if ((event.kind === 'streamUpload' || event.kind === 'streamDownload') && 'data' in event) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (event.data as any)?.bytes || 0
   }
 
   return undefined
@@ -584,13 +561,8 @@ function escapeHtml(text: string): string {
 }
 
 // Initialize when DOM is ready
-console.log('[Inspector UI] Script loaded, document.readyState:', document.readyState)
-
-// Use 'load' event instead of 'DOMContentLoaded' to ensure body is fully loaded
 if (document.readyState === 'complete') {
-  console.log('[Inspector UI] DOM already complete, initializing now')
   init()
 } else {
-  console.log('[Inspector UI] Waiting for window load...')
   window.addEventListener('load', init)
 }

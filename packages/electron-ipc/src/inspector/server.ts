@@ -140,12 +140,7 @@ export class InspectorServer {
    * @param window - Inspector window to subscribe
    */
   subscribe(window: BrowserWindow): void {
-    // eslint-disable-next-line no-console
-    console.log('[InspectorServer] subscribe() called for window:', window.id)
-
     if (window.isDestroyed()) {
-      // eslint-disable-next-line no-console
-      console.log('[InspectorServer] Window already destroyed')
       return
     }
 
@@ -154,8 +149,6 @@ export class InspectorServer {
     }
 
     this.subscribers.set(window.id, subscriber)
-    // eslint-disable-next-line no-console
-    console.log('[InspectorServer] Subscriber added, total subscribers:', this.subscribers.size)
 
     // Auto-cleanup when window is destroyed
     window.once('closed', () => {
@@ -163,8 +156,6 @@ export class InspectorServer {
     })
 
     // Don't send initial snapshot here - wait for HELLO from renderer
-    // eslint-disable-next-line no-console
-    console.log('[InspectorServer] Waiting for HELLO from renderer...')
   }
 
   /**
@@ -201,19 +192,10 @@ export class InspectorServer {
    */
   sendInit(subscriber: InspectorSubscriber): void {
     if (subscriber.window.isDestroyed() || subscriber.window.webContents.isDestroyed()) {
-      // eslint-disable-next-line no-console
-      console.log('[InspectorServer] sendInit: window or webContents already destroyed')
       return
     }
 
     const events = this.snapshot()
-    // eslint-disable-next-line no-console
-    console.log(
-      '[InspectorServer] sendInit: Sending',
-      events.length,
-      'events to window',
-      subscriber.window.id
-    )
 
     subscriber.window.webContents.send('INSPECTOR:INIT', {
       events,
@@ -225,9 +207,6 @@ export class InspectorServer {
       },
       timestamp: Date.now(),
     })
-
-    // eslint-disable-next-line no-console
-    console.log('[InspectorServer] sendInit: INSPECTOR:INIT message sent')
   }
 
   /**
