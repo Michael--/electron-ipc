@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { WindowRegistry, getWindowRegistry, resetWindowRegistry } from './registry'
 import type { BrowserWindow } from 'electron'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { WindowRegistry, getWindowRegistry, resetWindowRegistry } from './registry'
 
 // Mock BrowserWindow with event triggering capability
 interface MockWindow extends BrowserWindow {

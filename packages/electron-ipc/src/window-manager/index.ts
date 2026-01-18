@@ -9,3 +9,5 @@ export {
   resetWindowRegistry,
   type WindowMetadata,
 } from './registry'
+
+export { broadcastToApp, createBroadcastToAll, createBroadcastToRole } from './broadcast'
