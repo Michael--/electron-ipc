@@ -291,6 +291,12 @@ function createEventRow(event: TraceEvent, index: number): HTMLTableRowElement {
   directionCell.textContent = event.direction
   row.appendChild(directionCell)
 
+  // Role
+  const roleCell = document.createElement('td')
+  const role = getEventRole(event)
+  roleCell.textContent = role ?? '-'
+  row.appendChild(roleCell)
+
   // Duration
   const durationCell = document.createElement('td')
   if (event.durationMs !== undefined) {
@@ -544,6 +550,25 @@ function formatKind(kind: string): string {
     default:
       return kind
   }
+}
+
+/**
+ * Resolve role label for the main list
+ */
+function getEventRole(event: TraceEvent): string | undefined {
+  if (event.direction === 'renderer→main' && 'source' in event) {
+    return event.source?.windowRole
+  }
+  if (event.direction === 'main→renderer' && 'target' in event) {
+    return event.target?.windowRole
+  }
+  if ('source' in event && event.source?.windowRole) {
+    return event.source.windowRole
+  }
+  if ('target' in event && event.target?.windowRole) {
+    return event.target.windowRole
+  }
+  return undefined
 }
 
 /**
