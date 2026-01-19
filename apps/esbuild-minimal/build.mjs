@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/* eslint-disable no-undef */
+
 /**
  * esbuild configuration for Electron app
  * Builds main, preload, and renderer processes
@@ -8,10 +10,7 @@
 import { spawn } from 'child_process'
 import * as esbuild from 'esbuild'
 import { mkdirSync, readFileSync, writeFileSync } from 'fs'
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
 const isWatch = process.argv.includes('--watch')
 
 /**
@@ -134,21 +133,6 @@ function startElectron() {
   if (isWatch) {
     console.log('🚀 Starting Electron...')
     restart()
-
-    // Watch for changes and restart
-    const watchOptions = {
-      recursive: true,
-    }
-
-    // Simple debounce for restarts
-    let restartTimeout
-    const debouncedRestart = () => {
-      clearTimeout(restartTimeout)
-      restartTimeout = setTimeout(() => {
-        console.log('🔄 Restarting Electron...')
-        restart()
-      }, 1000)
-    }
 
     process.on('SIGINT', () => {
       if (electronProcess) {
