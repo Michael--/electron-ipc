@@ -392,6 +392,10 @@ function openInspectorWindow() {
   enableIpcInspector({ openOnStart: true })
 }
 
+function enableInspectorBackend() {
+  enableIpcInspector({ openOnStart: false, shortcut: undefined })
+}
+
 function toggleInspectorWindow() {
   const inspectorWindow = getInspectorWindow()
   if (inspectorWindow) {
@@ -408,6 +412,7 @@ function toggleInspectorWindow() {
 }
 
 app.whenReady().then(() => {
+  enableInspectorBackend()
   createWindow()
 
   // Create application menu with Window Management demo

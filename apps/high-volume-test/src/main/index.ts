@@ -58,6 +58,14 @@ function openInspectorWindow() {
   })
 }
 
+function enableInspectorBackend() {
+  enableIpcInspector({
+    ...inspectorOptions,
+    openOnStart: false,
+    shortcut: undefined,
+  })
+}
+
 function toggleInspectorWindow() {
   const inspectorWindow = getInspectorWindow()
   if (inspectorWindow) {
@@ -102,6 +110,7 @@ function setupMenu() {
  */
 app.whenReady().then(() => {
   // Enable Inspector with higher limits
+  enableInspectorBackend()
   openInspectorWindow()
 
   // Setup IPC handlers

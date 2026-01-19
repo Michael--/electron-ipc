@@ -56,6 +56,10 @@ function getWindowList() {
     }))
 }
 
+function enableInspectorBackend() {
+  enableIpcInspector({ openOnStart: false, shortcut: undefined })
+}
+
 function openInspectorWindow() {
   enableIpcInspector({ openOnStart: true })
 }
@@ -191,6 +195,7 @@ function setupMenu() {
 
 app.whenReady().then(() => {
   initializeHandlers()
+  enableInspectorBackend()
 
   createAppWindow('main')
   createAppWindow('secondary')
