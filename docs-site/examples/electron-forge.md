@@ -44,8 +44,42 @@ Renderer uses the API:
 
 ```ts
 const result = await window.api.invokeAddNumbers({ a: 1, b: 2 })
+console.log('Result:', result) // 3
 ```
 
-## 4) Build/CI
+## 4) Handle in Main Process
+
+Implement handlers for your contracts:
+
+```ts
+import { app } from 'electron'
+import {
+  AbstractRegisterHandler,
+  AbstractRegisterEvent,
+  IPCHandlerType,
+  IPCEventType,
+} from '@number10/electron-ipc'
+import { InvokeContracts, EventContracts } from './ipc-api'
+
+class RegisterHandler extends AbstractRegisterHandler {
+  handlers: IPCHandlerType<InvokeContracts> = {
+    AddNumbers: async (_event, { a, b }) => a + b,
+  }
+}
+
+class RegisterEvent extends AbstractRegisterEvent {
+  events: IPCEventType<EventContracts> = {
+    LogMessage: (_event, message) => console.log('[Renderer]', message),
+  }
+}
+
+app.whenReady().then(() => {
+  RegisterHandler.register()
+  RegisterEvent.register()
+  // Create your main window...
+})
+```
+
+## 5) Build/CI
 
 In CI, run `pnpm run generate:check` to ensure generated files are up to date.

@@ -280,6 +280,107 @@ const stopDownload = window.myApi.downloadDownloadLogs(
 // stopDownload()
 ```
 
+### React Hooks (Optional)
+
+If you're using React, enable automatic hook generation in your configuration:
+
+```yaml
+apis:
+  - name: api
+    # ... other config
+    reactHooksOutput: ./src/renderer/hooks/api-hooks.ts
+```
+
+This generates type-safe React hooks for all contract types:
+
+**useInvokeContracts** - For invoke operations with automatic state management:
+
+```typescript
+import { useInvokeContracts } from './hooks/api-hooks'
+
+function MyComponent() {
+  const { data, loading, error, invoke } = useInvokeContracts('AddNumbers')
+
+  const handleClick = async () => {
+    try {
+      const result = await invoke({ a: 5, b: 3 })
+      console.log('Result:', result) // 8
+    } catch (err) {
+      console.error('Error:', err)
+    }
+  }
+
+  return (
+    <div>
+      {loading && <p>Loading...</p>}
+      {error && <p>Error: {error.message}</p>}
+      {data && <p>Result: {data}</p>}
+      <button onClick={handleClick}>Add Numbers</button>
+    </div>
+  )
+}
+```
+
+**useEventContracts** - For sending events to main:
+
+```typescript
+import { useEventContracts } from './hooks/api-hooks'
+
+function LogComponent() {
+  const { send } = useEventContracts('LogMessage')
+
+  return <button onClick={() => send('User clicked button')}>Log Message</button>
+}
+```
+
+**useBroadcastContracts** - For listening to broadcasts with automatic cleanup:
+
+```typescript
+import { useBroadcastContracts } from './hooks/api-hooks'
+import { useEffect } from 'react'
+
+function PingDisplay() {
+  const { data, subscribe, unsubscribe } = useBroadcastContracts('Ping')
+
+  useEffect(() => {
+    const unsubscribeFn = subscribe((count) => {
+      console.log('Received ping:', count)
+    })
+    return unsubscribeFn
+  }, [subscribe])
+
+  return <div>Ping count: {data}</div>
+}
+```
+
+**useStreamInvokeContracts**, **useStreamUploadContracts**, **useStreamDownloadContracts** - For streaming operations:
+
+```typescript
+import { useStreamDownloadContracts } from './hooks/api-hooks'
+
+function LogViewer() {
+  const { data, loading, error, startStream, stopStream } = useStreamDownloadContracts('DownloadLogs')
+
+  const handleStart = () => {
+    startStream({ sinceMs: Date.now() - 3600000 }) // Last hour
+  }
+
+  return (
+    <div>
+      <button onClick={handleStart} disabled={loading}>
+        Start Stream
+      </button>
+      <button onClick={stopStream} disabled={!loading}>
+        Stop Stream
+      </button>
+      {data.map((log, i) => (
+        <div key={i}>{log}</div>
+      ))}
+    </div>
+  )
+}
+```
+
 **Note:** The generated broadcast API (`mainBroadcastOutput`) is optional but recommended for consistency with the renderer API. Both approaches are type-safe.
 
 ### 5. Implement Handlers in Main

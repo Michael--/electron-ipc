@@ -49,11 +49,66 @@ const result = await window.api.invokeAddNumbers({ a: 1, b: 2 })
 Main:
 
 ```ts
-import { AbstractRegisterHandler, IPCHandlerType } from '@number10/electron-ipc'
-import { InvokeContracts } from './ipc-api'
+import { app } from 'electron'
+import {
+  AbstractRegisterHandler,
+  AbstractRegisterEvent,
+  IPCHandlerType,
+  IPCEventType,
+} from '@number10/electron-ipc'
+import { InvokeContracts, EventContracts } from './ipc-api'
+
+class RegisterHandler extends AbstractRegisterHandler {
+  handlers: IPCHandlerType<InvokeContracts> = {
+    AddNumbers: async (_event, { a, b }) => a + b,
+  }
+}
+
+class RegisterEvent extends AbstractRegisterEvent {
+  events: IPCEventType<EventContracts> = {
+    LogMessage: (_event, message) => console.log('[Renderer]', message),
+  }
+}
+
+app.whenReady().then(() => {
+  RegisterHandler.register()
+  RegisterEvent.register()
+  // Create your main window...
+})
 ```
 
-## 4) Optional path alias
+## 4) Optional: React Hooks
+
+Add `reactHooksOutput` to your config for automatic React hook generation:
+
+```yaml
+apis:
+  - name: api
+    # ... existing config
+    reactHooksOutput: ./src/renderer/hooks/api-hooks.ts
+```
+
+Then use hooks in React components:
+
+```tsx
+import { useInvokeContracts } from './hooks/api-hooks'
+
+function Calculator() {
+  const { data, loading, error, invoke } = useInvokeContracts('AddNumbers')
+
+  const handleAdd = () => invoke({ a: 5, b: 3 })
+
+  return (
+    <div>
+      <button onClick={handleAdd}>Add 5 + 3</button>
+      {loading && <p>Loading...</p>}
+      {data && <p>Result: {data}</p>}
+    </div>
+  )
+}
+```
+
+## 5) Optional: Path Alias
 
 If you want a stable alias for generated files, add this to your `electron.vite.config.ts`:
 
