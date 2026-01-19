@@ -102,10 +102,6 @@ function createInspectorWindow(_options: Required<InspectorOptions>): BrowserWin
     },
   })
 
-  window.webContents.on('devtools-opened', () => {
-    window.webContents.closeDevTools()
-  })
-
   // Register with window manager if available
   try {
     getWindowRegistry().register(window, 'inspector')
