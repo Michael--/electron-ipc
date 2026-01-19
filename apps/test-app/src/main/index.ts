@@ -421,6 +421,10 @@ app.whenReady().then(() => {
   // Create application menu with Window Management demo
   const menu = Menu.buildFromTemplate([
     {
+      label: 'File',
+      submenu: [{ role: 'quit' }],
+    },
+    {
       label: 'Window',
       submenu: [
         {
