@@ -1,4 +1,9 @@
-import { BrowserWindow, app, ipcMain } from 'electron'
+import {
+  AbstractRegisterHandler,
+  createBroadcast,
+  defineInvokeHandlers,
+} from '@number10/electron-ipc'
+import { BrowserWindow, app } from 'electron'
 import { join } from 'path'
 import type { EventContracts, InvokeContracts } from './ipc-api'
 
@@ -8,38 +13,35 @@ import type { EventContracts, InvokeContracts } from './ipc-api'
 let mainWindow: BrowserWindow | null = null
 
 /**
- * Register IPC handlers
+ * Create typed broadcast sender
  */
-function registerHandlers(): void {
-  // Ping handler
-  ipcMain.handle('ping', async (_event, request: InvokeContracts['ping']['request']) => {
-    console.log('📨 Received ping:', request.message)
-    const response: InvokeContracts['ping']['response'] = {
-      reply: `Pong! You said: "${request.message}"`,
-      timestamp: Date.now(),
-    }
-    return response
-  })
+const broadcast = createBroadcast<EventContracts>()
 
-  // Get data handler
-  ipcMain.handle('getData', async (_event, request: InvokeContracts['getData']['request']) => {
-    console.log('📊 Get data request for ID:', request.id)
+/**
+ * Register IPC handlers using electron-ipc
+ */
+class RegisterHandler extends AbstractRegisterHandler {
+  handlers = defineInvokeHandlers<InvokeContracts>({
+    ping: async (_event, request) => {
+      console.log('📨 Received ping:', request.message)
+      return {
+        reply: `Pong! You said: "${request.message}"`,
+        timestamp: Date.now(),
+      }
+    },
+    getData: async (_event, request) => {
+      console.log('📊 Get data request for ID:', request.id)
 
-    // Simulate some processing
-    await new Promise((resolve) => setTimeout(resolve, 100))
+      // Simulate some processing
+      await new Promise((resolve) => setTimeout(resolve, 100))
 
-    const response: InvokeContracts['getData']['response'] = {
-      id: request.id,
-      data: `Data for ID ${request.id}: ${Math.random().toString(36).substring(7)}`,
-      processed: true,
-    }
-    return response
-  })
-
-  // Trigger notification handler
-  ipcMain.handle(
-    'triggerNotification',
-    async (_event, request: InvokeContracts['triggerNotification']['request']) => {
+      return {
+        id: request.id,
+        data: `Data for ID ${request.id}: ${Math.random().toString(36).substring(7)}`,
+        processed: true,
+      }
+    },
+    triggerNotification: async (_event, request) => {
       console.log('🔔 Notification scheduled with delay:', request.delay)
 
       if (!mainWindow) {
@@ -47,26 +49,28 @@ function registerHandlers(): void {
         return { scheduled: false }
       }
 
-      // Send notification after delay
+      // Send notification after delay using typed broadcast
       setTimeout(() => {
         if (mainWindow) {
-          const payload: EventContracts['notification']['payload'] = {
+          broadcast('notification', mainWindow, {
             title: 'Scheduled Notification',
             message: `This notification was triggered ${request.delay}ms ago!`,
             level: 'success',
-          }
-          mainWindow.webContents.send('notification', payload)
+          })
           console.log('✅ Notification sent to renderer')
         }
       }, request.delay)
 
-      const response: InvokeContracts['triggerNotification']['response'] = {
-        scheduled: true,
-      }
-      return response
-    }
-  )
+      return { scheduled: true }
+    },
+  })
+}
 
+/**
+ * Initialize IPC handlers
+ */
+function registerHandlers(): void {
+  RegisterHandler.register()
   console.log('✅ IPC handlers registered')
 }
 
