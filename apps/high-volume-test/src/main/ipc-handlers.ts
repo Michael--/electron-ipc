@@ -3,45 +3,42 @@
  * IPC Handlers for High-Volume Test
  */
 
-import { ipcMain } from 'electron'
+import {
+  AbstractRegisterEvent,
+  AbstractRegisterHandler,
+  defineEventHandlers,
+  defineInvokeHandlers,
+} from '@number10/electron-ipc'
 import { getTestStats, startHighVolumeTest, stopHighVolumeTest } from './high-volume-generator'
 import type { EventContracts, InvokeContracts } from './ipc-api'
 
 /**
- * Setup all IPC handlers
+ * Register IPC handlers using electron-ipc
  */
-export function setupIpcHandlers() {
-  // Test: Ping
-  ipcMain.handle('testPing', async (_event, request: InvokeContracts['testPing']['request']) => {
-    return {
-      echo: request.message,
-      timestamp: Date.now(),
-    } as InvokeContracts['testPing']['response']
-  })
+class RegisterHandler extends AbstractRegisterHandler {
+  handlers = defineInvokeHandlers<InvokeContracts>({
+    testPing: async (_event, request) => {
+      return {
+        echo: request.message,
+        timestamp: Date.now(),
+      }
+    },
+    testHeavy: async (_event, request) => {
+      // Simulate processing
+      await new Promise((resolve) => setTimeout(resolve, 1))
 
-  // Test: Heavy payload
-  ipcMain.handle('testHeavy', async (_event, request: InvokeContracts['testHeavy']['request']) => {
-    // Simulate processing
-    await new Promise((resolve) => setTimeout(resolve, 1))
-
-    return {
-      processed: true,
-      size: request.data?.length || 0,
-    } as InvokeContracts['testHeavy']['response']
-  })
-
-  // Test: Error
-  ipcMain.handle('testError', async (_event, request: InvokeContracts['testError']['request']) => {
-    if (request.shouldFail) {
-      throw new Error('Simulated error')
-    }
-    return { success: true } as InvokeContracts['testError']['response']
-  })
-
-  // Control: Start test
-  ipcMain.handle(
-    'controlStart',
-    async (_event, request: InvokeContracts['controlStart']['request']) => {
+      return {
+        processed: true,
+        size: request.data?.length || 0,
+      }
+    },
+    testError: async (_event, request) => {
+      if (request.shouldFail) {
+        throw new Error('Simulated error')
+      }
+      return { success: true }
+    },
+    controlStart: async (_event, request) => {
       try {
         const testId = startHighVolumeTest(
           request.mode,
@@ -52,28 +49,37 @@ export function setupIpcHandlers() {
         return {
           started: true,
           testId,
-        } as InvokeContracts['controlStart']['response']
+        }
       } catch (error) {
         throw new Error(`Failed to start test: ${(error as Error).message}`)
       }
-    }
-  )
-
-  // Control: Stop test
-  ipcMain.handle('controlStop', async () => {
-    stopHighVolumeTest()
-    return { stopped: true } as InvokeContracts['controlStop']['response']
+    },
+    controlStop: async () => {
+      stopHighVolumeTest()
+      return { stopped: true }
+    },
+    controlStatus: async () => {
+      return getTestStats()
+    },
   })
+}
 
-  // Control: Get status
-  ipcMain.handle('controlStatus', async () => {
-    return getTestStats() as InvokeContracts['controlStatus']['response']
+/**
+ * Register event handlers
+ */
+class RegisterEvent extends AbstractRegisterEvent {
+  events = defineEventHandlers<EventContracts>({
+    testEvent: (_event, payload) => {
+      console.log('[Main] Received test event:', payload)
+    },
   })
+}
 
-  // Listen to events from renderer
-  ipcMain.on('testEvent', (_event, payload: EventContracts['testEvent']['request']) => {
-    console.log('[Main] Received test event:', payload)
-  })
-
+/**
+ * Setup all IPC handlers
+ */
+export function setupIpcHandlers() {
+  RegisterHandler.register()
+  RegisterEvent.register()
   console.log('[IPC] All handlers registered')
 }
