@@ -33,6 +33,13 @@ let renderTimeout: ReturnType<typeof setTimeout> | null = null
 const RENDER_DEBOUNCE_MS = 100
 let pendingRender = false
 
+// Virtual scrolling state
+const VIRTUAL_SCROLL_ITEM_HEIGHT = 32 // Height of one table row in pixels
+const VIRTUAL_SCROLL_OVERSCAN = 10 // Extra rows to render above/below viewport
+let virtualScrollContainer: HTMLElement | null = null
+let virtualScrollViewport: HTMLElement | null = null
+let lastScrollTop = 0
+
 // DOM Elements - will be initialized in init()
 let elements: {
   main: HTMLElement
@@ -102,6 +109,15 @@ function init() {
     detailContent: bodyNode.querySelector('#detailContent') as HTMLElement,
     closeDetailBtn: bodyNode.querySelector('#closeDetailBtn') as HTMLButtonElement,
     pinDetailBtn: bodyNode.querySelector('#pinDetailBtn') as HTMLButtonElement,
+  }
+
+  // Initialize virtual scrolling
+  virtualScrollContainer = elements.main
+  virtualScrollViewport = elements.eventsBody.parentElement as HTMLElement // table wrapper
+
+  // Setup scroll listener for virtual scrolling
+  if (virtualScrollContainer) {
+    virtualScrollContainer.addEventListener('scroll', handleScroll, { passive: true })
   }
 
   // Check if API is available
@@ -318,22 +334,80 @@ function renderEvents() {
   elements.emptyState.style.display = 'none'
   elements.eventsTable.style.display = 'table'
 
+  // Virtual scrolling: calculate visible range
+  const visibleRange = calculateVisibleRange()
+
   // Clear existing rows
   elements.eventsBody.innerHTML = ''
 
-  // Render events (most recent first)
-  const events = [...filteredEvents].reverse()
+  // Create virtual spacer at the top
+  if (visibleRange.start > 0) {
+    const spacer = document.createElement('tr')
+    spacer.style.height = `${visibleRange.start * VIRTUAL_SCROLL_ITEM_HEIGHT}px`
+    spacer.className = 'virtual-spacer'
+    elements.eventsBody.appendChild(spacer)
+  }
 
-  events.forEach((event, index) => {
-    const row = createEventRow(event, index)
+  // Render only visible events (most recent first)
+  const events = [...filteredEvents].reverse()
+  const visibleEvents = events.slice(visibleRange.start, visibleRange.end)
+
+  visibleEvents.forEach((event, idx) => {
+    const actualIndex = visibleRange.start + idx
+    const row = createEventRow(event, actualIndex)
     if (selectedEvent && event.id === selectedEvent.id) {
       row.classList.add('selected')
     }
     elements.eventsBody.appendChild(row)
   })
 
+  // Create virtual spacer at the bottom
+  if (visibleRange.end < events.length) {
+    const spacer = document.createElement('tr')
+    spacer.style.height = `${(events.length - visibleRange.end) * VIRTUAL_SCROLL_ITEM_HEIGHT}px`
+    spacer.className = 'virtual-spacer'
+    elements.eventsBody.appendChild(spacer)
+  }
+
   if (shouldStick) {
     scrollToBottom(elements.main)
+  }
+}
+
+/**
+ * Calculate visible range for virtual scrolling
+ */
+function calculateVisibleRange(): { start: number; end: number } {
+  if (!virtualScrollContainer) {
+    return { start: 0, end: filteredEvents.length }
+  }
+
+  const scrollTop = virtualScrollContainer.scrollTop
+  const containerHeight = virtualScrollContainer.clientHeight
+
+  const start = Math.max(
+    0,
+    Math.floor(scrollTop / VIRTUAL_SCROLL_ITEM_HEIGHT) - VIRTUAL_SCROLL_OVERSCAN
+  )
+  const visibleCount = Math.ceil(containerHeight / VIRTUAL_SCROLL_ITEM_HEIGHT)
+  const end = Math.min(filteredEvents.length, start + visibleCount + VIRTUAL_SCROLL_OVERSCAN * 2)
+
+  return { start, end }
+}
+
+/**
+ * Handle scroll event for virtual scrolling
+ */
+function handleScroll() {
+  if (!virtualScrollContainer) return
+
+  const currentScrollTop = virtualScrollContainer.scrollTop
+  const delta = Math.abs(currentScrollTop - lastScrollTop)
+
+  // Only re-render if scrolled more than one row height
+  if (delta > VIRTUAL_SCROLL_ITEM_HEIGHT) {
+    lastScrollTop = currentScrollTop
+    renderNow()
   }
 }
 
