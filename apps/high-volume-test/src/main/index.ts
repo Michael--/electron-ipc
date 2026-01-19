@@ -5,6 +5,7 @@
  */
 
 import { enableIpcInspector } from '@number10/electron-ipc/inspector'
+import { getWindowRegistry } from '@number10/electron-ipc/window-manager'
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { setupIpcHandlers } from './ipc-handlers'
@@ -25,6 +26,9 @@ function createWindow() {
       contextIsolation: true,
     },
   })
+
+  // Register window with window manager
+  getWindowRegistry().register(mainWindow, 'main')
 
   // Load the app
   if (process.env.ELECTRON_RENDERER_URL) {

@@ -5,8 +5,8 @@
  */
 
 import { flushInspector } from '@number10/electron-ipc/inspector'
+import { broadcastToApp } from '@number10/electron-ipc/window-manager'
 import { randomBytes } from 'crypto'
-import { BrowserWindow } from 'electron'
 import type { BroadcastContracts } from './ipc-api'
 
 interface TestStats {
@@ -28,6 +28,9 @@ const stats: TestStats = {
 }
 
 let currentInterval: NodeJS.Timeout | null = null
+
+// Create broadcast function for testBroadcast channel
+const broadcast = broadcastToApp<BroadcastContracts>()
 
 /**
  * Generate random payload
@@ -152,13 +155,11 @@ function sendTestEvent(payloadSize: number, counter: number) {
   const data = payloadSize > 0 ? generatePayload(payloadSize) : undefined
   const start = Date.now()
 
-  // Send broadcast to all windows
-  const windows = BrowserWindow.getAllWindows()
-  windows.forEach((win) => {
-    win.webContents.send('testBroadcast', {
-      message: `Event ${counter}`,
-      id: counter,
-    } as BroadcastContracts['testBroadcast']['payload'])
+  // Send broadcast to all windows using proper IPC API
+  // This goes through the Inspector tracking system
+  broadcast('testBroadcast', {
+    message: `Event ${counter}`,
+    id: counter,
   })
 
   stats.generated++
@@ -170,27 +171,13 @@ function sendTestEvent(payloadSize: number, counter: number) {
  */
 function sendMixedEvent(type: number, payloadSize: number, counter: number) {
   const data = payloadSize > 0 ? generatePayload(payloadSize) : undefined
-  const windows = BrowserWindow.getAllWindows()
 
-  if (type === 0 || type === 1) {
-    // For invoke and heavy, send simple broadcast
-    windows.forEach((win) => {
-      win.webContents.send('testBroadcast', {
-        message: type === 0 ? `Invoke ${counter}` : `Heavy ${counter}`,
-        id: counter,
-      } as BroadcastContracts['testBroadcast']['payload'])
-    })
-    stats.generated++
-  } else {
-    // Broadcast
-    windows.forEach((win) => {
-      win.webContents.send('testBroadcast', {
-        message: `Broadcast ${counter}`,
-        id: counter,
-      } as BroadcastContracts['testBroadcast']['payload'])
-    })
-    stats.generated++
-  }
+  const messages = ['Invoke', 'Heavy', 'Broadcast']
+  broadcast('testBroadcast', {
+    message: `${messages[type] || 'Mixed'} ${counter}`,
+    id: counter,
+  })
+  stats.generated++
 }
 
 /**
