@@ -5,7 +5,11 @@ import {
   defineEventHandlers,
   defineInvokeHandlers,
 } from '@number10/electron-ipc'
-import { enableIpcInspector } from '@number10/electron-ipc/inspector'
+import {
+  closeInspector,
+  enableIpcInspector,
+  getInspectorWindow,
+} from '@number10/electron-ipc/inspector'
 import {
   broadcastToApp,
   createBroadcastToRole,
@@ -50,6 +54,25 @@ function getWindowList() {
       title: meta.window.getTitle(),
       webContentsId: meta.window.webContents.id,
     }))
+}
+
+function openInspectorWindow() {
+  enableIpcInspector({ openOnStart: true })
+}
+
+function toggleInspectorWindow() {
+  const inspectorWindow = getInspectorWindow()
+  if (inspectorWindow) {
+    if (inspectorWindow.isVisible()) {
+      closeInspector()
+    } else {
+      inspectorWindow.show()
+      inspectorWindow.focus()
+    }
+    return
+  }
+
+  openInspectorWindow()
 }
 
 function initializeHandlers() {
@@ -149,20 +172,17 @@ function setupMenu() {
       ],
     },
     {
-      label: 'Developer',
+      label: 'View',
       submenu: [
         {
-          label: 'Open IPC Inspector',
+          label: 'Toggle IPC Inspector',
           accelerator: 'CmdOrCtrl+Shift+I',
-          click: () => {
-            enableIpcInspector({ openOnStart: true })
-          },
+          click: toggleInspectorWindow,
         },
+        { type: 'separator' },
+        { role: 'reload' },
+        { role: 'toggleDevTools', accelerator: 'CmdOrCtrl+Alt+I' },
       ],
-    },
-    {
-      label: 'View',
-      submenu: [{ role: 'reload' }, { role: 'toggleDevTools' }],
     },
   ])
 
@@ -175,7 +195,7 @@ app.whenReady().then(() => {
   createAppWindow('main')
   createAppWindow('secondary')
 
-  enableIpcInspector({ openOnStart: true })
+  openInspectorWindow()
   setupMenu()
 
   app.on('activate', () => {

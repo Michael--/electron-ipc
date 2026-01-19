@@ -12,6 +12,7 @@ import { DEFAULT_INSPECTOR_OPTIONS } from './types'
  * Inspector window instance
  */
 let inspectorWindow: BrowserWindow | null = null
+let handlersRegistered = false
 
 /**
  * Flushes any pending inspector events
@@ -60,8 +61,11 @@ export function enableIpcInspector(options: InspectorOptions = {}): BrowserWindo
     server.push(event)
   })
 
-  // Register IPC handlers
-  registerIpcHandlers(server)
+  // Register IPC handlers only once
+  if (!handlersRegistered) {
+    registerIpcHandlers(server)
+    handlersRegistered = true
+  }
 
   // Create inspector window if requested
   if (config.openOnStart) {
