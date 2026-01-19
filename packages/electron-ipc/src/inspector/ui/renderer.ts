@@ -120,10 +120,19 @@ function init() {
     updateStats(payload.events?.length || 0, 0)
   })
 
-  // Listen for live events
+  // Listen for live events (single)
   window.inspectorAPI.onEvent((payload) => {
     if (!isPaused) {
       allEvents.push(payload.event)
+      applyFilters()
+      updateStats(allEvents.length, 0)
+    }
+  })
+
+  // Listen for event batches
+  window.inspectorAPI.onEventBatch?.((payload) => {
+    if (!isPaused && payload.events && payload.events.length > 0) {
+      allEvents.push(...payload.events)
       applyFilters()
       updateStats(allEvents.length, 0)
     }

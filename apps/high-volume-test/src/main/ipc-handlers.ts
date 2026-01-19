@@ -2,8 +2,8 @@
  * IPC Handlers for High-Volume Test
  */
 
+import { getTestStats, startHighVolumeTest, stopHighVolumeTest } from './high-volume-generator'
 import { api as ipcAPI } from './ipc-api.generated'
-import { startHighVolumeTest, stopHighVolumeTest, getTestStats } from './high-volume-generator'
 
 /**
  * Setup all IPC handlers

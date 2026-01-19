@@ -1,5 +1,6 @@
 import { BrowserWindow, WebContents } from 'electron'
 import { RingBuffer } from './ring-buffer'
+import { EventBatcher } from './event-batcher'
 import type { InspectorOptions, PayloadMode, TraceEvent } from './types'
 import { DEFAULT_INSPECTOR_OPTIONS } from './types'
 
@@ -22,6 +23,7 @@ export class InspectorServer {
   private isPaused = false
   private droppedCount = 0
   private options: Required<InspectorOptions>
+  private batcher: EventBatcher | null = null
 
   /**
    * Creates a new inspector server
@@ -29,8 +31,31 @@ export class InspectorServer {
    * @param options - Inspector configuration options
    */
   constructor(options: InspectorOptions = {}) {
-    this.options = { ...DEFAULT_INSPECTOR_OPTIONS, ...options }
+    this.options = {
+      ...DEFAULT_INSPECTOR_OPTIONS,
+      ...options,
+      batching: {
+        ...DEFAULT_INSPECTOR_OPTIONS.batching,
+        ...(options.batching || {}),
+      },
+    }
     this.buffer = new RingBuffer<TraceEvent>(this.options.maxEvents)
+
+    // Initialize batcher if enabled
+    if (this.options.batching.enabled) {
+      this.batcher = new EventBatcher(
+        {
+          maxBatchSize: this.options.batching.maxBatchSize!,
+          maxBatchDelay: this.options.batching.maxBatchDelay!,
+        },
+        (events) => {
+          this.broadcast({
+            channel: 'INSPECTOR:EVENT_BATCH',
+            payload: { events },
+          })
+        }
+      )
+    }
   }
 
   /**
@@ -50,11 +75,15 @@ export class InspectorServer {
 
     this.buffer.push(event)
 
-    // Broadcast to all subscribers
-    this.broadcast({
-      channel: 'INSPECTOR:EVENT',
-      payload: { event },
-    })
+    // Batch or broadcast immediately
+    if (this.batcher) {
+      this.batcher.add(event)
+    } else {
+      this.broadcast({
+        channel: 'INSPECTOR:EVENT',
+        payload: { event },
+      })
+    }
   }
 
   /**
@@ -70,6 +99,9 @@ export class InspectorServer {
   clear(): void {
     this.buffer.clear()
     this.droppedCount = 0
+    if (this.batcher) {
+      this.batcher.clear()
+    }
 
     this.broadcast({
       channel: 'INSPECTOR:STATUS',
@@ -82,6 +114,9 @@ export class InspectorServer {
    */
   pause(): void {
     this.isPaused = true
+    if (this.batcher) {
+      this.batcher.flush()
+    }
 
     this.broadcast({
       channel: 'INSPECTOR:STATUS',

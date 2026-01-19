@@ -4,9 +4,9 @@
  * Generates configurable high-volume IPC events for Inspector testing
  */
 
+import { enableInspector } from '@number10/electron-ipc'
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
-import { enableInspector } from '@number10/electron-ipc'
 import { setupIpcHandlers } from './ipc-handlers'
 
 let mainWindow: BrowserWindow | null = null

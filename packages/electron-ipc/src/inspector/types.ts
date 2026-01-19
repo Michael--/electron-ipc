@@ -239,6 +239,16 @@ export interface InspectorOptions {
 
   /** Keyboard shortcut to open inspector */
   shortcut?: string
+
+  /** Event batching options */
+  batching?: {
+    /** Enable event batching (default: true) */
+    enabled?: boolean
+    /** Maximum batch size in number of events (default: 50) */
+    maxBatchSize?: number
+    /** Maximum time to wait before flushing batch in ms (default: 100) */
+    maxBatchDelay?: number
+  }
 }
 
 /**
@@ -251,4 +261,9 @@ export const DEFAULT_INSPECTOR_OPTIONS: Required<InspectorOptions> = {
   payloadMode: 'redacted',
   maxPayloadPreviewBytes: 10_000,
   shortcut: 'CommandOrControl+Shift+I',
+  batching: {
+    enabled: true,
+    maxBatchSize: 50,
+    maxBatchDelay: 100,
+  },
 }

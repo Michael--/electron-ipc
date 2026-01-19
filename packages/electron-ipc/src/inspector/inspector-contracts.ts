@@ -54,6 +54,17 @@ export interface InspectorEventPayload {
 }
 
 /**
+ * EVENT_BATCH: Main Process sends batch of trace events to Inspector UI
+ *
+ * Direction: Main → UI
+ * Sent when batching is enabled to reduce IPC overhead
+ */
+export interface InspectorEventBatchPayload {
+  /** Batch of trace events */
+  events: TraceEvent[]
+}
+
+/**
  * COMMAND: Inspector UI sends command to Main Process
  *
  * Direction: UI → Main
@@ -112,6 +123,7 @@ export interface InspectorContracts {
   // Main → UI
   'INSPECTOR:INIT': { payload: InspectorInitPayload }
   'INSPECTOR:EVENT': { payload: InspectorEventPayload }
+  'INSPECTOR:EVENT_BATCH': { payload: InspectorEventBatchPayload }
   'INSPECTOR:STATUS': { payload: InspectorStatusPayload }
   'INSPECTOR:COMMAND_RESPONSE': { payload: InspectorCommandResponsePayload }
 }

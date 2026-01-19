@@ -4,8 +4,8 @@
  * Generates configurable high-volume IPC events
  */
 
-import { api as ipcAPI } from './ipc-api.generated'
 import { randomBytes } from 'crypto'
+import { api as ipcAPI } from './ipc-api.generated'
 
 interface TestStats {
   generated: number

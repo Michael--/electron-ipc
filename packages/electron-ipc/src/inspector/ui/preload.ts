@@ -3,6 +3,7 @@ import type {
   InspectorCommand,
   InspectorCommandResponsePayload,
   InspectorEventPayload,
+  InspectorEventBatchPayload,
   InspectorInitPayload,
   InspectorStatusPayload,
 } from '../inspector-contracts'
@@ -42,6 +43,15 @@ const inspectorAPI = {
    */
   onEvent: (callback: (payload: InspectorEventPayload) => void) => {
     ipcRenderer.on('INSPECTOR:EVENT', (_event, payload: InspectorEventPayload) => {
+      callback(payload)
+    })
+  },
+
+  /**
+   * Listens for event batches from main process
+   */
+  onEventBatch: (callback: (payload: InspectorEventBatchPayload) => void) => {
+    ipcRenderer.on('INSPECTOR:EVENT_BATCH', (_event, payload: InspectorEventBatchPayload) => {
       callback(payload)
     })
   },
