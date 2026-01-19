@@ -492,6 +492,13 @@
       <div class="stats">
         <span id="eventCount">0 events</span>
         <span id="droppedCount"></span>
+        <span
+          id="gapCount"
+          class="stat-badge danger"
+          style="display: none"
+          title="Missing sequence numbers detected"
+          >⚠ Gaps detected</span
+        >
         <span id="bufferUsage" class="stat-badge" title="Buffer usage">0/5000</span>
         <span id="eventsPerSec" class="stat-badge" title="Events per second">0/s</span>
       </div>
@@ -510,6 +517,7 @@
       <table id="eventsTable" style="display: none">
         <thead>
           <tr>
+            <th style="width: 60px">#</th>
             <th style="width: 140px">Time</th>
             <th style="width: 100px">Type</th>
             <th style="width: 200px">Channel</th>

@@ -55,6 +55,7 @@ let elements: {
   autoScrollBtn: HTMLButtonElement
   eventCount: HTMLElement
   droppedCount: HTMLElement
+  gapCount: HTMLElement
   bufferUsage: HTMLElement
   eventsPerSec: HTMLElement
   emptyState: HTMLElement
@@ -71,6 +72,8 @@ let statsStartTime = Date.now()
 let statsEventCount = 0
 let maxBufferSize = 5000
 let statsInterval: ReturnType<typeof setInterval> | null = null
+let lastSeqNumber = 0
+let detectedGaps = 0
 
 /**
  * Initialize inspector UI
@@ -110,6 +113,7 @@ function init() {
     autoScrollBtn: bodyNode.querySelector('#autoScrollBtn') as HTMLButtonElement,
     eventCount: bodyNode.querySelector('#eventCount') as HTMLElement,
     droppedCount: bodyNode.querySelector('#droppedCount') as HTMLElement,
+    gapCount: bodyNode.querySelector('#gapCount') as HTMLElement,
     bufferUsage: bodyNode.querySelector('#bufferUsage') as HTMLElement,
     eventsPerSec: bodyNode.querySelector('#eventsPerSec') as HTMLElement,
     emptyState: bodyNode.querySelector('#emptyState') as HTMLElement,
@@ -157,6 +161,7 @@ function init() {
   // Listen for live events (single)
   window.inspectorAPI.onEvent((payload) => {
     if (!isPaused) {
+      if (payload.event.seq) detectGap(payload.event.seq)
       allEvents.push(payload.event)
       statsEventCount++
       applyFilters()
@@ -167,6 +172,9 @@ function init() {
   // Listen for event batches
   window.inspectorAPI.onEventBatch?.((payload) => {
     if (!isPaused && payload.events && payload.events.length > 0) {
+      payload.events.forEach((event) => {
+        if (event.seq) detectGap(event.seq)
+      })
       allEvents.push(...payload.events)
       statsEventCount += payload.events.length
       applyFilters()
@@ -220,6 +228,10 @@ function setupEventListeners() {
       allEvents = []
       statsEventCount = 0
       statsStartTime = Date.now()
+      lastSeqNumber = 0
+      detectedGaps = 0
+      elements.gapCount.style.display = 'none'
+      elements.gapCount.textContent = ''
       applyFilters()
       renderNow() // Immediate render after clear
       updateStats(0, 0)
@@ -434,6 +446,14 @@ function handleScroll() {
 function createEventRow(event: TraceEvent, index: number): HTMLTableRowElement {
   const row = document.createElement('tr')
   row.dataset.index = String(index)
+
+  // Sequence number
+  const seqCell = document.createElement('td')
+  seqCell.textContent = String(event.seq || '-')
+  seqCell.style.fontFamily = 'monospace'
+  seqCell.style.fontSize = '11px'
+  seqCell.style.color = '#858585'
+  row.appendChild(seqCell)
 
   // Time
   const timeCell = document.createElement('td')
@@ -753,6 +773,27 @@ function updatePinButton() {
 function updateAutoScrollButton() {
   elements.autoScrollBtn.textContent = autoScrollEnabled ? 'Auto-scroll: On' : 'Auto-scroll: Off'
   elements.autoScrollBtn.classList.toggle('toggle-active', autoScrollEnabled)
+}
+
+/**
+ * Detect sequence number gaps
+ */
+function detectGap(seq: number) {
+  if (!seq) return
+
+  if (lastSeqNumber > 0 && seq > lastSeqNumber + 1) {
+    const gap = seq - lastSeqNumber - 1
+    detectedGaps += gap
+    console.warn(
+      `[Inspector] Gap detected: missing ${gap} events (${lastSeqNumber + 1} to ${seq - 1})`
+    )
+
+    // Show gap indicator
+    elements.gapCount.style.display = 'inline-block'
+    elements.gapCount.textContent = `⚠ ${detectedGaps} gaps`
+  }
+
+  lastSeqNumber = Math.max(lastSeqNumber, seq)
 }
 
 /**

@@ -3,7 +3,7 @@
   "version": "2.1.0",
   "private": true,
   "description": "High-volume test app for Inspector performance testing",
-  "main": "dist/main/index.js",
+  "main": "out/main/index.js",
   "scripts": {
     "dev": "pnpm --filter electron-ipc run build && mkdirp dist && pnpm run generate:all && electron-vite dev",
     "build": "pnpm --filter electron-ipc run build && mkdirp dist && pnpm run generate:all && electron-vite build",

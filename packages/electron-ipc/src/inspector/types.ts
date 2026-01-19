@@ -26,6 +26,9 @@ export interface TraceEventBase {
   /** Unique identifier for this trace */
   id: string
 
+  /** Sequence number (server-side incrementing counter) */
+  seq?: number
+
   /** Timestamp when operation started (ms since epoch) */
   tsStart: number
 

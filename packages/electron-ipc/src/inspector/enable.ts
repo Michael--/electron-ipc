@@ -1,17 +1,30 @@
 import type { IpcMainEvent } from 'electron'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
+import { getWindowRegistry } from '../window-manager/registry'
 import type { InspectorCommand, InspectorCommandPayload } from './inspector-contracts'
 import { getInspectorServer } from './server'
 import { setTraceSink } from './trace'
 import type { InspectorOptions, TraceEvent } from './types'
 import { DEFAULT_INSPECTOR_OPTIONS } from './types'
-import { getWindowRegistry } from '../window-manager/registry'
 
 /**
  * Inspector window instance
  */
 let inspectorWindow: BrowserWindow | null = null
+
+/**
+ * Flushes any pending inspector events
+ *
+ * Call this at the end of high-volume operations to ensure all batched
+ * events are sent to the inspector UI before they're lost
+ */
+export function flushInspector(): void {
+  const server = getInspectorServer()
+  if (server) {
+    server.flush()
+  }
+}
 
 /**
  * Enables the IPC Inspector

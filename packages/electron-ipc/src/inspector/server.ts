@@ -24,6 +24,7 @@ export class InspectorServer {
   private droppedCount = 0
   private options: Required<InspectorOptions>
   private batcher: EventBatcher | null = null
+  private sequenceCounter = 0
 
   /**
    * Creates a new inspector server
@@ -67,6 +68,9 @@ export class InspectorServer {
     if (this.isPaused) {
       return
     }
+
+    // Assign sequence number
+    event.seq = ++this.sequenceCounter
 
     // Track if we're dropping events
     if (this.buffer.isFull()) {
@@ -134,6 +138,18 @@ export class InspectorServer {
       channel: 'INSPECTOR:STATUS',
       payload: this.getStatus(),
     })
+  }
+
+  /**
+   * Flushes any pending batched events immediately
+   *
+   * Call this before application shutdown or at the end of high-volume operations
+   * to ensure all events are sent to the inspector UI
+   */
+  flush(): void {
+    if (this.batcher) {
+      this.batcher.flush()
+    }
   }
 
   /**

@@ -4,6 +4,7 @@
  * Generates configurable high-volume IPC events
  */
 
+import { flushInspector } from '@number10/electron-ipc/inspector'
 import { randomBytes } from 'crypto'
 import { BrowserWindow } from 'electron'
 import type { BroadcastContracts } from './ipc-api'
@@ -202,11 +203,14 @@ export function stopHighVolumeTest() {
   }
   stats.running = false
 
-  // IMPORTANT: Give a short delay to allow final IPC batches to flush
-  // The Inspector batching has a 100ms delay, so we wait 150ms to be safe
+  // CRITICAL: Flush Inspector to send all pending batched events
+  // Without this, batched events waiting in the buffer will be lost
+  flushInspector()
+
+  // Small delay to allow IPC messages to be sent
   setTimeout(() => {
     console.log(`[HighVolume] Test stopped: ${stats.generated} events generated`)
-  }, 150)
+  }, 100)
 }
 
 /**

@@ -63,4 +63,4 @@ export { RingBuffer } from './ring-buffer'
 export { InspectorServer, getInspectorServer, resetInspectorServer } from './server'
 
 // Export enable function
-export { closeInspector, enableIpcInspector, getInspectorWindow } from './enable'
+export { closeInspector, enableIpcInspector, flushInspector, getInspectorWindow } from './enable'
