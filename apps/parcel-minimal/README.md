@@ -58,7 +58,13 @@ pnpm run typecheck
 ```typescript
 // Renderer
 const result = await api.invokeping({ message: 'Hello' })
-// Main handles via ipcMain.handle('ping', ...)
+
+// Main process (using electron-ipc patterns)
+class RegisterHandler extends AbstractRegisterHandler {
+  handlers = defineInvokeHandlers<InvokeContracts>({
+    ping: async (_event, request) => ({ reply: 'Pong!', timestamp: Date.now() }),
+  })
+}
 ```
 
 ### 2. Request with Parameters
@@ -138,7 +144,7 @@ Defined in `package.json`:
 
 1. **Schema Definition**: Define IPC API in `ipc-config.yaml`
 2. **Code Generation**: Run `electron-ipc-generate` to create type-safe API
-3. **Main Process**: Implement handlers using `ipcMain.handle()`
+3. **Main Process**: Implement handlers using `AbstractRegisterHandler` and `defineInvokeHandlers`
 4. **Preload**: Use `exposeApi()` to bridge IPC to renderer
 5. **Renderer**: Use generated `api` object with full TypeScript support
 6. **Parcel Bundling**: Build targets automatically with `parcel build`

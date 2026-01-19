@@ -84,9 +84,15 @@ Creates type-safe `ipc-api.generated.ts` with full IntelliSense support.
 
 ```typescript
 // src/main/index.ts
-ipcMain.handle('ping', async (_event, request) => {
-  return { reply: `Pong! ${request.message}`, timestamp: Date.now() }
-})
+class RegisterHandler extends AbstractRegisterHandler {
+  handlers = defineInvokeHandlers<InvokeContracts>({
+    ping: async (_event, request) => {
+      return { reply: `Pong! ${request.message}`, timestamp: Date.now() }
+    },
+  })
+}
+
+RegisterHandler.register()
 ```
 
 ### 5. Use in Renderer

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Renderer process - demonstrates electron-ipc usage
  */
