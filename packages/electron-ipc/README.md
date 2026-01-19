@@ -45,14 +45,14 @@ Here's a minimal example to get you started:
 
 ```typescript
 // 1. Define contracts (src/main/ipc-api.ts)
-import { GenericInvokeContract, GenericEventContract } from '@number10/electron-ipc'
+import { GenericInvokeContract, GenericRendererEventContract } from '@number10/electron-ipc'
 
 export type InvokeContracts = GenericInvokeContract<{
   AddNumbers: IInvokeContract<{ a: number; b: number }, number>
 }>
 
-export type EventContracts = GenericEventContract<{
-  LogMessage: IEventContract<string>
+export type EventContracts = GenericRendererEventContract<{
+  LogMessage: IRendererEventContract<string>
 }>
 ```
 
@@ -549,14 +549,18 @@ apis:
 
 For detailed documentation, architecture, and advanced usage, see:
 
-- [📚 Complete Documentation](https://github.com/Michael--/electron-ipc/tree/main/docs) - Comprehensive guide with examples and best practices
-- [🏗️ Architecture Guide](https://github.com/Michael--/electron-ipc/blob/main/docs/ARCHITECTURE.md) - Technical details about the code generator design
+- [📚 Complete Documentation](https://michael--.github.io/electron-ipc/) - Full guides, examples, and API reference
+- [🏗️ Architecture Guide](https://michael--.github.io/electron-ipc/guide/architecture) - Technical details about the code generator design
+- [🪟 Window Manager](https://michael--.github.io/electron-ipc/guide/window-manager) - Multi-window support and broadcasts
+- [🔍 IPC Inspector](https://michael--.github.io/electron-ipc/guide/inspector) - Dev-only IPC tracing and debugging
 
 ## Examples & Templates
 
-- `docs/examples/electron-vite.md`
-- `docs/examples/electron-forge.md`
-- `packages/electron-ipc/templates/basic/`
+See the [documentation](https://michael--.github.io/electron-ipc/examples/electron-vite) for integration guides:
+
+- [Electron + Vite](https://michael--.github.io/electron-ipc/examples/electron-vite)
+- [Electron Forge](https://michael--.github.io/electron-ipc/examples/electron-forge)
+- Working examples in repository: `apps/test-app`, `apps/multi-window`, `apps/*-minimal`
 
 ## Migration from v1.x
 
