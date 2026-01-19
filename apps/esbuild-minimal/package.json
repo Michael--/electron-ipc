@@ -1,0 +1,38 @@
+{
+  "name": "electron-ipc-esbuild-minimal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal Electron app demonstrating electron-ipc with esbuild",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "generate": "mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml",
+    "generate:watch": "mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml --watch",
+    "prebuild": "pnpm run generate",
+    "build": "node build.mjs",
+    "predev": "pnpm run generate",
+    "dev": "node build.mjs --watch",
+    "start": "electron .",
+    "clean": "rimraf dist *.tsbuildinfo",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "electron",
+    "ipc",
+    "esbuild",
+    "typescript"
+  ],
+  "author": "Michael Rieck (Michael--) <mr@number10.de>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "esbuild": "^0.20.0",
+    "electron": "^28.0.0",
+    "mkdirp": "^3.0.1",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@number10/electron-ipc": "workspace:*",
+    "zod": "^3.23.8"
+  }
+}
