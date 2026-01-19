@@ -372,12 +372,19 @@ broadcast('Empty') // ✅ OK (void payload)
 
 ## Examples
 
-See the test-app for a complete working example:
+See the example apps for complete working implementations:
 
-- `apps/test-app/src/main/index.ts`: Multi-window setup with menu
+**Multi-Window Demo:**
+
+- `apps/multi-window` - Dedicated multi-window IPC demo with role-based broadcasts
+- `apps/test-app/src/main/index.ts` - Multi-window setup with menu and registry integration
+
+Both apps demonstrate:
+
 - Window menu with "Open Secondary Window" command
 - Registry info logging
-- Broadcast to all windows demo
+- Broadcast to all windows
+- Role-based window management
 
 ## Testing
 

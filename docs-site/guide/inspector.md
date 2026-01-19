@@ -89,6 +89,24 @@ own instrumentation.
 
 Use the Export button in the Inspector UI to download a JSON snapshot of the current buffer.
 
+## Examples
+
+See the example apps for working Inspector integrations:
+
+**High-Volume Testing:**
+
+- `apps/high-volume-test` - Dedicated stress-testing app for Inspector performance
+  - Configurable test modes (Burst, Sustained, Mixed)
+  - Adjustable parameters (events/second, duration, payload size)
+  - Real-time statistics and latency tracking
+
+**Standard Integration:**
+
+- `apps/test-app` - Inspector enabled with standard IPC flows
+- `apps/multi-window` - Inspector with multi-window IPC tracing
+
+All apps include Inspector integration and demonstrate best practices for IPC monitoring.
+
 ## Migration
 
 The inspector is opt-in and does not introduce breaking changes. Existing IPC code continues

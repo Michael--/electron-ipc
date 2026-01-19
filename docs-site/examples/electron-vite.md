@@ -2,6 +2,12 @@
 
 This example mirrors the `apps/test-app` setup and keeps generation in a separate terminal.
 
+> **Reference Apps:** For complete working examples, see:
+>
+> - `apps/test-app` - Full-featured app with React
+> - `apps/multi-window` - Multi-window IPC flows
+> - `apps/high-volume-test` - Inspector stress testing
+
 ## 1) Add template files
 
 Copy the files from `packages/electron-ipc/templates/basic/` into your project:

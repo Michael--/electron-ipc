@@ -2,6 +2,12 @@
 
 This example focuses on wiring generator output into a Forge app.
 
+> **Alternative Bundlers:** For examples with other bundlers, see:
+>
+> - `apps/esbuild-minimal` - ESBuild bundler
+> - `apps/webpack-minimal` - Webpack bundler
+> - `apps/parcel-minimal` - Parcel 2.x bundler
+
 ## 1) Add template files
 
 Copy the files from `packages/electron-ipc/templates/basic/` into your project:

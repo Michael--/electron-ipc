@@ -12,8 +12,19 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 
 ### Packages
 
-- **`electron-ipc`** - Publishable npm package containing the code generator
-- **`test-app`** - Electron application for testing the generator
+- **`packages/electron-ipc`** - Main library (publishable to npm) with code generator and runtime helpers
+- **`packages/template-basic`** - Self-generating template demonstrating best practices
+
+### Example Applications
+
+The repository includes multiple example apps demonstrating different bundlers and use cases:
+
+- **`apps/test-app`** - Main test application with electron-vite (full feature showcase)
+- **`apps/multi-window`** - Multi-window IPC flows with window registry and role-based broadcasts
+- **`apps/high-volume-test`** - Inspector performance testing under high-volume IPC traffic
+- **`apps/esbuild-minimal`** - Minimal example with esbuild bundler
+- **`apps/webpack-minimal`** - Minimal example with webpack bundler
+- **`apps/parcel-minimal`** - Minimal example with Parcel 2.x bundler
 
 ### How It Works
 
@@ -601,9 +612,32 @@ apis:
 
 ## Examples & Templates
 
-- [Electron + Vite](../examples/electron-vite)
-- [Electron Forge](../examples/electron-forge)
-- `packages/electron-ipc/templates/basic/`
+### Guides & Documentation
+
+- [Electron + Vite](../examples/electron-vite) - Integration guide for electron-vite
+- [Electron Forge](../examples/electron-forge) - Integration guide for Electron Forge
+
+### Working Example Apps
+
+All examples are in the repository and ready to run:
+
+**Full-Featured Apps:**
+
+- `apps/test-app` - Main demo with React, all features, Inspector integration
+- `apps/multi-window` - Multi-window IPC flows, window registry, role-based broadcasts
+- `apps/high-volume-test` - Inspector performance testing under high load
+
+**Minimal Bundler Examples:**
+
+- `apps/esbuild-minimal` - Type-safe IPC with esbuild bundler
+- `apps/webpack-minimal` - Type-safe IPC with webpack bundler
+- `apps/parcel-minimal` - Type-safe IPC with Parcel 2.x bundler
+
+**Template:**
+
+- `packages/template-basic` - Self-generating template showing best practices
+
+Each example includes its own README with specific setup instructions.
 
 ## Benefits
 
@@ -698,24 +732,34 @@ pnpm run dev
 ```
 electron-ipc/
 ├── packages/
-│   ├── electron-ipc/          # Generator library (publishable)
+│   ├── electron-ipc/              # Main library (publishable to npm)
 │   │   ├── src/
-│   │   │   ├── generator/     # Code generation logic
-│   │   │   ├── interfaces/    # TypeScript interfaces
+│   │   │   ├── generator/         # Code generation logic
+│   │   │   ├── interfaces/        # TypeScript interfaces
+│   │   │   ├── window-manager/    # Window registry module
+│   │   │   ├── inspector/         # IPC Inspector module
 │   │   │   └── index.ts
 │   │   └── package.json
 │   │
-│   └── test-app/              # Electron test application (private)
-│       ├── src/
-│       │   ├── main/          # Main process code
-│       │   ├── preload/       # Preload scripts
-│       │   └── renderer/      # Renderer process (React)
-│       ├── public/            # React components
-│       └── package.json
+│   └── template-basic/            # Self-generating template
 │
-├── docs-site/                 # Documentation site (VitePress)
-├── package.json               # Workspace root
-└── tsconfig.json              # Base TypeScript config
+├── apps/                          # Example applications
+│   ├── test-app/                  # Main test app (electron-vite)
+│   │   ├── src/
+│   │   │   ├── main/              # Main process code
+│   │   │   ├── preload/           # Preload scripts
+│   │   │   └── renderer/          # Renderer process (React)
+│   │   └── public/                # React components
+│   │
+│   ├── multi-window/              # Multi-window demo (electron-vite)
+│   ├── high-volume-test/          # Inspector stress test (electron-vite)
+│   ├── esbuild-minimal/           # Minimal example with esbuild
+│   ├── webpack-minimal/           # Minimal example with webpack
+│   └── parcel-minimal/            # Minimal example with Parcel 2.x
+│
+├── docs-site/                     # Documentation site (VitePress)
+├── package.json                   # Workspace root
+└── tsconfig.json                  # Base TypeScript config
 ```
 
 ## 🛠 Technology Stack

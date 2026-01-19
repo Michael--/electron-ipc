@@ -235,6 +235,15 @@ The generator uses ts-morph to:
 - Source maps enabled for debugging
 - No minification in development
 
+**Other Bundler Examples:**
+
+The repository includes minimal examples with alternative bundlers:
+- `apps/esbuild-minimal` - esbuild bundler with custom build script
+- `apps/webpack-minimal` - webpack with separate configs for main/preload/renderer
+- `apps/parcel-minimal` - Parcel 2.x with zero-config setup
+
+Each demonstrates electron-ipc integration with different build tooling.
+
 ## Security Considerations
 
 ### Context Isolation
@@ -276,8 +285,13 @@ The test app includes CSP headers to prevent XSS attacks:
 
 ### Integration Tests
 
+- **Multiple Test Apps** - Various bundler configurations tested:
+  - `apps/test-app` - Full-featured app with electron-vite
+  - `apps/multi-window` - Multi-window IPC scenarios
+  - `apps/high-volume-test` - Performance and stress testing
+  - `apps/esbuild-minimal`, `apps/webpack-minimal`, `apps/parcel-minimal` - Bundler compatibility
 - **Electron Spectator** - End-to-end testing (future)
-- **Manual Testing** - Via test-app Electron application
+- **Manual Testing** - Via example applications
 
 ### Debugging
 
