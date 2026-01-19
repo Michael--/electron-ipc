@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';"
+    />
     <title>High-Volume Inspector Test</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -124,6 +128,6 @@
       </main>
     </div>
 
-    <script src="renderer.js"></script>
+    <script type="module" src="./renderer.ts"></script>
   </body>
 </html>

@@ -33,11 +33,6 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-  // Open DevTools in development
-  if (!app.isPackaged) {
-    mainWindow.webContents.openDevTools()
-  }
-
   mainWindow.on('closed', () => {
     mainWindow = null
   })
