@@ -17,6 +17,7 @@
     "ipcrenderer",
     "onnotification",
     "outdir",
+    "parcelrc",
     "pnpm",
     "preload",
     "prepublishonly",

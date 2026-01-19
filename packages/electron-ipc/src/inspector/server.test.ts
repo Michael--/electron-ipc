@@ -1,6 +1,14 @@
+import { BrowserWindow } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { InspectorServer, getInspectorServer, resetInspectorServer } from './server'
 import type { BroadcastTrace, InvokeTrace } from './types'
+
+// Mock electron
+vi.mock('electron', () => ({
+  BrowserWindow: {
+    fromWebContents: vi.fn(),
+  },
+}))
 
 // Mock BrowserWindow
 const createMockWindow = (id: number) => {
@@ -198,6 +206,10 @@ describe('InspectorServer', () => {
       } as InvokeTrace)
 
       server.subscribe(mockWindow)
+      // Mock BrowserWindow.fromWebContents to return the window
+      vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockWindow)
+      const subscriber = server.getSubscriber(mockWindow.webContents)
+      server.sendInit(subscriber!)
 
       expect(mockWindow.webContents.send).toHaveBeenCalledWith(
         'INSPECTOR:INIT',
@@ -213,7 +225,6 @@ describe('InspectorServer', () => {
       const mockWindow = createMockWindow(1) as any
       server.subscribe(mockWindow)
 
-      // Clear previous calls from init
       vi.clearAllMocks()
 
       const event: BroadcastTrace = {
@@ -228,7 +239,16 @@ describe('InspectorServer', () => {
 
       server.push(event)
 
-      expect(mockWindow.webContents.send).toHaveBeenCalledWith('INSPECTOR:EVENT', { event })
+      // Should be batched - need to flush
+      server.flush()
+
+      // Events are sent as batch
+      expect(mockWindow.webContents.send).toHaveBeenCalledWith(
+        'INSPECTOR:EVENT_BATCH',
+        expect.objectContaining({
+          events: expect.arrayContaining([expect.objectContaining({ id: '2' })]),
+        })
+      )
     })
 
     it('should handle multiple subscribers', () => {
@@ -251,6 +271,9 @@ describe('InspectorServer', () => {
         tsStart: Date.now(),
         source: { webContentsId: 1 },
       } as InvokeTrace)
+
+      // Flush to trigger broadcast
+      server.flush()
 
       expect(window1.webContents.send).toHaveBeenCalled()
       expect(window2.webContents.send).toHaveBeenCalled()
@@ -299,10 +322,13 @@ describe('InspectorServer', () => {
         source: { webContentsId: 1 },
       } as InvokeTrace)
 
+      // Flush to trigger broadcast which will remove destroyed window
+      server.flush()
+
       // Should not send to destroyed window
       expect(mockWindow.webContents.send).not.toHaveBeenCalled()
 
-      // Should be removed from subscribers
+      // Should be removed from subscribers after broadcast attempt
       expect(server.getSubscriberCount()).toBe(0)
     })
   })
@@ -315,7 +341,7 @@ describe('InspectorServer', () => {
 
       expect(server.getSubscriberCount()).toBe(1)
 
-      server.unsubscribe(1 as unknown as Electron.BrowserWindow)
+      server.unsubscribe(mockWindow)
 
       expect(server.getSubscriberCount()).toBe(0)
     })

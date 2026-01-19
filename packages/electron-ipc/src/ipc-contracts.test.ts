@@ -208,7 +208,7 @@ describe('IPC Contracts', () => {
       }>
 
       const handlers: IPCStreamDownloadHandlerType<TestDownloadContract> = {
-        DownloadLogs: async () => {
+        DownloadLogs: () => {
           return new globalThis.ReadableStream({
             start(controller) {
               controller.enqueue('ok')
