@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * High-Volume Test Generator
  *
@@ -81,7 +82,7 @@ function runBurstTest(
   eventsPerSecond: number,
   duration: number,
   payloadSize: number,
-  testId: string
+  _testId: string
 ) {
   const totalEvents = eventsPerSecond * duration
 
@@ -160,6 +161,7 @@ function sendTestEvent(payloadSize: number, counter: number) {
   broadcast('testBroadcast', {
     message: `Event ${counter}`,
     id: counter,
+    data,
   })
 
   stats.generated++
@@ -176,6 +178,7 @@ function sendMixedEvent(type: number, payloadSize: number, counter: number) {
   broadcast('testBroadcast', {
     message: `${messages[type] || 'Mixed'} ${counter}`,
     id: counter,
+    data,
   })
   stats.generated++
 }

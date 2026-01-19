@@ -82,5 +82,5 @@ export type BroadcastContracts = GenericBroadcastContract<{
   /**
    * Test broadcast
    */
-  testBroadcast: IBroadcastContract<{ message: string; id: number }>
+  testBroadcast: IBroadcastContract<{ message: string; id: number; data?: string }>
 }>

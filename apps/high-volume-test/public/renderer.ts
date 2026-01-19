@@ -172,4 +172,4 @@ window.api.ontestBroadcast(() => {
   // No action needed - ontestBroadcast() internally calls traceBroadcast()
 })
 
-console.log('[HighVolume] Renderer initialized')
+// console.log('[HighVolume] Renderer initialized')
