@@ -183,7 +183,7 @@ function init() {
   window.inspectorAPI.onInit((payload) => {
     allEvents = payload.events || []
     applyFilters()
-    updateStats(payload.events?.length || 0, 0)
+    updateStats(payload.events?.length || 0)
   })
 
   // Listen for live events (single)
@@ -194,7 +194,7 @@ function init() {
       allEvents.push(payload.event)
       statsEventCount++
       applyFilters()
-      updateStats(allEvents.length, 0)
+      updateStats(allEvents.length)
     }
   })
 
@@ -208,7 +208,7 @@ function init() {
       allEvents.push(...payload.events)
       statsEventCount += payload.events.length
       applyFilters()
-      updateStats(allEvents.length, 0)
+      updateStats(allEvents.length)
     }
   })
 
@@ -265,7 +265,7 @@ function setupEventListeners() {
       elements.gapCount.textContent = ''
       applyFilters()
       renderNow() // Immediate render after clear
-      updateStats(0, 0)
+      updateStats(0)
     }
   })
 
@@ -747,11 +747,12 @@ function formatPayloadSection(title: string, payload: any): string {
 /**
  * Update stats display
  */
-function updateStats(eventCount: number, droppedCount?: number) {
+function updateStats(eventCount: number, _droppedCount?: number) {
   elements.eventCount.textContent = `${eventCount} event${eventCount !== 1 ? 's' : ''}`
 
-  if (droppedCount && droppedCount > 0) {
-    elements.droppedCount.textContent = `(${droppedCount} dropped)`
+  // Show detected gaps (events that never reached UI)
+  if (detectedGaps > 0) {
+    elements.droppedCount.textContent = `(${detectedGaps} gaps)`
     elements.droppedCount.style.color = '#f48771'
   } else {
     elements.droppedCount.textContent = ''
@@ -761,10 +762,13 @@ function updateStats(eventCount: number, droppedCount?: number) {
 /**
  * Update status display
  */
+/**
+ * Update status display
+ */
 function updateStatus(
   isTracing: boolean,
   eventCount: number,
-  droppedCount?: number,
+  _droppedCount?: number,
   payloadMode?: 'none' | 'redacted' | 'full'
 ) {
   if (!isTracing && !isPaused) {
@@ -781,7 +785,8 @@ function updateStatus(
     isPaused = false
   }
 
-  updateStats(eventCount, droppedCount)
+  // Note: We ignore droppedCount from server - only show UI gaps
+  updateStats(eventCount)
 
   // Update payload mode selector
   if (payloadMode && elements.payloadModeSelect.value !== payloadMode) {
@@ -840,11 +845,8 @@ async function pollServerStatus() {
       if (status.bufferCapacity && status.bufferCapacity !== maxBufferSize) {
         maxBufferSize = status.bufferCapacity
       }
-      // Update dropped count
-      if (status.droppedCount && status.droppedCount > 0) {
-        elements.droppedCount.textContent = `(${status.droppedCount} dropped)`
-        elements.droppedCount.style.color = '#f48771'
-      }
+      // Note: We don't show status.droppedCount from server
+      // Only show gaps detected in UI (detectedGaps) via updateStats()
     }
   } catch (error) {
     // Ignore errors - server might not support getStatus yet
@@ -899,12 +901,16 @@ function updateStatistics() {
   const usage = maxBufferSize > 0 ? (currentCount / maxBufferSize) * 100 : 0
   elements.bufferUsage.textContent = `${currentCount}/${maxBufferSize}`
 
-  // Color-code buffer usage
+  // Color-code buffer usage with early warning
   elements.bufferUsage.classList.remove('warning', 'danger')
   if (usage > 90) {
     elements.bufferUsage.classList.add('danger')
-  } else if (usage > 75) {
+    elements.bufferUsage.title = 'Buffer critical! Consider increasing size or enabling filters'
+  } else if (usage > 80) {
     elements.bufferUsage.classList.add('warning')
+    elements.bufferUsage.title = 'Buffer filling up - take action soon'
+  } else {
+    elements.bufferUsage.title = 'Buffer usage'
   }
 
   // Color-code events/sec
