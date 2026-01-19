@@ -612,7 +612,7 @@ electron-ipc/
 │       ├── public/            # React components
 │       └── package.json
 │
-├── docs/                      # Detailed documentation
+├── docs-site/                 # Documentation site (VitePress)
 ├── package.json               # Workspace root
 └── tsconfig.json              # Base TypeScript config
 ```
