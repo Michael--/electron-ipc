@@ -9,6 +9,10 @@ TypeScript code generator for type-safe Electron IPC communication with streamin
 [![npm version](https://img.shields.io/npm/v/@number10/electron-ipc.svg)](https://www.npmjs.com/package/@number10/electron-ipc)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## 📚 Documentation
+
+**[Full Documentation](https://michael--.github.io/electron-ipc/)** - Complete guides, examples, and API reference
+
 ## Overview
 
 This library provides a code generation approach to create type-safe IPC communication between Electron's main and renderer processes. It supports traditional request/response patterns, events, broadcasts, and streaming for large data transfers.
