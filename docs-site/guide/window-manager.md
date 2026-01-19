@@ -401,4 +401,4 @@ beforeEach(() => {
 ## Related
 
 - [IPC Inspector](./inspector.md) - Uses Window Management for multi-window tracing
-- [Main README](../README.md) - Library overview
+- [Overview](/guide/overview) - Library overview
