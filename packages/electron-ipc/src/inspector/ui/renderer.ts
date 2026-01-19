@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /// <reference lib="dom" />
 
 /**
@@ -37,11 +38,11 @@ let pendingRender = false
 const VIRTUAL_SCROLL_ITEM_HEIGHT = 32 // Height of one table row in pixels
 const VIRTUAL_SCROLL_OVERSCAN = 10 // Extra rows to render above/below viewport
 let virtualScrollContainer: HTMLElement | null = null
-let virtualScrollViewport: HTMLElement | null = null
 let lastScrollTop = 0
 
 // DOM Elements - will be initialized in init()
 let elements: {
+  body: HTMLElement
   main: HTMLElement
   statusBadge: HTMLElement
   statusText: HTMLElement
@@ -81,10 +82,9 @@ let statsStartTime = Date.now()
 let statsEventCount = 0
 let serverBufferSize = 5000 // Server-side RingBuffer capacity
 let uiMaxEvents = 10000 // UI-side max events to display
-let statsInterval: ReturnType<typeof setInterval> | null = null
-let statusPollInterval: ReturnType<typeof setInterval> | null = null
 let lastSeqNumber = 0
 let detectedGaps = 0
+let lastServerEventCount = 0
 
 // Channel statistics
 interface ChannelStats {
@@ -119,6 +119,7 @@ function init() {
 
   // Initialize DOM elements using bodyNode.querySelector
   elements = {
+    body: bodyNode,
     main: bodyNode.querySelector('main') as HTMLElement,
     statusBadge: bodyNode.querySelector('#statusBadge') as HTMLElement,
     statusText: bodyNode.querySelector('#statusText') as HTMLElement,
@@ -159,7 +160,6 @@ function init() {
 
   // Initialize virtual scrolling
   virtualScrollContainer = elements.main
-  virtualScrollViewport = elements.eventsBody.parentElement as HTMLElement // table wrapper
 
   // Setup scroll listener for virtual scrolling
   if (virtualScrollContainer) {
@@ -167,10 +167,10 @@ function init() {
   }
 
   // Start statistics update interval
-  statsInterval = setInterval(updateStatistics, 1000)
+  setInterval(updateStatistics, 1000)
 
   // Start status polling from server (buffer size, dropped count, etc.)
-  statusPollInterval = setInterval(pollServerStatus, 2000)
+  setInterval(pollServerStatus, 2000)
   pollServerStatus() // Initial poll
 
   // Check if API is available
@@ -201,15 +201,11 @@ function init() {
   // Listen for live events (single)
   window.inspectorAPI.onEvent((payload) => {
     if (!isPaused) {
-      if (payload.event.seq) detectGap(payload.event.seq)
-      trackChannelStats(payload.event)
-      allEvents.push(payload.event)
-      // Trim if over UI limit (keep most recent)
-      if (allEvents.length > uiMaxEvents) {
-        allEvents.shift()
-      }
+      const shouldRender = appendEvent(payload.event)
       statsEventCount++
-      applyFilters()
+      if (shouldRender) {
+        scheduleRender()
+      }
       updateStats(allEvents.length)
     }
   })
@@ -217,17 +213,11 @@ function init() {
   // Listen for event batches
   window.inspectorAPI.onEventBatch?.((payload) => {
     if (!isPaused && payload.events && payload.events.length > 0) {
-      payload.events.forEach((event) => {
-        if (event.seq) detectGap(event.seq)
-        trackChannelStats(event)
-      })
-      allEvents.push(...payload.events)
-      // Trim if over UI limit (keep most recent)
-      if (allEvents.length > uiMaxEvents) {
-        allEvents = allEvents.slice(-uiMaxEvents)
-      }
+      const shouldRender = appendEventBatch(payload.events)
       statsEventCount += payload.events.length
-      applyFilters()
+      if (shouldRender) {
+        scheduleRender()
+      }
       updateStats(allEvents.length)
     }
   })
@@ -325,25 +315,26 @@ function setupEventListeners() {
 
   // Server buffer size apply button
   elements.applyServerBufferBtn.addEventListener('click', () => {
-    const newSize = parseInt(elements.serverBufferInput.value)
-    if (newSize >= 100 && newSize <= 100000) {
+    const newSize = normalizeBufferSize(elements.serverBufferInput, serverBufferSize)
+    if (newSize !== null && newSize !== serverBufferSize) {
       window.inspectorAPI.sendCommand({ type: 'setBufferSize', size: newSize })
       serverBufferSize = newSize
+      updateServerBufferUsage(lastServerEventCount)
       console.log(`[Inspector] Server buffer size set to ${newSize}`)
     }
   })
 
   // UI max events apply button
   elements.applyUiBufferBtn.addEventListener('click', () => {
-    const newSize = parseInt(elements.uiBufferInput.value)
-    if (newSize >= 100 && newSize <= 100000) {
+    const newSize = normalizeBufferSize(elements.uiBufferInput, uiMaxEvents)
+    if (newSize !== null && newSize !== uiMaxEvents) {
       uiMaxEvents = newSize
-      // Trim allEvents if over limit
-      if (allEvents.length > uiMaxEvents) {
-        allEvents = allEvents.slice(-uiMaxEvents)
-        applyFilters()
+      const shouldRender = trimToUiLimit()
+      if (shouldRender) {
         renderNow()
       }
+      updateStats(allEvents.length)
+      updateStatistics()
       console.log(`[Inspector UI] Max events set to ${newSize}`)
     }
   })
@@ -382,26 +373,77 @@ function setupEventListeners() {
  * Apply filters to events
  */
 function applyFilters() {
-  filteredEvents = allEvents.filter((event) => {
-    // Search filter
-    if (searchQuery && !event.channel.toLowerCase().includes(searchQuery)) {
-      return false
-    }
-
-    // Kind filter
-    if (kindFilter && event.kind !== kindFilter) {
-      return false
-    }
-
-    // Status filter
-    if (statusFilter && event.status !== statusFilter) {
-      return false
-    }
-
-    return true
-  })
+  filteredEvents = allEvents.filter((event) => passesFilter(event))
 
   scheduleRender()
+}
+
+function passesFilter(event: TraceEvent): boolean {
+  // Search filter
+  if (searchQuery && !event.channel.toLowerCase().includes(searchQuery)) {
+    return false
+  }
+
+  // Kind filter
+  if (kindFilter && event.kind !== kindFilter) {
+    return false
+  }
+
+  // Status filter
+  if (statusFilter && event.status !== statusFilter) {
+    return false
+  }
+
+  return true
+}
+
+function trimToUiLimit(): boolean {
+  let changed = false
+  while (allEvents.length > uiMaxEvents) {
+    const dropped = allEvents.shift()
+    if (dropped && filteredEvents[0] === dropped) {
+      filteredEvents.shift()
+      changed = true
+    }
+  }
+  return changed
+}
+
+function appendEvent(event: TraceEvent): boolean {
+  if (event.seq) detectGap(event.seq)
+  trackChannelStats(event)
+  allEvents.push(event)
+
+  let changed = false
+  if (passesFilter(event)) {
+    filteredEvents.push(event)
+    changed = true
+  }
+
+  if (trimToUiLimit()) {
+    changed = true
+  }
+
+  return changed
+}
+
+function appendEventBatch(events: TraceEvent[]): boolean {
+  let changed = false
+  for (const event of events) {
+    if (event.seq) detectGap(event.seq)
+    trackChannelStats(event)
+    allEvents.push(event)
+    if (passesFilter(event)) {
+      filteredEvents.push(event)
+      changed = true
+    }
+  }
+
+  if (trimToUiLimit()) {
+    changed = true
+  }
+
+  return changed
 }
 
 /**
@@ -466,23 +508,23 @@ function renderEvents() {
     elements.eventsBody.appendChild(spacer)
   }
 
-  // Render only visible events (most recent first)
-  const events = [...filteredEvents].reverse()
-  const visibleEvents = events.slice(visibleRange.start, visibleRange.end)
-
-  visibleEvents.forEach((event, idx) => {
-    const actualIndex = visibleRange.start + idx
-    const row = createEventRow(event, actualIndex)
+  // Render only visible events (oldest first)
+  for (let i = visibleRange.start; i < visibleRange.end; i++) {
+    const event = filteredEvents[i]
+    if (!event) continue
+    const row = createEventRow(event, i)
     if (selectedEvent && event.id === selectedEvent.id) {
       row.classList.add('selected')
     }
     elements.eventsBody.appendChild(row)
-  })
+  }
 
   // Create virtual spacer at the bottom
-  if (visibleRange.end < events.length) {
+  if (visibleRange.end < filteredEvents.length) {
     const spacer = document.createElement('tr')
-    spacer.style.height = `${(events.length - visibleRange.end) * VIRTUAL_SCROLL_ITEM_HEIGHT}px`
+    spacer.style.height = `${
+      (filteredEvents.length - visibleRange.end) * VIRTUAL_SCROLL_ITEM_HEIGHT
+    }px`
     spacer.className = 'virtual-spacer'
     elements.eventsBody.appendChild(spacer)
   }
@@ -621,28 +663,34 @@ function createEventRow(event: TraceEvent, index: number): HTMLTableRowElement {
 function showDetailPanel(event: TraceEvent) {
   openDetailPanel()
 
+  const safeId = escapeHtml(event.id)
+  const safeKind = escapeHtml(formatKind(event.kind))
+  const safeChannel = escapeHtml(event.channel)
+  const safeDirection = escapeHtml(event.direction)
+  const safeStatus = escapeHtml(event.status.toUpperCase())
+
   let html = `
     <div class="detail-section">
       <h3>General</h3>
       <div class="detail-row">
         <div class="detail-label">ID:</div>
-        <div class="detail-value">${event.id}</div>
+        <div class="detail-value">${safeId}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">Type:</div>
-        <div class="detail-value">${formatKind(event.kind)}</div>
+        <div class="detail-value">${safeKind}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">Channel:</div>
-        <div class="detail-value">${event.channel}</div>
+        <div class="detail-value">${safeChannel}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">Direction:</div>
-        <div class="detail-value">${event.direction}</div>
+        <div class="detail-value">${safeDirection}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">Status:</div>
-        <div class="detail-value status-${event.status}">${event.status.toUpperCase()}</div>
+        <div class="detail-value status-${event.status}">${safeStatus}</div>
       </div>
     </div>
 
@@ -690,10 +738,11 @@ function showDetailPanel(event: TraceEvent) {
     }
 
     if ('error' in event && event.error) {
+      const safeError = escapeHtml(JSON.stringify(event.error, null, 2))
       html += `
         <div class="detail-section">
           <h3>Error</h3>
-          <pre><code>${JSON.stringify(event.error, null, 2)}</code></pre>
+          <pre><code>${safeError}</code></pre>
         </div>
       `
     }
@@ -712,12 +761,12 @@ function showDetailPanel(event: TraceEvent) {
 
 function openDetailPanel() {
   elements.detailPanel.classList.add('visible')
-  document.body.classList.add('detail-open')
+  elements.body.classList.add('detail-open')
 }
 
 function closeDetailPanel() {
   elements.detailPanel.classList.remove('visible')
-  document.body.classList.remove('detail-open')
+  elements.body.classList.remove('detail-open')
   selectedEvent = null
   isDetailPinned = false
   updatePinButton()
@@ -745,7 +794,8 @@ function formatEndpointSection(
   }
 
   if (endpoint.windowRole) {
-    html += `<div class="detail-row"><div class="detail-label">Window Role:</div><div class="detail-value">${endpoint.windowRole}</div></div>`
+    const safeRole = escapeHtml(endpoint.windowRole)
+    html += `<div class="detail-row"><div class="detail-label">Window Role:</div><div class="detail-value">${safeRole}</div></div>`
   }
 
   html += `</div>`
@@ -764,15 +814,17 @@ function formatPayloadSection(title: string, payload: any): string {
   }
 
   if (payload.mode) {
-    html += `<div class="detail-row"><div class="detail-label">Mode:</div><div class="detail-value">${payload.mode}</div></div>`
+    const safeMode = escapeHtml(String(payload.mode))
+    html += `<div class="detail-row"><div class="detail-label">Mode:</div><div class="detail-value">${safeMode}</div></div>`
   }
 
   if (payload.summary) {
     html += `<div class="detail-row"><div class="detail-label">Summary:</div><div class="detail-value">${escapeHtml(payload.summary)}</div></div>`
   }
 
-  if (payload.data) {
-    html += `<pre><code>${JSON.stringify(payload.data, null, 2)}</code></pre>`
+  if (payload.data !== undefined) {
+    const safeData = escapeHtml(JSON.stringify(payload.data, null, 2))
+    html += `<pre><code>${safeData}</code></pre>`
   }
 
   html += `</div>`
@@ -802,7 +854,7 @@ function updateStats(eventCount: number, _droppedCount?: number) {
  */
 function updateStatus(
   isTracing: boolean,
-  eventCount: number,
+  _eventCount: number,
   _droppedCount?: number,
   payloadMode?: 'none' | 'redacted' | 'full'
 ) {
@@ -821,7 +873,7 @@ function updateStatus(
   }
 
   // Note: We ignore droppedCount from server - only show UI gaps
-  updateStats(eventCount)
+  updateStats(allEvents.length)
 
   // Update payload mode selector
   if (payloadMode && elements.payloadModeSelect.value !== payloadMode) {
@@ -877,28 +929,15 @@ async function pollServerStatus() {
     const status = await window.inspectorAPI.getStatus()
     if (status) {
       // Update server buffer size if changed
-      if (status.bufferCapacity && status.bufferCapacity !== serverBufferSize) {
+      if (typeof status.bufferCapacity === 'number' && status.bufferCapacity !== serverBufferSize) {
         serverBufferSize = status.bufferCapacity
         elements.serverBufferInput.value = String(serverBufferSize)
       }
 
       // Update server buffer usage display
       const serverEventCount = status.eventCount || 0
-      const serverUsage = serverBufferSize > 0 ? (serverEventCount / serverBufferSize) * 100 : 0
-      elements.serverBufferUsage.textContent = `Server: ${serverEventCount}/${serverBufferSize}`
-
-      // Color-code server buffer (only warn if actively receiving events)
-      elements.serverBufferUsage.classList.remove('warning', 'danger')
-      const receiving = statsEventCount / ((Date.now() - statsStartTime) / 1000) > 0
-      if (serverUsage > 90 && receiving) {
-        elements.serverBufferUsage.classList.add('danger')
-        elements.serverBufferUsage.title = 'Server buffer critical!'
-      } else if (serverUsage > 80 && receiving) {
-        elements.serverBufferUsage.classList.add('warning')
-        elements.serverBufferUsage.title = 'Server buffer filling up'
-      } else {
-        elements.serverBufferUsage.title = 'Server-side buffer usage'
-      }
+      lastServerEventCount = serverEventCount
+      updateServerBufferUsage(serverEventCount)
 
       // Note: We don't show status.droppedCount from server
       // Only show gaps detected in UI (detectedGaps) via updateStats()
@@ -997,13 +1036,14 @@ function updateStatsPanel() {
 
   let html = ''
   for (const [channel, stats] of sortedChannels) {
+    const safeChannel = escapeHtml(channel)
     const avgDuration = stats.count > 0 ? (stats.totalDuration / stats.count).toFixed(2) : '0'
     const errorRate = stats.count > 0 ? ((stats.errors / stats.count) * 100).toFixed(1) : '0'
     const hasErrors = stats.errors > 0
 
     html += `
       <div class="channel-stat ${hasErrors ? 'has-errors' : ''}">
-        <div class="channel-name">${channel}</div>
+        <div class="channel-name">${safeChannel}</div>
         <div class="channel-metrics">
           <span class="channel-metric">📊 ${stats.count} calls</span>
           ${stats.errors > 0 ? `<span class="channel-metric" style="color: #f48771">❌ ${stats.errors} errors (${errorRate}%)</span>` : ''}
@@ -1089,10 +1129,41 @@ function downloadJSON(data: string) {
   const a = document.createElement('a')
   a.href = url
   a.download = `ipc-trace-${Date.now()}.json`
-  document.body.appendChild(a)
+  const body = elements.body || document.body || document.documentElement
+  if (!body) return
+  body.appendChild(a)
   a.click()
-  document.body.removeChild(a)
+  body.removeChild(a)
   URL.revokeObjectURL(url)
+}
+
+function normalizeBufferSize(input: HTMLInputElement, fallback: number): number | null {
+  const parsed = Number.parseInt(input.value, 10)
+  if (Number.isNaN(parsed)) {
+    input.value = String(fallback)
+    return null
+  }
+  const clamped = Math.min(100000, Math.max(100, parsed))
+  input.value = String(clamped)
+  return clamped
+}
+
+function updateServerBufferUsage(serverEventCount: number) {
+  const serverUsage = serverBufferSize > 0 ? (serverEventCount / serverBufferSize) * 100 : 0
+  elements.serverBufferUsage.textContent = `Server: ${serverEventCount}/${serverBufferSize}`
+
+  // Color-code server buffer (only warn if actively receiving events)
+  elements.serverBufferUsage.classList.remove('warning', 'danger')
+  const receiving = statsEventCount / ((Date.now() - statsStartTime) / 1000) > 0
+  if (serverUsage > 90 && receiving) {
+    elements.serverBufferUsage.classList.add('danger')
+    elements.serverBufferUsage.title = 'Server buffer critical!'
+  } else if (serverUsage > 80 && receiving) {
+    elements.serverBufferUsage.classList.add('warning')
+    elements.serverBufferUsage.title = 'Server buffer filling up'
+  } else {
+    elements.serverBufferUsage.title = 'Server-side buffer usage'
+  }
 }
 
 /**

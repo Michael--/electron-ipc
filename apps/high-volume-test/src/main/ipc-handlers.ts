@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * IPC Handlers for High-Volume Test
  */
