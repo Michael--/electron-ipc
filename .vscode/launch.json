@@ -48,11 +48,11 @@
       "windows": {
         "runtimeExecutable": "${workspaceFolder}/apps/high-volume-test/node_modules/.bin/electron.cmd"
       },
-      "args": ["${workspaceFolder}/apps/high-volume-test/dist/main/index.js", "--remote-debugging-port=9225"],
+      "args": ["${workspaceFolder}/apps/high-volume-test/out/main/index.js", "--remote-debugging-port=9225"],
       "outputCapture": "std",
       "sourceMaps": true,
       "outFiles": [
-        "${workspaceFolder}/apps/high-volume-test/dist/**/*.js"
+        "${workspaceFolder}/apps/high-volume-test/out/**/*.js"
       ],
       "sourceMapPathOverrides": {
         "../../*": "${workspaceFolder}/apps/high-volume-test/*"
