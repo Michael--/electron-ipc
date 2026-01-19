@@ -57,7 +57,6 @@ let elements: {
   eventCount: HTMLElement
   droppedCount: HTMLElement
   gapCount: HTMLElement
-  bufferUsage: HTMLElement
   eventsPerSec: HTMLElement
   emptyState: HTMLElement
   eventsTable: HTMLTableElement
@@ -70,7 +69,6 @@ let elements: {
   applyServerBufferBtn: HTMLButtonElement
   uiBufferInput: HTMLInputElement
   applyUiBufferBtn: HTMLButtonElement
-  serverBufferUsage: HTMLElement
   showStatsBtn: HTMLButtonElement
   statsPanel: HTMLElement
   statsContent: HTMLElement
@@ -84,7 +82,6 @@ let serverBufferSize = 5000 // Server-side RingBuffer capacity
 let uiMaxEvents = 10000 // UI-side max events to display
 let lastSeqNumber = 0
 let detectedGaps = 0
-let lastServerEventCount = 0
 
 // Channel statistics
 interface ChannelStats {
@@ -134,7 +131,6 @@ function init() {
     eventCount: bodyNode.querySelector('#eventCount') as HTMLElement,
     droppedCount: bodyNode.querySelector('#droppedCount') as HTMLElement,
     gapCount: bodyNode.querySelector('#gapCount') as HTMLElement,
-    bufferUsage: bodyNode.querySelector('#bufferUsage') as HTMLElement,
     eventsPerSec: bodyNode.querySelector('#eventsPerSec') as HTMLElement,
     emptyState: bodyNode.querySelector('#emptyState') as HTMLElement,
     eventsTable: bodyNode.querySelector('#eventsTable') as HTMLTableElement,
@@ -147,7 +143,6 @@ function init() {
     applyServerBufferBtn: bodyNode.querySelector('#applyServerBufferBtn') as HTMLButtonElement,
     uiBufferInput: bodyNode.querySelector('#uiBufferInput') as HTMLInputElement,
     applyUiBufferBtn: bodyNode.querySelector('#applyUiBufferBtn') as HTMLButtonElement,
-    serverBufferUsage: bodyNode.querySelector('#serverBufferUsage') as HTMLElement,
     showStatsBtn: bodyNode.querySelector('#showStatsBtn') as HTMLButtonElement,
     statsPanel: bodyNode.querySelector('#statsPanel') as HTMLElement,
     statsContent: bodyNode.querySelector('#statsContent') as HTMLElement,
@@ -319,7 +314,6 @@ function setupEventListeners() {
     if (newSize !== null && newSize !== serverBufferSize) {
       window.inspectorAPI.sendCommand({ type: 'setBufferSize', size: newSize })
       serverBufferSize = newSize
-      updateServerBufferUsage(lastServerEventCount)
       console.log(`[Inspector] Server buffer size set to ${newSize}`)
     }
   })
@@ -934,11 +928,6 @@ async function pollServerStatus() {
         elements.serverBufferInput.value = String(serverBufferSize)
       }
 
-      // Update server buffer usage display
-      const serverEventCount = status.eventCount || 0
-      lastServerEventCount = serverEventCount
-      updateServerBufferUsage(serverEventCount)
-
       // Note: We don't show status.droppedCount from server
       // Only show gaps detected in UI (detectedGaps) via updateStats()
     }
@@ -989,23 +978,6 @@ function updateStatistics() {
   // Calculate events/second
   const eventsPerSec = elapsed > 0 ? Math.round(statsEventCount / elapsed) : 0
   elements.eventsPerSec.textContent = `${eventsPerSec}/s`
-
-  // Update UI buffer usage
-  const currentCount = allEvents.length
-  const uiUsage = uiMaxEvents > 0 ? (currentCount / uiMaxEvents) * 100 : 0
-  elements.bufferUsage.textContent = `UI: ${currentCount}/${uiMaxEvents}`
-
-  // Color-code UI buffer usage (only warn if actively receiving events)
-  elements.bufferUsage.classList.remove('warning', 'danger')
-  if (uiUsage > 95 && eventsPerSec > 0) {
-    elements.bufferUsage.classList.add('danger')
-    elements.bufferUsage.title = 'UI buffer critical! Increase UI limit or enable filters'
-  } else if (uiUsage > 85 && eventsPerSec > 0) {
-    elements.bufferUsage.classList.add('warning')
-    elements.bufferUsage.title = 'UI buffer filling up'
-  } else {
-    elements.bufferUsage.title = `UI buffer usage (max events in UI)`
-  }
 
   // Color-code events/sec
   elements.eventsPerSec.classList.remove('warning', 'danger')
@@ -1146,24 +1118,6 @@ function normalizeBufferSize(input: HTMLInputElement, fallback: number): number 
   const clamped = Math.min(100000, Math.max(100, parsed))
   input.value = String(clamped)
   return clamped
-}
-
-function updateServerBufferUsage(serverEventCount: number) {
-  const serverUsage = serverBufferSize > 0 ? (serverEventCount / serverBufferSize) * 100 : 0
-  elements.serverBufferUsage.textContent = `Server: ${serverEventCount}/${serverBufferSize}`
-
-  // Color-code server buffer (only warn if actively receiving events)
-  elements.serverBufferUsage.classList.remove('warning', 'danger')
-  const receiving = statsEventCount / ((Date.now() - statsStartTime) / 1000) > 0
-  if (serverUsage > 90 && receiving) {
-    elements.serverBufferUsage.classList.add('danger')
-    elements.serverBufferUsage.title = 'Server buffer critical!'
-  } else if (serverUsage > 80 && receiving) {
-    elements.serverBufferUsage.classList.add('warning')
-    elements.serverBufferUsage.title = 'Server buffer filling up'
-  } else {
-    elements.serverBufferUsage.title = 'Server-side buffer usage'
-  }
 }
 
 /**

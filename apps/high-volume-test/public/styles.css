@@ -11,59 +11,60 @@ body {
   color: #e2e8f0;
   line-height: 1.6;
   min-height: 100vh;
-  padding: 2rem;
+  padding: 1.25rem;
 }
 
 #app {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
 header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
 }
 
 header h1 {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   color: #fff;
 }
 
 header p {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   color: #cbd5e1;
 }
 
 main {
   display: grid;
-  gap: 2rem;
+  gap: 1rem;
+  align-items: start;
 }
 
 section {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: 1rem;
-  padding: 2rem;
+  padding: 1.25rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 h2 {
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  color: #fff;
-}
-
-h3 {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   margin-bottom: 1rem;
   color: #fff;
 }
 
+h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.75rem;
+  color: #fff;
+}
+
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.9rem;
 }
 
 .form-group label {
@@ -76,12 +77,12 @@ h3 {
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.6rem 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.5rem;
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
-  font-size: 1rem;
+  font-size: 0.95rem;
   transition: all 0.2s;
 }
 
@@ -95,22 +96,22 @@ h3 {
 .form-group .hint {
   display: block;
   margin-top: 0.25rem;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #cbd5e1;
 }
 
 .actions {
   display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 .btn {
   flex: 1;
-  padding: 1rem 2rem;
+  padding: 0.75rem 1rem;
   border: none;
   border-radius: 0.5rem;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -144,27 +145,27 @@ h3 {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .stat-card {
   background: rgba(255, 255, 255, 0.05);
-  padding: 1.5rem;
+  padding: 1rem;
   border-radius: 0.75rem;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stat-label {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: #cbd5e1;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .stat-value {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #fff;
 }
@@ -172,14 +173,14 @@ h3 {
 .preset-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .preset-btn {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.75rem;
-  padding: 1.5rem;
+  padding: 1rem;
   cursor: pointer;
   transition: all 0.2s;
   text-align: left;
@@ -191,15 +192,36 @@ h3 {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
+.preset-btn:active {
+  transform: translateY(0);
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.45);
+}
+
+.preset-btn:focus-visible {
+  outline: 2px solid rgba(74, 222, 128, 0.7);
+  outline-offset: 2px;
+}
+
+.preset-btn.is-active {
+  background: rgba(74, 222, 128, 0.18);
+  border-color: rgba(74, 222, 128, 0.6);
+  box-shadow: 0 8px 18px rgba(34, 197, 94, 0.25);
+}
+
+.preset-btn.is-active .preset-name {
+  color: #f0fdf4;
+}
+
 .preset-name {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #fff;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .preset-desc {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #cbd5e1;
 }
 
@@ -209,7 +231,7 @@ h3 {
 }
 
 .info li {
-  padding: 0.75rem 0;
+  padding: 0.5rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -221,13 +243,38 @@ h3 {
   color: #4ade80;
 }
 
+@media (min-width: 900px) {
+  main {
+    grid-template-columns: minmax(340px, 1fr) minmax(260px, 0.85fr);
+    grid-template-areas:
+      'control stats'
+      'presets info';
+  }
+
+  .control-panel {
+    grid-area: control;
+  }
+
+  .stats-panel {
+    grid-area: stats;
+  }
+
+  .presets {
+    grid-area: presets;
+  }
+
+  .info {
+    grid-area: info;
+  }
+}
+
 @media (max-width: 768px) {
   body {
-    padding: 1rem;
+    padding: 0.75rem;
   }
 
   header h1 {
-    font-size: 2rem;
+    font-size: 1.6rem;
   }
 
   .stats-grid,

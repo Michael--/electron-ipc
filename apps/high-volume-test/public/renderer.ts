@@ -25,6 +25,7 @@ const elements = {
 }
 
 let statsInterval: number | null = null
+const presetButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.preset-btn'))
 
 /**
  * Start test
@@ -72,7 +73,13 @@ elements.stopBtn.addEventListener('click', async () => {
 /**
  * Preset buttons
  */
-document.querySelectorAll('.preset-btn').forEach((btn) => {
+const setActivePreset = (activeButton: HTMLButtonElement) => {
+  presetButtons.forEach((button) => {
+    button.classList.toggle('is-active', button === activeButton)
+  })
+}
+
+presetButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
     const preset = (btn as HTMLButtonElement).dataset.preset
 
@@ -114,6 +121,8 @@ document.querySelectorAll('.preset-btn').forEach((btn) => {
         elements.payloadSize.value = '100'
         break
     }
+
+    setActivePreset(btn as HTMLButtonElement)
   })
 })
 
