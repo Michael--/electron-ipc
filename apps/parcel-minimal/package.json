@@ -20,7 +20,8 @@
     "renderer": {
       "source": "src/renderer/index.html",
       "distDir": "dist/renderer",
-      "context": "electron-renderer"
+      "context": "electron-renderer",
+      "publicUrl": "./"
     }
   },
   "scripts": {
