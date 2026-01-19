@@ -194,6 +194,31 @@
         font-size: 12px;
         color: #858585;
         margin-left: auto;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .stat-badge {
+        padding: 4px 8px;
+        background: #2d2d30;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        color: #cccccc;
+        border: 1px solid #3e3e42;
+      }
+
+      .stat-badge.warning {
+        background: #5e5e1e;
+        border-color: #d1d185;
+        color: #d1d185;
+      }
+
+      .stat-badge.danger {
+        background: #5e1e1e;
+        border-color: #d18585;
+        color: #d18585;
       }
 
       main {
@@ -467,6 +492,8 @@
       <div class="stats">
         <span id="eventCount">0 events</span>
         <span id="droppedCount"></span>
+        <span id="bufferUsage" class="stat-badge" title="Buffer usage">0/5000</span>
+        <span id="eventsPerSec" class="stat-badge" title="Events per second">0/s</span>
       </div>
     </div>
 

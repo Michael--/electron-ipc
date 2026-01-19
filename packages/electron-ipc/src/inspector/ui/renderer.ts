@@ -55,6 +55,8 @@ let elements: {
   autoScrollBtn: HTMLButtonElement
   eventCount: HTMLElement
   droppedCount: HTMLElement
+  bufferUsage: HTMLElement
+  eventsPerSec: HTMLElement
   emptyState: HTMLElement
   eventsTable: HTMLTableElement
   eventsBody: HTMLTableSectionElement
@@ -63,6 +65,12 @@ let elements: {
   closeDetailBtn: HTMLButtonElement
   pinDetailBtn: HTMLButtonElement
 }
+
+// Statistics tracking
+let statsStartTime = Date.now()
+let statsEventCount = 0
+let maxBufferSize = 5000
+let statsInterval: ReturnType<typeof setInterval> | null = null
 
 /**
  * Initialize inspector UI
@@ -102,6 +110,8 @@ function init() {
     autoScrollBtn: bodyNode.querySelector('#autoScrollBtn') as HTMLButtonElement,
     eventCount: bodyNode.querySelector('#eventCount') as HTMLElement,
     droppedCount: bodyNode.querySelector('#droppedCount') as HTMLElement,
+    bufferUsage: bodyNode.querySelector('#bufferUsage') as HTMLElement,
+    eventsPerSec: bodyNode.querySelector('#eventsPerSec') as HTMLElement,
     emptyState: bodyNode.querySelector('#emptyState') as HTMLElement,
     eventsTable: bodyNode.querySelector('#eventsTable') as HTMLTableElement,
     eventsBody: bodyNode.querySelector('#eventsBody') as HTMLTableSectionElement,
@@ -119,6 +129,9 @@ function init() {
   if (virtualScrollContainer) {
     virtualScrollContainer.addEventListener('scroll', handleScroll, { passive: true })
   }
+
+  // Start statistics update interval
+  statsInterval = setInterval(updateStatistics, 1000)
 
   // Check if API is available
   if (!window.inspectorAPI) {
@@ -145,6 +158,7 @@ function init() {
   window.inspectorAPI.onEvent((payload) => {
     if (!isPaused) {
       allEvents.push(payload.event)
+      statsEventCount++
       applyFilters()
       updateStats(allEvents.length, 0)
     }
@@ -154,6 +168,7 @@ function init() {
   window.inspectorAPI.onEventBatch?.((payload) => {
     if (!isPaused && payload.events && payload.events.length > 0) {
       allEvents.push(...payload.events)
+      statsEventCount += payload.events.length
       applyFilters()
       updateStats(allEvents.length, 0)
     }
@@ -203,6 +218,8 @@ function setupEventListeners() {
     if (confirm('Clear all events?')) {
       window.inspectorAPI.sendCommand({ type: 'clear' })
       allEvents = []
+      statsEventCount = 0
+      statsStartTime = Date.now()
       applyFilters()
       renderNow() // Immediate render after clear
       updateStats(0, 0)
@@ -736,6 +753,39 @@ function updatePinButton() {
 function updateAutoScrollButton() {
   elements.autoScrollBtn.textContent = autoScrollEnabled ? 'Auto-scroll: On' : 'Auto-scroll: Off'
   elements.autoScrollBtn.classList.toggle('toggle-active', autoScrollEnabled)
+}
+
+/**
+ * Update statistics display
+ */
+function updateStatistics() {
+  const now = Date.now()
+  const elapsed = (now - statsStartTime) / 1000 // seconds
+
+  // Calculate events/second
+  const eventsPerSec = elapsed > 0 ? Math.round(statsEventCount / elapsed) : 0
+  elements.eventsPerSec.textContent = `${eventsPerSec}/s`
+
+  // Update buffer usage
+  const currentCount = allEvents.length
+  const usage = maxBufferSize > 0 ? (currentCount / maxBufferSize) * 100 : 0
+  elements.bufferUsage.textContent = `${currentCount}/${maxBufferSize}`
+
+  // Color-code buffer usage
+  elements.bufferUsage.classList.remove('warning', 'danger')
+  if (usage > 90) {
+    elements.bufferUsage.classList.add('danger')
+  } else if (usage > 75) {
+    elements.bufferUsage.classList.add('warning')
+  }
+
+  // Color-code events/sec
+  elements.eventsPerSec.classList.remove('warning', 'danger')
+  if (eventsPerSec > 500) {
+    elements.eventsPerSec.classList.add('danger')
+  } else if (eventsPerSec > 200) {
+    elements.eventsPerSec.classList.add('warning')
+  }
 }
 
 function isNearBottom(element: HTMLElement, threshold: number): boolean {

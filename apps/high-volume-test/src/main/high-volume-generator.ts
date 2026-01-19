@@ -201,7 +201,12 @@ export function stopHighVolumeTest() {
     currentInterval = null
   }
   stats.running = false
-  console.log(`[HighVolume] Test stopped: ${stats.generated} events generated`)
+
+  // IMPORTANT: Give a short delay to allow final IPC batches to flush
+  // The Inspector batching has a 100ms delay, so we wait 150ms to be safe
+  setTimeout(() => {
+    console.log(`[HighVolume] Test stopped: ${stats.generated} events generated`)
+  }, 150)
 }
 
 /**
