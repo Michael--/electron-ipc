@@ -1,0 +1,58 @@
+{
+  "name": "electron-ipc-parcel-minimal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal Electron app demonstrating electron-ipc with Parcel",
+  "main": "dist/main/index.js",
+  "targets": {
+    "main": {
+      "source": "src/main/index.ts",
+      "distDir": "dist/main",
+      "context": "electron-main",
+      "outputFormat": "commonjs"
+    },
+    "preload": {
+      "source": "src/preload/index.ts",
+      "distDir": "dist/preload",
+      "context": "electron-main",
+      "outputFormat": "commonjs"
+    },
+    "renderer": {
+      "source": "src/renderer/index.html",
+      "distDir": "dist/renderer",
+      "context": "electron-renderer"
+    }
+  },
+  "scripts": {
+    "generate": "mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml",
+    "generate:watch": "mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml --watch",
+    "prebuild": "pnpm run generate",
+    "build": "parcel build",
+    "predev": "pnpm run generate",
+    "dev": "parcel watch",
+    "start": "electron .",
+    "clean": "rimraf dist .parcel-cache *.tsbuildinfo",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "electron",
+    "ipc",
+    "parcel",
+    "typescript"
+  ],
+  "author": "Michael Rieck (Michael--) <mr@number10.de>",
+  "license": "MIT",
+  "devDependencies": {
+    "@parcel/config-default": "^2.12.0",
+    "@parcel/transformer-typescript-tsc": "^2.12.0",
+    "@types/node": "^20.10.0",
+    "electron": "^28.0.0",
+    "mkdirp": "^3.0.1",
+    "parcel": "^2.12.0",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@number10/electron-ipc": "workspace:*"
+  }
+}
