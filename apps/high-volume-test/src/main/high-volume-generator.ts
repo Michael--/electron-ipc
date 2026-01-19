@@ -5,7 +5,8 @@
  */
 
 import { randomBytes } from 'crypto'
-import { api as ipcAPI } from '../../dist/ipc-api'
+import { BrowserWindow } from 'electron'
+import type { BroadcastContracts } from './ipc-api'
 
 interface TestStats {
   generated: number
@@ -150,16 +151,17 @@ function sendTestEvent(payloadSize: number, counter: number) {
   const data = payloadSize > 0 ? generatePayload(payloadSize) : undefined
   const start = Date.now()
 
-  ipcAPI
-    .invoke('testPing', { message: `Event ${counter}` })
-    .then(() => {
-      stats.generated++
-      stats.totalLatency += Date.now() - start
-    })
-    .catch((err) => {
-      stats.errored++
-      console.error('[HighVolume] Error:', err)
-    })
+  // Send broadcast to all windows
+  const windows = BrowserWindow.getAllWindows()
+  windows.forEach((win) => {
+    win.webContents.send('testBroadcast', {
+      message: `Event ${counter}`,
+      id: counter,
+    } as BroadcastContracts['testBroadcast']['payload'])
+  })
+
+  stats.generated++
+  stats.totalLatency += Date.now() - start
 }
 
 /**
@@ -167,30 +169,25 @@ function sendTestEvent(payloadSize: number, counter: number) {
  */
 function sendMixedEvent(type: number, payloadSize: number, counter: number) {
   const data = payloadSize > 0 ? generatePayload(payloadSize) : undefined
+  const windows = BrowserWindow.getAllWindows()
 
-  if (type === 0) {
-    // Invoke
-    const start = Date.now()
-    ipcAPI
-      .invoke('testPing', { message: `Invoke ${counter}` })
-      .then(() => {
-        stats.generated++
-        stats.totalLatency += Date.now() - start
-      })
-      .catch(() => stats.errored++)
-  } else if (type === 1) {
-    // Heavy payload
-    const start = Date.now()
-    ipcAPI
-      .invoke('testHeavy', { size: payloadSize, data })
-      .then(() => {
-        stats.generated++
-        stats.totalLatency += Date.now() - start
-      })
-      .catch(() => stats.errored++)
+  if (type === 0 || type === 1) {
+    // For invoke and heavy, send simple broadcast
+    windows.forEach((win) => {
+      win.webContents.send('testBroadcast', {
+        message: type === 0 ? `Invoke ${counter}` : `Heavy ${counter}`,
+        id: counter,
+      } as BroadcastContracts['testBroadcast']['payload'])
+    })
+    stats.generated++
   } else {
     // Broadcast
-    ipcAPI.broadcast('testBroadcast', { message: `Broadcast ${counter}`, id: counter })
+    windows.forEach((win) => {
+      win.webContents.send('testBroadcast', {
+        message: `Broadcast ${counter}`,
+        id: counter,
+      } as BroadcastContracts['testBroadcast']['payload'])
+    })
     stats.generated++
   }
 }

@@ -2,9 +2,10 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "composite": true,
-    "outDir": "./out"
+    "outDir": "./out",
+    "lib": ["ES2020", "DOM"]
   },
-  "include": ["src/**/*", "public/**/*"],
+  "include": ["src/**/*", "public/**/*", "dist/**/*"],
   "references": [
     {
       "path": "../../packages/electron-ipc"

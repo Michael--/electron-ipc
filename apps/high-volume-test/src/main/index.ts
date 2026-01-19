@@ -4,7 +4,7 @@
  * Generates configurable high-volume IPC events for Inspector testing
  */
 
-import { enableInspector } from '@number10/electron-ipc'
+import { enableIpcInspector } from '@number10/electron-ipc/inspector'
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { setupIpcHandlers } from './ipc-handlers'
@@ -48,7 +48,7 @@ function createWindow() {
  */
 app.whenReady().then(() => {
   // Enable Inspector with higher limits
-  enableInspector({
+  enableIpcInspector({
     enabled: true,
     openOnStart: true,
     maxEvents: 10000, // Higher limit for testing

@@ -62,7 +62,7 @@ elements.startBtn.addEventListener('click', async () => {
  */
 elements.stopBtn.addEventListener('click', async () => {
   try {
-    await window.ipcAPI.invoke('controlStop', {})
+    await window.api.invokecontrolStop({})
     stopTest()
   } catch (error) {
     alert(`Failed to stop test: ${(error as Error).message}`)
@@ -125,7 +125,7 @@ function startStatsPolling() {
 
   statsInterval = window.setInterval(async () => {
     try {
-      const stats = await window.ipcAPI.invoke('controlStatus', undefined)
+      const stats = await window.api.invokecontrolStatus(undefined)
 
       elements.generated.textContent = stats.generated.toLocaleString()
       elements.errored.textContent = stats.errored.toLocaleString()
