@@ -65,6 +65,12 @@ let elements: {
   detailContent: HTMLElement
   closeDetailBtn: HTMLButtonElement
   pinDetailBtn: HTMLButtonElement
+  bufferSizeInput: HTMLInputElement
+  applyBufferBtn: HTMLButtonElement
+  showStatsBtn: HTMLButtonElement
+  statsPanel: HTMLElement
+  statsContent: HTMLElement
+  closeStatsBtn: HTMLButtonElement
 }
 
 // Statistics tracking
@@ -72,8 +78,17 @@ let statsStartTime = Date.now()
 let statsEventCount = 0
 let maxBufferSize = 5000
 let statsInterval: ReturnType<typeof setInterval> | null = null
+let statusPollInterval: ReturnType<typeof setInterval> | null = null
 let lastSeqNumber = 0
 let detectedGaps = 0
+
+// Channel statistics
+interface ChannelStats {
+  count: number
+  errors: number
+  totalDuration: number
+}
+const channelStats = new Map<string, ChannelStats>()
 
 /**
  * Initialize inspector UI
@@ -123,7 +138,16 @@ function init() {
     detailContent: bodyNode.querySelector('#detailContent') as HTMLElement,
     closeDetailBtn: bodyNode.querySelector('#closeDetailBtn') as HTMLButtonElement,
     pinDetailBtn: bodyNode.querySelector('#pinDetailBtn') as HTMLButtonElement,
+    bufferSizeInput: bodyNode.querySelector('#bufferSizeInput') as HTMLInputElement,
+    applyBufferBtn: bodyNode.querySelector('#applyBufferBtn') as HTMLButtonElement,
+    showStatsBtn: bodyNode.querySelector('#showStatsBtn') as HTMLButtonElement,
+    statsPanel: bodyNode.querySelector('#statsPanel') as HTMLElement,
+    statsContent: bodyNode.querySelector('#statsContent') as HTMLElement,
+    closeStatsBtn: bodyNode.querySelector('#closeStatsBtn') as HTMLButtonElement,
   }
+
+  // Set initial buffer size value
+  elements.bufferSizeInput.value = String(maxBufferSize)
 
   // Initialize virtual scrolling
   virtualScrollContainer = elements.main
@@ -136,6 +160,10 @@ function init() {
 
   // Start statistics update interval
   statsInterval = setInterval(updateStatistics, 1000)
+
+  // Start status polling from server (buffer size, dropped count, etc.)
+  statusPollInterval = setInterval(pollServerStatus, 2000)
+  pollServerStatus() // Initial poll
 
   // Check if API is available
   if (!window.inspectorAPI) {
@@ -162,6 +190,7 @@ function init() {
   window.inspectorAPI.onEvent((payload) => {
     if (!isPaused) {
       if (payload.event.seq) detectGap(payload.event.seq)
+      trackChannelStats(payload.event)
       allEvents.push(payload.event)
       statsEventCount++
       applyFilters()
@@ -174,6 +203,7 @@ function init() {
     if (!isPaused && payload.events && payload.events.length > 0) {
       payload.events.forEach((event) => {
         if (event.seq) detectGap(event.seq)
+        trackChannelStats(event)
       })
       allEvents.push(...payload.events)
       statsEventCount += payload.events.length
@@ -230,6 +260,7 @@ function setupEventListeners() {
       statsStartTime = Date.now()
       lastSeqNumber = 0
       detectedGaps = 0
+      channelStats.clear()
       elements.gapCount.style.display = 'none'
       elements.gapCount.textContent = ''
       applyFilters()
@@ -270,6 +301,29 @@ function setupEventListeners() {
   // Close detail panel
   elements.closeDetailBtn.addEventListener('click', () => {
     closeDetailPanel()
+  })
+
+  // Buffer size apply button
+  elements.applyBufferBtn.addEventListener('click', () => {
+    const newSize = parseInt(elements.bufferSizeInput.value)
+    if (newSize >= 100 && newSize <= 100000) {
+      window.inspectorAPI.sendCommand({ type: 'setBufferSize', size: newSize })
+      maxBufferSize = newSize
+      console.log(`[Inspector] Buffer size set to ${newSize}`)
+    }
+  })
+
+  // Show/hide statistics panel
+  elements.showStatsBtn.addEventListener('click', () => {
+    const isVisible = elements.statsPanel.style.display !== 'none'
+    elements.statsPanel.style.display = isVisible ? 'none' : 'flex'
+    if (!isVisible) {
+      updateStatsPanel()
+    }
+  })
+
+  elements.closeStatsBtn.addEventListener('click', () => {
+    elements.statsPanel.style.display = 'none'
   })
 
   elements.pinDetailBtn.addEventListener('click', () => {
@@ -776,6 +830,39 @@ function updateAutoScrollButton() {
 }
 
 /**
+ * Poll server status (buffer size, dropped events)
+ */
+async function pollServerStatus() {
+  try {
+    const status = await window.inspectorAPI.getStatus()
+    if (status) {
+      // Update buffer size if changed
+      if (status.bufferCapacity && status.bufferCapacity !== maxBufferSize) {
+        maxBufferSize = status.bufferCapacity
+      }
+      // Update dropped count
+      if (status.droppedCount && status.droppedCount > 0) {
+        elements.droppedCount.textContent = `(${status.droppedCount} dropped)`
+        elements.droppedCount.style.color = '#f48771'
+      }
+    }
+  } catch (error) {
+    // Ignore errors - server might not support getStatus yet
+  }
+}
+
+/**
+ * Track channel statistics
+ */
+function trackChannelStats(event: TraceEvent) {
+  const stats = channelStats.get(event.channel) || { count: 0, errors: 0, totalDuration: 0 }
+  stats.count++
+  if (event.status === 'error') stats.errors++
+  if (event.durationMs) stats.totalDuration += event.durationMs
+  channelStats.set(event.channel, stats)
+}
+
+/**
  * Detect sequence number gaps
  */
 function detectGap(seq: number) {
@@ -827,6 +914,45 @@ function updateStatistics() {
   } else if (eventsPerSec > 200) {
     elements.eventsPerSec.classList.add('warning')
   }
+
+  // Update stats panel if visible
+  if (elements.statsPanel.style.display !== 'none') {
+    updateStatsPanel()
+  }
+}
+
+/**
+ * Update statistics panel with channel breakdown
+ */
+function updateStatsPanel() {
+  if (channelStats.size === 0) {
+    elements.statsContent.innerHTML =
+      '<p style="color: #888; text-align: center; padding: 20px">No data yet</p>'
+    return
+  }
+
+  // Sort channels by count
+  const sortedChannels = Array.from(channelStats.entries()).sort((a, b) => b[1].count - a[1].count)
+
+  let html = ''
+  for (const [channel, stats] of sortedChannels) {
+    const avgDuration = stats.count > 0 ? (stats.totalDuration / stats.count).toFixed(2) : '0'
+    const errorRate = stats.count > 0 ? ((stats.errors / stats.count) * 100).toFixed(1) : '0'
+    const hasErrors = stats.errors > 0
+
+    html += `
+      <div class="channel-stat ${hasErrors ? 'has-errors' : ''}">
+        <div class="channel-name">${channel}</div>
+        <div class="channel-metrics">
+          <span class="channel-metric">📊 ${stats.count} calls</span>
+          ${stats.errors > 0 ? `<span class="channel-metric" style="color: #f48771">❌ ${stats.errors} errors (${errorRate}%)</span>` : ''}
+          ${stats.totalDuration > 0 ? `<span class="channel-metric">⏱ ${avgDuration}ms avg</span>` : ''}
+        </div>
+      </div>
+    `
+  }
+
+  elements.statsContent.innerHTML = html
 }
 
 function isNearBottom(element: HTMLElement, threshold: number): boolean {

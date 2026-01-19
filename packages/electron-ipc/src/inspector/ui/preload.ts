@@ -30,6 +30,17 @@ const inspectorAPI = {
   },
 
   /**
+   * Gets current status from main process
+   */
+  getStatus: async (): Promise<InspectorStatusPayload | null> => {
+    try {
+      return await ipcRenderer.invoke('INSPECTOR:GET_STATUS')
+    } catch {
+      return null
+    }
+  },
+
+  /**
    * Listens for INIT message from main process
    */
   onInit: (callback: (payload: InspectorInitPayload) => void) => {

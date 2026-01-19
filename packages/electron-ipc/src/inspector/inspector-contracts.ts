@@ -76,6 +76,7 @@ export type InspectorCommand =
   | { type: 'resume' }
   | { type: 'export'; format: 'json' | 'csv' }
   | { type: 'setPayloadMode'; mode: 'none' | 'redacted' | 'full' }
+  | { type: 'setBufferSize'; size: number }
 
 export interface InspectorCommandPayload {
   command: InspectorCommand
@@ -104,6 +105,9 @@ export interface InspectorStatusPayload {
 
   /** Number of events in buffer */
   eventCount: number
+
+  /** Buffer capacity */
+  bufferCapacity?: number
 
   /** Number of events dropped (if buffer full) */
   droppedCount?: number

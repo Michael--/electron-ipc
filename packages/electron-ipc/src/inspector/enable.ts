@@ -182,6 +182,11 @@ function registerIpcHandlers(server: ReturnType<typeof getInspectorServer>): voi
     return server.getOptions().payloadMode
   })
 
+  // GET_STATUS: Renderer requests current status
+  ipcMain.handle('INSPECTOR:GET_STATUS', () => {
+    return server.getStatus()
+  })
+
   // COMMAND: Inspector UI sends commands
   ipcMain.on('INSPECTOR:COMMAND', (event: IpcMainEvent, payload: InspectorCommandPayload) => {
     const { command } = payload
@@ -233,6 +238,13 @@ function handleCommand(
     case 'setPayloadMode':
       server.setPayloadMode(command.mode)
       return { mode: command.mode }
+
+    case 'setBufferSize':
+      if (command.size && command.size >= 100 && command.size <= 100000) {
+        server.setBufferSize(command.size)
+        return { bufferSize: command.size }
+      }
+      throw new Error(`Invalid buffer size: ${command.size}`)
 
     case 'export':
       if (command.format === 'json') {

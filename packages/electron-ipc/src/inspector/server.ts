@@ -193,9 +193,39 @@ export class InspectorServer {
     return {
       isTracing: !this.isPaused,
       eventCount: this.buffer.getSize(),
+      bufferCapacity: this.options.maxEvents,
       droppedCount: this.droppedCount,
       payloadMode: this.options.payloadMode,
     }
+  }
+
+  /**
+   * Sets the buffer size (creates new buffer with specified capacity)
+   *
+   * @param size - New buffer capacity
+   */
+  setBufferSize(size: number): void {
+    if (size < 100 || size > 100000) {
+      throw new Error('Buffer size must be between 100 and 100000')
+    }
+
+    this.options.maxEvents = size
+    const oldEvents = this.buffer.getAll()
+    this.buffer = new RingBuffer<TraceEvent>(size)
+
+    // Restore events (up to new capacity)
+    const eventsToRestore = oldEvents.slice(-size)
+    eventsToRestore.forEach((event) => this.buffer.push(event))
+
+    // Broadcast status update
+    this.broadcast({
+      channel: 'INSPECTOR:STATUS',
+      payload: this.getStatus(),
+    })
+
+    console.log(
+      `[Inspector] Buffer size changed to ${size} (restored ${eventsToRestore.length} events)`
+    )
   }
 
   /**
