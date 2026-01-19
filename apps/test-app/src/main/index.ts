@@ -33,6 +33,9 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { z } from 'zod'
 
+// Prevent Electron warning about unsupported NODE_OPTIONS.
+delete process.env.NODE_OPTIONS
+
 let eventHandlerInitialized = false
 
 /// create type safe accessing to BroadcastContracts, this is the alternative way to send broadcast events

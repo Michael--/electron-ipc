@@ -14,6 +14,9 @@ import { app, BrowserWindow, Menu } from 'electron'
 import { join } from 'path'
 import { setupIpcHandlers } from './ipc-handlers'
 
+// Prevent Electron warning about unsupported NODE_OPTIONS.
+delete process.env.NODE_OPTIONS
+
 let mainWindow: BrowserWindow | null = null
 const inspectorOptions = {
   enabled: true,

@@ -19,6 +19,9 @@ import type { IpcMainEvent, IpcMainInvokeEvent } from 'electron'
 import { app, BrowserWindow, Menu } from 'electron'
 import { join } from 'path'
 
+// Prevent Electron warning about unsupported NODE_OPTIONS.
+delete process.env.NODE_OPTIONS
+
 let handlersInitialized = false
 let secondaryCount = 0
 
