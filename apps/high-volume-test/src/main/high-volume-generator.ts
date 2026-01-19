@@ -5,7 +5,7 @@
  */
 
 import { randomBytes } from 'crypto'
-import { api as ipcAPI } from './ipc-api.generated'
+import { api as ipcAPI } from '../../dist/ipc-api'
 
 interface TestStats {
   generated: number

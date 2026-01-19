@@ -3,7 +3,7 @@
  */
 
 // Type declaration for the exposed API
-import type { ApiType } from '../src/main/ipc-api.generated'
+import type { ApiType } from '../dist/ipc-api'
 
 declare global {
   interface Window {

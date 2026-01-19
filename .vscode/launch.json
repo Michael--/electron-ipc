@@ -40,6 +40,44 @@
       "timeout": 30000
     },
     {
+      "name": "Debug High-Volume Main",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/high-volume-test",
+      "runtimeExecutable": "${workspaceFolder}/apps/high-volume-test/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceFolder}/apps/high-volume-test/node_modules/.bin/electron.cmd"
+      },
+      "args": ["${workspaceFolder}/apps/high-volume-test/dist/main/index.js", "--remote-debugging-port=9225"],
+      "outputCapture": "std",
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/apps/high-volume-test/dist/**/*.js"
+      ],
+      "sourceMapPathOverrides": {
+        "../../*": "${workspaceFolder}/apps/high-volume-test/*"
+      },
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/apps/high-volume-test/**",
+        "!**/node_modules/**"
+      ],
+      "preLaunchTask": "npm: build - apps/high-volume-test",
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug High-Volume Renderer",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9225,
+      "webRoot": "${workspaceFolder}/apps/high-volume-test",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "../../../*": "${workspaceFolder}/apps/high-volume-test/*"
+      },
+      "timeout": 30000
+    },
+    {
       "name": "Debug Renderer Process",
       "type": "chrome",
       "request": "attach",
@@ -89,13 +127,23 @@
       }
     },
     {
-      "name": "Debug Main + Renderer",
-      "configurations": ["Debug Main Process", "Debug Renderer Process"],
+      "name": "Debug High-Volume (Main + Renderer)",
+      "configurations": ["Debug High-Volume Main", "Debug High-Volume Renderer"],
       "presentation": {
         "hidden": false,
         "group": "electron",
         "order": 1
       }
     },
+    {
+      "name": "Debug Main + Renderer",
+      "configurations": ["Debug Main Process", "Debug Renderer Process"],
+      "presentation": {
+        "hidden": false,
+        "group": "electron",
+        "order": 2
+      }
+    },
   ]
+}
 }

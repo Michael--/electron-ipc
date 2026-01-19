@@ -1,23 +1,47 @@
 {
   "name": "@electron-ipc/high-volume-test",
-  "version": "0.0.1",
+  "version": "2.1.0",
   "private": true,
   "description": "High-volume test app for Inspector performance testing",
-  "main": "./out/main/index.js",
+  "main": "dist/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "dev": "pnpm --filter electron-ipc run build && mkdirp dist && pnpm run generate:all && electron-vite dev",
+    "build": "pnpm --filter electron-ipc run build && mkdirp dist && pnpm run generate:all && electron-vite build",
     "preview": "electron-vite preview",
-    "start": "electron-vite preview"
+    "start": "electron-vite preview",
+    "clean": "rimraf dist out *.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,html,css}\"",
+    "generate:all": "pnpm --filter electron-ipc run build && mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml",
+    "generate:watch": "pnpm --filter electron-ipc run build && mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml --watch",
+    "generate:check": "pnpm --filter electron-ipc run build && mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml --check",
+    "package": "electron-builder",
+    "package:mac": "electron-builder --mac",
+    "package:win": "electron-builder --win",
+    "package:linux": "electron-builder --linux"
   },
+  "keywords": [
+    "electron",
+    "ipc",
+    "testing",
+    "performance",
+    "high-volume"
+  ],
+  "author": "Michael Rieck (Michael--) <mr@number10.de>",
+  "license": "MIT",
   "dependencies": {
     "@number10/electron-ipc": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^20.11.5",
-    "electron": "^28.1.4",
+    "@types/node": "^20.10.0",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
     "electron-vite": "^2.0.0",
+    "mkdirp": "^3.0.1",
+    "rimraf": "^5.0.5",
     "typescript": "^5.3.3",
-    "vite": "^5.0.11"
+    "vite": "^5.0.8"
   }
 }

@@ -4,8 +4,8 @@ $schema: ../../../../packages/electron-ipc/ipc-config.schema.json
 
 apis:
   - name: api
-    input: ./ipc-api.ts
-    output: ./ipc-api.generated.ts
+    input: ./src/main/ipc-api.ts
+    output: ./dist/ipc-api.ts
     contracts:
       invoke: InvokeContracts
       event: EventContracts
