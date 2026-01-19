@@ -28,6 +28,11 @@ let statusFilter = ''
 let isDetailPinned = false
 let autoScrollEnabled = true
 
+// Render debouncing
+let renderTimeout: ReturnType<typeof setTimeout> | null = null
+const RENDER_DEBOUNCE_MS = 100
+let pendingRender = false
+
 // DOM Elements - will be initialized in init()
 let elements: {
   main: HTMLElement
@@ -183,6 +188,7 @@ function setupEventListeners() {
       window.inspectorAPI.sendCommand({ type: 'clear' })
       allEvents = []
       applyFilters()
+      renderNow() // Immediate render after clear
       updateStats(0, 0)
     }
   })
@@ -261,6 +267,39 @@ function applyFilters() {
     return true
   })
 
+  scheduleRender()
+}
+
+/**
+ * Schedules a render with debouncing
+ */
+function scheduleRender() {
+  if (pendingRender) {
+    return // Already scheduled
+  }
+
+  pendingRender = true
+
+  if (renderTimeout) {
+    clearTimeout(renderTimeout)
+  }
+
+  renderTimeout = setTimeout(() => {
+    renderTimeout = null
+    pendingRender = false
+    renderEvents()
+  }, RENDER_DEBOUNCE_MS)
+}
+
+/**
+ * Immediately renders without debouncing
+ */
+function renderNow() {
+  if (renderTimeout) {
+    clearTimeout(renderTimeout)
+    renderTimeout = null
+  }
+  pendingRender = false
   renderEvents()
 }
 

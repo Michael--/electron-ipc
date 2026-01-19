@@ -2,8 +2,8 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type {
   InspectorCommand,
   InspectorCommandResponsePayload,
-  InspectorEventPayload,
   InspectorEventBatchPayload,
+  InspectorEventPayload,
   InspectorInitPayload,
   InspectorStatusPayload,
 } from '../inspector-contracts'

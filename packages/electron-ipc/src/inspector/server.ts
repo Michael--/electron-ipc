@@ -1,6 +1,6 @@
 import { BrowserWindow, WebContents } from 'electron'
-import { RingBuffer } from './ring-buffer'
 import { EventBatcher } from './event-batcher'
+import { RingBuffer } from './ring-buffer'
 import type { InspectorOptions, PayloadMode, TraceEvent } from './types'
 import { DEFAULT_INSPECTOR_OPTIONS } from './types'
 
