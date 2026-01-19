@@ -1,0 +1,10 @@
+# IPC Generator Configuration
+$schema: ../../../packages/electron-ipc/ipc-config.schema.json
+
+apis:
+  - name: api
+    input: ./src/main/ipc-api.ts
+    output: ./dist/ipc-api.generated.ts
+    contracts:
+      invoke: InvokeContracts
+      send: EventContracts

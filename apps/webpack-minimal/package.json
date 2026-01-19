@@ -1,0 +1,42 @@
+{
+  "name": "electron-ipc-webpack-minimal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal Electron app demonstrating electron-ipc with webpack",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "generate": "mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml",
+    "generate:watch": "mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml --watch",
+    "prebuild": "pnpm run generate",
+    "build": "webpack --mode production",
+    "build:dev": "webpack --mode development",
+    "predev": "pnpm run generate",
+    "dev": "webpack --mode development --watch",
+    "start": "electron .",
+    "clean": "rimraf dist *.tsbuildinfo",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "electron",
+    "ipc",
+    "webpack",
+    "typescript"
+  ],
+  "author": "Michael Rieck (Michael--) <mr@number10.de>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "copy-webpack-plugin": "^12.0.0",
+    "electron": "^28.0.0",
+    "html-webpack-plugin": "^5.6.0",
+    "mkdirp": "^3.0.1",
+    "rimraf": "^5.0.5",
+    "ts-loader": "^9.5.0",
+    "typescript": "^5.3.3",
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.0"
+  },
+  "dependencies": {
+    "@number10/electron-ipc": "workspace:*"
+  }
+}
