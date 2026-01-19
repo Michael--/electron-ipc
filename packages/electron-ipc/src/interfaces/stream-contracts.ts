@@ -42,8 +42,16 @@
  *
  * class MyUploadHandler extends AbstractRegisterStreamUpload {
  *   handlers: IPCStreamUploadHandlerType<MyUploadContracts> = {
- *     UploadFile: ({ filename }, stream) => {
- *       // Handle upload stream
+ *     UploadFile: ({ filename }, onData, onEnd, onError) => {
+ *       onData((chunk) => {
+ *         // Handle each chunk
+ *       })
+ *       onEnd(() => {
+ *         // Finalize upload
+ *       })
+ *       onError((err) => {
+ *         // Handle upload error
+ *       })
  *     }
  *   }
  * }

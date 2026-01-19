@@ -199,8 +199,6 @@ The `exposeMyApi()` function uses Electron's `contextBridge` to securely expose 
 
 ### 5. Use in Renderer
 
-### 5. Use in Renderer
-
 The API is now available in the renderer process with full type safety:
 
 ```typescript
@@ -224,12 +222,12 @@ const stopStream = window.myApi.invokeStreamGetLargeData(
 )
 
 // Stream upload (upload data to main)
-const uploadStream = window.myApi.uploadStreamUploadFile({ filename: 'data.txt' })
+const uploadStream = window.myApi.uploadUploadFile({ filename: 'data.txt' })
 await uploadStream.write(new Uint8Array([1, 2, 3, 4, 5]))
 await uploadStream.close()
 
 // Stream download (receive stream from main)
-const stopDownload = window.myApi.downloadStreamDownloadLogs(
+const stopDownload = window.myApi.downloadDownloadLogs(
   { sinceMs: Date.now() },
   (log) => console.log('Log:', log),
   () => console.log('Download complete'),
@@ -307,16 +305,18 @@ class RegisterStreamHandler extends AbstractRegisterStreamHandler {
 // Implement stream upload handlers (renderer → main)
 class RegisterStreamUpload extends AbstractRegisterStreamUpload {
   handlers: IPCStreamUploadHandlerType<StreamUploadContracts> = {
-    UploadFile: async (_event, { filename }, stream) => {
-      // Handle the uploaded stream
-      const reader = stream.getReader()
-      const chunks = []
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        chunks.push(value)
-      }
-      // Process uploaded data...
+    UploadFile: ({ filename }, onData, onEnd, onError) => {
+      const chunks: Uint8Array[] = []
+      onData((chunk) => {
+        chunks.push(chunk)
+      })
+      onEnd(() => {
+        // Process uploaded data...
+        console.log(`Upload complete for ${filename} (${chunks.length} chunks)`)
+      })
+      onError((err) => {
+        console.error(`Upload failed for ${filename}`, err)
+      })
     },
   }
 }
@@ -324,7 +324,7 @@ class RegisterStreamUpload extends AbstractRegisterStreamUpload {
 // Implement stream download handlers (main → renderer)
 class RegisterStreamDownload extends AbstractRegisterStreamDownload {
   handlers: IPCStreamDownloadHandlerType<StreamDownloadContracts> = {
-    DownloadLogs: async (_event, { sinceMs }) => {
+    DownloadLogs: async ({ sinceMs }, _event) => {
       // Return a ReadableStream for logs
       return createLogStream(sinceMs)
     },
@@ -361,7 +361,7 @@ const eventHandlers = defineEventHandlers<EventContracts>({
 })
 
 const downloadHandlers = defineStreamDownloadHandlers<StreamDownloadContracts>({
-  DownloadLogs: async (_event, { sinceMs }) => createLogStream(sinceMs),
+  DownloadLogs: async ({ sinceMs }, _event) => createLogStream(sinceMs),
 })
 
 class RegisterHandler extends AbstractRegisterHandler {

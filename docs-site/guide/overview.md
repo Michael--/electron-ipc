@@ -26,9 +26,9 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 The generator ships with optional runtime modules:
 
 - **Window Management**: Central registry + multi-window broadcast helpers.  
-  See [`docs/window-manager.md`](window-manager.md).
+  See [Window Management](./window-manager).
 - **IPC Inspector**: Dev-only IPC tracing UI with payload previews and export.  
-  See [`docs/inspector.md`](inspector.md).
+  See [IPC Inspector](./inspector).
 
 ## IPC Contract Types
 
@@ -500,8 +500,8 @@ apis:
 
 ## Examples & Templates
 
-- `docs/examples/electron-vite.md`
-- `docs/examples/electron-forge.md`
+- [Electron + Vite](../examples/electron-vite)
+- [Electron Forge](../examples/electron-forge)
 - `packages/electron-ipc/templates/basic/`
 
 ## Benefits
