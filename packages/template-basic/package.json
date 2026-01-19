@@ -1,6 +1,6 @@
 {
   "name": "@number10/template-basic",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Basic template for @number10/electron-ipc with code generation",
   "private": true,
   "type": "module",

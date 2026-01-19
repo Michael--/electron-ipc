@@ -1,6 +1,6 @@
 {
   "name": "@electron-ipc/high-volume-test",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "description": "High-volume test app for Inspector performance testing",
   "main": "out/main/index.js",

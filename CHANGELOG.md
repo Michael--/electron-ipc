@@ -1,3 +1,63 @@
+## [2.2.0] - 2026-01-19
+
+### Added
+
+- **IPC Inspector**: Dev-only IPC tracing with separate BrowserWindow
+  - Live event monitoring with pause, clear, and filters
+  - JSON export for bug reports
+  - Payload preview modes (none, redacted, full)
+  - Virtual scrolling for massive performance (handles 100k+ events)
+  - Statistics dashboard with buffer usage and events/s monitoring
+  - Sequence numbers and gap detection
+  - Event batching to reduce IPC overhead
+  - Automatic inline trace instrumentation in generated code
+  - Window metadata integration
+- **Window Manager**: Central registry for BrowserWindows with role-based organization
+  - Role-based window categorization (main, secondary, inspector, custom)
+  - Automatic lifecycle tracking and cleanup
+  - Focus tracking
+  - Enhanced broadcast APIs (all windows or filtered by role)
+  - Helper functions for common tasks
+- **Example Applications**:
+  - `apps/multi-window`: Multi-window IPC flows demo with window registry
+  - `apps/high-volume-test`: Inspector performance testing app
+  - `apps/esbuild-minimal`: Minimal example with esbuild bundler
+  - `apps/webpack-minimal`: Minimal example with webpack bundler
+  - `apps/parcel-minimal`: Minimal example with Parcel 2.x bundler
+- **Template Package**: `packages/template-basic` as standalone self-generating template
+- **Documentation**: VitePress documentation site with comprehensive guides
+  - Full guides for all features
+  - Integration examples (electron-vite, Electron Forge)
+  - Architecture documentation
+  - React Hooks examples
+  - Deployed to GitHub Pages
+
+### Changed
+
+- Moved `test-app` from `packages/` to `apps/` for better organization
+- Reorganized monorepo structure with multiple example apps
+
+### Fixed
+
+- Various bug fixes in Inspector UI and backend
+- High-volume test app rendering and CSP issues
+- TypeScript errors in minimal bundler examples
+
+### Documentation
+
+- Complete documentation overhaul with VitePress
+- Added Window Manager comprehensive documentation
+- Added IPC Inspector documentation with examples
+- Enhanced overview with all packages and apps
+- Fixed outdated type references in README (GenericEventContract → GenericRendererEventContract)
+- Updated all documentation links to GitHub Pages
+
+### Tests
+
+- Inspector UI tests with virtual scrolling coverage
+- Inspector server and trace instrumentation tests
+- Template relocation tests
+
 ## [2.1.0] - 2026-01-13
 
 ### Added

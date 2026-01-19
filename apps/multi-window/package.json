@@ -1,6 +1,6 @@
 {
   "name": "electron-ipc-multi-window",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "description": "Multi-window test application for electron-ipc",
   "main": "dist/main/index.js",
