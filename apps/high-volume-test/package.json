@@ -1,0 +1,23 @@
+{
+  "name": "@electron-ipc/high-volume-test",
+  "version": "0.0.1",
+  "private": true,
+  "description": "High-volume test app for Inspector performance testing",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "start": "electron-vite preview"
+  },
+  "dependencies": {
+    "@number10/electron-ipc": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "electron": "^28.1.4",
+    "electron-vite": "^2.0.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11"
+  }
+}

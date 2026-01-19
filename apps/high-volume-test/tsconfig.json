@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "./out"
+  },
+  "include": ["src/**/*", "public/**/*"],
+  "references": [
+    {
+      "path": "../../packages/electron-ipc"
+    }
+  ]
+}

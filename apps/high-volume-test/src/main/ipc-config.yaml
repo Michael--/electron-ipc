@@ -1,0 +1,12 @@
+# IPC Configuration for High-Volume Testing
+
+$schema: ../../../../packages/electron-ipc/ipc-config.schema.json
+
+apis:
+  - name: api
+    input: ./ipc-api.ts
+    output: ./ipc-api.generated.ts
+    contracts:
+      invoke: InvokeContracts
+      event: EventContracts
+      send: BroadcastContracts

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>High-Volume Inspector Test</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>🚀 High-Volume Inspector Test</h1>
+        <p>Generate configurable high-volume IPC events to test Inspector performance</p>
+      </header>
+
+      <main>
+        <section class="control-panel">
+          <h2>Test Configuration</h2>
+
+          <div class="form-group">
+            <label for="mode">Mode:</label>
+            <select id="mode">
+              <option value="burst">Burst (All at once)</option>
+              <option value="sustained" selected>Sustained (Steady rate)</option>
+              <option value="mixed">Mixed (Varied operations)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="eventsPerSecond">Events/Second:</label>
+            <input
+              type="number"
+              id="eventsPerSecond"
+              value="100"
+              min="1"
+              max="10000"
+              step="10"
+            />
+            <span class="hint">Recommended: 100-500</span>
+          </div>
+
+          <div class="form-group">
+            <label for="duration">Duration (seconds):</label>
+            <input type="number" id="duration" value="10" min="1" max="300" step="1" />
+          </div>
+
+          <div class="form-group">
+            <label for="payloadSize">Payload Size (bytes):</label>
+            <input type="number" id="payloadSize" value="0" min="0" max="100000" step="100" />
+            <span class="hint">0 = no payload</span>
+          </div>
+
+          <div class="actions">
+            <button id="startBtn" class="btn btn-primary">Start Test</button>
+            <button id="stopBtn" class="btn btn-secondary" disabled>Stop Test</button>
+          </div>
+        </section>
+
+        <section class="stats-panel">
+          <h2>Statistics</h2>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Status</div>
+              <div class="stat-value" id="status">Idle</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-label">Events Generated</div>
+              <div class="stat-value" id="generated">0</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-label">Errors</div>
+              <div class="stat-value" id="errored">0</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-label">Avg Latency</div>
+              <div class="stat-value" id="avgLatency">0 ms</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="presets">
+          <h2>Quick Presets</h2>
+
+          <div class="preset-grid">
+            <button class="preset-btn" data-preset="light">
+              <div class="preset-name">Light Load</div>
+              <div class="preset-desc">50 events/s × 10s</div>
+            </button>
+
+            <button class="preset-btn" data-preset="medium">
+              <div class="preset-name">Medium Load</div>
+              <div class="preset-desc">200 events/s × 30s</div>
+            </button>
+
+            <button class="preset-btn" data-preset="heavy">
+              <div class="preset-name">Heavy Load</div>
+              <div class="preset-desc">500 events/s × 60s</div>
+            </button>
+
+            <button class="preset-btn" data-preset="extreme">
+              <div class="preset-name">Extreme Load</div>
+              <div class="preset-desc">1000 events/s × 10s</div>
+            </button>
+
+            <button class="preset-btn" data-preset="burst">
+              <div class="preset-name">Burst Test</div>
+              <div class="preset-desc">5000 events immediately</div>
+            </button>
+
+            <button class="preset-btn" data-preset="stress">
+              <div class="preset-name">Stress Test</div>
+              <div class="preset-desc">2000 events/s × 30s</div>
+            </button>
+          </div>
+        </section>
+
+        <section class="info">
+          <h3>💡 Tips</h3>
+          <ul>
+            <li><strong>Start light:</strong> Begin with 50-100 events/s to establish baseline</li>
+            <li><strong>Watch Inspector:</strong> Monitor memory and rendering performance</li>
+            <li><strong>Burst mode:</strong> Tests buffer overflow behavior</li>
+            <li><strong>Sustained mode:</strong> Tests steady-state performance</li>
+            <li><strong>Mixed mode:</strong> Tests varied IPC operation types</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>
