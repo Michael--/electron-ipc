@@ -4,7 +4,7 @@ import {
   defineInvokeHandlers,
 } from '@number10/electron-ipc'
 import { BrowserWindow, app } from 'electron'
-import { join } from 'path'
+import * as path from 'path'
 import type { EventContracts, InvokeContracts } from './ipc-api'
 
 /**
@@ -78,17 +78,21 @@ function registerHandlers(): void {
  * Creates the main application window
  */
 function createWindow(): void {
+  // Workaround for Parcel's __dirname transformation
+  // Use app.getAppPath() to get the actual runtime path
+  const appPath = app.getAppPath()
+
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: path.join(appPath, 'dist', 'preload', 'index.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   })
 
-  mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+  mainWindow.loadFile(path.join(appPath, 'dist', 'renderer', 'index.html'))
 
   // Open DevTools in development
   if (!app.isPackaged) {
