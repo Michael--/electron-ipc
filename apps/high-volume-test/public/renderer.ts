@@ -157,16 +157,10 @@ function stopTest() {
 
 /**
  * Listen to broadcast events
- * This is REQUIRED for Inspector tracking - broadcasts are only tracked when received!
+ * REQUIRED: Inspector only tracks broadcasts when a renderer receives them
  */
-let receivedCount = 0
-window.api.ontestBroadcast((payload) => {
-  receivedCount++
-  // We don't need to do anything with the data - just receiving it triggers Inspector tracking
-  // Optionally log first/last few events for verification
-  if (receivedCount <= 3 || receivedCount % 100 === 0) {
-    console.log(`[Renderer] Received broadcast #${receivedCount}:`, payload.id)
-  }
+window.api.ontestBroadcast(() => {
+  // No action needed - ontestBroadcast() internally calls traceBroadcast()
 })
 
 console.log('[HighVolume] Renderer initialized')
