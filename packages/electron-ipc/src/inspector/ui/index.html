@@ -578,12 +578,13 @@
           title="Missing sequence numbers detected"
           >⚠ Gaps detected</span
         >
-        <span id="bufferUsage" class="stat-badge" title="Buffer usage">0/5000</span>
+        <span id="bufferUsage" class="stat-badge" title="UI buffer usage">UI: 0/10000</span>
+        <span id="serverBufferUsage" class="stat-badge" title="Server buffer usage">Server: 0/5000</span>
         <span id="eventsPerSec" class="stat-badge" title="Events per second">0/s</span>
-        <label title="Buffer capacity">
-          Buffer:
+        <label title="Server-side RingBuffer capacity">
+          Server:
           <input
-            id="bufferSizeInput"
+            id="serverBufferInput"
             type="number"
             min="100"
             max="100000"
@@ -591,7 +592,20 @@
             value="5000"
             style="width: 70px; padding: 4px 8px; margin: 0 4px"
           />
-          <button id="applyBufferBtn" title="Apply buffer size">Apply</button>
+          <button id="applyServerBufferBtn" title="Apply server buffer size">Apply</button>
+        </label>
+        <label title="Maximum events to display in UI">
+          UI Max:
+          <input
+            id="uiBufferInput"
+            type="number"
+            min="100"
+            max="100000"
+            step="1000"
+            value="10000"
+            style="width: 70px; padding: 4px 8px; margin: 0 4px"
+          />
+          <button id="applyUiBufferBtn" title="Apply UI max events">Apply</button>
         </label>
       </div>
     </div>

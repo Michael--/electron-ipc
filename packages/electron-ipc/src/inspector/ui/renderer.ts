@@ -65,8 +65,11 @@ let elements: {
   detailContent: HTMLElement
   closeDetailBtn: HTMLButtonElement
   pinDetailBtn: HTMLButtonElement
-  bufferSizeInput: HTMLInputElement
-  applyBufferBtn: HTMLButtonElement
+  serverBufferInput: HTMLInputElement
+  applyServerBufferBtn: HTMLButtonElement
+  uiBufferInput: HTMLInputElement
+  applyUiBufferBtn: HTMLButtonElement
+  serverBufferUsage: HTMLElement
   showStatsBtn: HTMLButtonElement
   statsPanel: HTMLElement
   statsContent: HTMLElement
@@ -76,7 +79,8 @@ let elements: {
 // Statistics tracking
 let statsStartTime = Date.now()
 let statsEventCount = 0
-let maxBufferSize = 5000
+let serverBufferSize = 5000 // Server-side RingBuffer capacity
+let uiMaxEvents = 10000 // UI-side max events to display
 let statsInterval: ReturnType<typeof setInterval> | null = null
 let statusPollInterval: ReturnType<typeof setInterval> | null = null
 let lastSeqNumber = 0
@@ -138,16 +142,20 @@ function init() {
     detailContent: bodyNode.querySelector('#detailContent') as HTMLElement,
     closeDetailBtn: bodyNode.querySelector('#closeDetailBtn') as HTMLButtonElement,
     pinDetailBtn: bodyNode.querySelector('#pinDetailBtn') as HTMLButtonElement,
-    bufferSizeInput: bodyNode.querySelector('#bufferSizeInput') as HTMLInputElement,
-    applyBufferBtn: bodyNode.querySelector('#applyBufferBtn') as HTMLButtonElement,
+    serverBufferInput: bodyNode.querySelector('#serverBufferInput') as HTMLInputElement,
+    applyServerBufferBtn: bodyNode.querySelector('#applyServerBufferBtn') as HTMLButtonElement,
+    uiBufferInput: bodyNode.querySelector('#uiBufferInput') as HTMLInputElement,
+    applyUiBufferBtn: bodyNode.querySelector('#applyUiBufferBtn') as HTMLButtonElement,
+    serverBufferUsage: bodyNode.querySelector('#serverBufferUsage') as HTMLElement,
     showStatsBtn: bodyNode.querySelector('#showStatsBtn') as HTMLButtonElement,
     statsPanel: bodyNode.querySelector('#statsPanel') as HTMLElement,
     statsContent: bodyNode.querySelector('#statsContent') as HTMLElement,
     closeStatsBtn: bodyNode.querySelector('#closeStatsBtn') as HTMLButtonElement,
   }
 
-  // Set initial buffer size value
-  elements.bufferSizeInput.value = String(maxBufferSize)
+  // Set initial buffer size values
+  elements.serverBufferInput.value = String(serverBufferSize)
+  elements.uiBufferInput.value = String(uiMaxEvents)
 
   // Initialize virtual scrolling
   virtualScrollContainer = elements.main
@@ -182,8 +190,12 @@ function init() {
   // Listen for init message
   window.inspectorAPI.onInit((payload) => {
     allEvents = payload.events || []
+    // Trim if over UI limit
+    if (allEvents.length > uiMaxEvents) {
+      allEvents = allEvents.slice(-uiMaxEvents)
+    }
     applyFilters()
-    updateStats(payload.events?.length || 0)
+    updateStats(allEvents.length)
   })
 
   // Listen for live events (single)
@@ -192,6 +204,10 @@ function init() {
       if (payload.event.seq) detectGap(payload.event.seq)
       trackChannelStats(payload.event)
       allEvents.push(payload.event)
+      // Trim if over UI limit (keep most recent)
+      if (allEvents.length > uiMaxEvents) {
+        allEvents.shift()
+      }
       statsEventCount++
       applyFilters()
       updateStats(allEvents.length)
@@ -206,6 +222,10 @@ function init() {
         trackChannelStats(event)
       })
       allEvents.push(...payload.events)
+      // Trim if over UI limit (keep most recent)
+      if (allEvents.length > uiMaxEvents) {
+        allEvents = allEvents.slice(-uiMaxEvents)
+      }
       statsEventCount += payload.events.length
       applyFilters()
       updateStats(allEvents.length)
@@ -303,13 +323,28 @@ function setupEventListeners() {
     closeDetailPanel()
   })
 
-  // Buffer size apply button
-  elements.applyBufferBtn.addEventListener('click', () => {
-    const newSize = parseInt(elements.bufferSizeInput.value)
+  // Server buffer size apply button
+  elements.applyServerBufferBtn.addEventListener('click', () => {
+    const newSize = parseInt(elements.serverBufferInput.value)
     if (newSize >= 100 && newSize <= 100000) {
       window.inspectorAPI.sendCommand({ type: 'setBufferSize', size: newSize })
-      maxBufferSize = newSize
-      console.log(`[Inspector] Buffer size set to ${newSize}`)
+      serverBufferSize = newSize
+      console.log(`[Inspector] Server buffer size set to ${newSize}`)
+    }
+  })
+
+  // UI max events apply button
+  elements.applyUiBufferBtn.addEventListener('click', () => {
+    const newSize = parseInt(elements.uiBufferInput.value)
+    if (newSize >= 100 && newSize <= 100000) {
+      uiMaxEvents = newSize
+      // Trim allEvents if over limit
+      if (allEvents.length > uiMaxEvents) {
+        allEvents = allEvents.slice(-uiMaxEvents)
+        applyFilters()
+        renderNow()
+      }
+      console.log(`[Inspector UI] Max events set to ${newSize}`)
     }
   })
 
@@ -835,16 +870,36 @@ function updateAutoScrollButton() {
 }
 
 /**
- * Poll server status (buffer size, dropped events)
+ * Poll server status (buffer size, event count)
  */
 async function pollServerStatus() {
   try {
     const status = await window.inspectorAPI.getStatus()
     if (status) {
-      // Update buffer size if changed
-      if (status.bufferCapacity && status.bufferCapacity !== maxBufferSize) {
-        maxBufferSize = status.bufferCapacity
+      // Update server buffer size if changed
+      if (status.bufferCapacity && status.bufferCapacity !== serverBufferSize) {
+        serverBufferSize = status.bufferCapacity
+        elements.serverBufferInput.value = String(serverBufferSize)
       }
+
+      // Update server buffer usage display
+      const serverEventCount = status.eventCount || 0
+      const serverUsage = serverBufferSize > 0 ? (serverEventCount / serverBufferSize) * 100 : 0
+      elements.serverBufferUsage.textContent = `Server: ${serverEventCount}/${serverBufferSize}`
+
+      // Color-code server buffer (only warn if actively receiving events)
+      elements.serverBufferUsage.classList.remove('warning', 'danger')
+      const receiving = statsEventCount / ((Date.now() - statsStartTime) / 1000) > 0
+      if (serverUsage > 90 && receiving) {
+        elements.serverBufferUsage.classList.add('danger')
+        elements.serverBufferUsage.title = 'Server buffer critical!'
+      } else if (serverUsage > 80 && receiving) {
+        elements.serverBufferUsage.classList.add('warning')
+        elements.serverBufferUsage.title = 'Server buffer filling up'
+      } else {
+        elements.serverBufferUsage.title = 'Server-side buffer usage'
+      }
+
       // Note: We don't show status.droppedCount from server
       // Only show gaps detected in UI (detectedGaps) via updateStats()
     }
@@ -896,21 +951,21 @@ function updateStatistics() {
   const eventsPerSec = elapsed > 0 ? Math.round(statsEventCount / elapsed) : 0
   elements.eventsPerSec.textContent = `${eventsPerSec}/s`
 
-  // Update buffer usage
+  // Update UI buffer usage
   const currentCount = allEvents.length
-  const usage = maxBufferSize > 0 ? (currentCount / maxBufferSize) * 100 : 0
-  elements.bufferUsage.textContent = `${currentCount}/${maxBufferSize}`
+  const uiUsage = uiMaxEvents > 0 ? (currentCount / uiMaxEvents) * 100 : 0
+  elements.bufferUsage.textContent = `UI: ${currentCount}/${uiMaxEvents}`
 
-  // Color-code buffer usage with early warning
+  // Color-code UI buffer usage (only warn if actively receiving events)
   elements.bufferUsage.classList.remove('warning', 'danger')
-  if (usage > 90) {
+  if (uiUsage > 95 && eventsPerSec > 0) {
     elements.bufferUsage.classList.add('danger')
-    elements.bufferUsage.title = 'Buffer critical! Consider increasing size or enabling filters'
-  } else if (usage > 80) {
+    elements.bufferUsage.title = 'UI buffer critical! Increase UI limit or enable filters'
+  } else if (uiUsage > 85 && eventsPerSec > 0) {
     elements.bufferUsage.classList.add('warning')
-    elements.bufferUsage.title = 'Buffer filling up - take action soon'
+    elements.bufferUsage.title = 'UI buffer filling up'
   } else {
-    elements.bufferUsage.title = 'Buffer usage'
+    elements.bufferUsage.title = `UI buffer usage (max events in UI)`
   }
 
   // Color-code events/sec
