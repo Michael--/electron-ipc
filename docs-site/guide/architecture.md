@@ -316,15 +316,18 @@ The test app includes CSP headers to prevent XSS attacks:
 
 ## Future Enhancements
 
+### Implemented Features
+
+- [x] Runtime validation decorators (`withInvokeValidation`, `withEventValidation`, etc.)
+- [x] IPC call logging/debugging (IPC Inspector with trace system)
+- [x] Support for streams (Stream Invoke, Stream Upload, Stream Download)
+- [x] Multiple window support (Window Manager with registry and role-based broadcasts)
+
 ### Planned Features
 
-- [ ] Runtime validation decorators
-- [ ] Automatic error handling
-- [ ] IPC call logging/debugging
-- [ ] Performance monitoring
-- [ ] Support for streams
+- [ ] Automatic error handling (partial implementation exists)
+- [ ] Performance monitoring (tracing exists, dedicated metrics missing)
 - [ ] Bi-directional invoke (renderer → main → renderer)
-- [ ] Multiple window support
 - [ ] IPC middleware system
 
 ### Extensibility Points

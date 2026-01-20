@@ -12,7 +12,7 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 
 ### Packages
 
-- **`packages/electron-ipc`** - Main library (publishable to npm) with code generator and runtime helpers
+- **`packages/electron-ipc`** - Main library with code generator and runtime helpers
 - **`packages/template-basic`** - Self-generating template demonstrating best practices
 
 ### Example Applications
@@ -31,6 +31,7 @@ The repository includes multiple example apps demonstrating different bundlers a
 1. **Define IPC Contracts** in your main process using TypeScript interfaces
 2. **Run the Generator** via YAML configuration to create type-safe API code
 3. **Use Generated API** in preload/renderer with full TypeScript support
+4. **Abstract Register Handler** in main/index for secure registration of the Invoke/Events/Broadcast interfaces
 
 ## Additional Modules
 
