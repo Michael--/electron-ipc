@@ -1,3 +1,11 @@
+## [2.2.1] - 2026-01-20
+
+### Fixed
+
+- Cross-platform compatibility for `electron-ipc-generate` CLI tool (Windows support)
+- Windows compatibility for contributors
+- CI: pnpm cache issue in GitHub Pages workflow
+
 ## [2.2.0] - 2026-01-19
 
 ### Added
