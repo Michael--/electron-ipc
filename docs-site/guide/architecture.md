@@ -325,14 +325,28 @@ The test app includes CSP headers to prevent XSS attacks:
 
 ### Planned Features
 
-- [ ] Automatic error handling (partial implementation exists)
-- [ ] Performance monitoring (tracing exists, dedicated metrics missing)
-- [ ] Bi-directional invoke (renderer → main → renderer)
-- [ ] IPC middleware system
+- P1 (High): Transaction-level tracing and correlation
+  Detail: Stable IDs for invoke/stream lifecycles, group related events in the Inspector UI, and expose end-to-end timings.
+- P2 (High): Metrics view backed by the ring buffer
+  Detail: p50/p95 latency, error rate, payload/byte volume, and stream throughput per channel and contract kind.
+- P3 (Medium): Versioned export schema
+  Detail: Add a `traceFormatVersion` and optional anonymized export to support reproducible bug reports and future tooling.
+- P4 (Medium): Automatic multi-window metadata
+  Detail: Enrich traces with windowRole/windowId from the Window Manager without manual user hooks.
+- P5 (Low): Automatic error handling
+  Detail: Standardize error payloads for invokes and streams; align with logging and validation output.
+- P6 (Low): IPC middleware system
+  Detail: Pre/post hooks for logging, validation, auth, and metrics without custom boilerplate.
+- P7 (Low): Bi-directional invoke
+  Detail: Renderer-to-renderer invocation routed via main with clear targeting and failure behavior.
 
 ### Extensibility Points
 
-- Custom code generators
-- Plugin system for transformations
-- Custom type validators
-- Alternative transport layers
+- P1 (High): Plugin system for transformations
+  Detail: Hookable pipeline stages (parse/transform/emit) to adjust AST, naming, and output shape without forking.
+- P2 (High): Custom type validators
+  Detail: Adapter layer for Zod/io-ts/Valibot with consistent error payloads across invoke/event/stream.
+- P3 (Medium): Custom code generators
+  Detail: Support alternative output targets (framework-specific APIs) on top of a stable intermediate model.
+- P4 (Low): Alternative transport layers
+  Detail: Swap Electron IPC for MessagePort/WebSocket while keeping contracts and types consistent.
