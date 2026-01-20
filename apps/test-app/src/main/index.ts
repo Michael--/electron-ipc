@@ -391,10 +391,6 @@ function createSecondaryWindow(): void {
   })
 }
 
-function openInspectorWindow() {
-  enableIpcInspector({ openOnStart: true })
-}
-
 function toggleInspectorWindow() {
   const inspectorWindow = getInspectorWindow()
   if (inspectorWindow) {
@@ -407,10 +403,11 @@ function toggleInspectorWindow() {
     return
   }
 
-  openInspectorWindow()
+  enableIpcInspector({ openOnStart: true })
 }
 
 app.whenReady().then(() => {
+  enableIpcInspector({ openOnStart: false }) // to ensure capture any early IPC messages
   createWindow()
 
   // Create application menu with Window Management demo
