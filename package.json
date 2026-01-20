@@ -19,7 +19,7 @@
     "spell": "cspell \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky",
     "pre-commit": "pnpm exec lint-staged",
-    "pack-electron-ipc": "cd packages/electron-ipc && pnpm pack"
+    "pack-electron-ipc": "pnpm --filter electron-ipc pack"
   },
   "keywords": [
     "electron",
