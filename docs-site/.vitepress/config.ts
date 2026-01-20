@@ -4,6 +4,7 @@ export default defineConfig({
   lang: 'en-US',
   title: 'Electron IPC',
   description: 'Type-safe IPC generator for Electron',
+  base: '/electron-ipc/',
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/overview' },
