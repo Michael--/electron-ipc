@@ -1,11 +1,16 @@
 {
   "name": "@number10/electron-ipc",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "TypeScript code generator for type-safe Electron IPC communication",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/index.mjs",
+    "./dist/index.cjs",
+    "./src/index.ts",
+    "./src/inspector/auto-init.ts"
+  ],
   "publishConfig": {
     "access": "public"
   },

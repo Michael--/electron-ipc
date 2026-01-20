@@ -2,6 +2,7 @@ import type { IpcMainEvent } from 'electron'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { getWindowRegistry } from '../window-manager/registry'
+import { replaceInspectorHandlers } from './auto-init'
 import type { InspectorCommand, InspectorCommandPayload } from './inspector-contracts'
 import { getInspectorServer } from './server'
 import { setTraceSink } from './trace'
@@ -182,14 +183,12 @@ function registerIpcHandlers(server: ReturnType<typeof getInspectorServer>): voi
   })
 
   // GET_PAYLOAD_MODE: Renderer requests current payload mode
-  ipcMain.handle('INSPECTOR:GET_PAYLOAD_MODE', () => {
-    return server.getOptions().payloadMode
-  })
-
   // GET_STATUS: Renderer requests current status
-  ipcMain.handle('INSPECTOR:GET_STATUS', () => {
-    return server.getStatus()
-  })
+  // Replace the default handlers registered by auto-init
+  replaceInspectorHandlers(
+    () => server.getOptions().payloadMode,
+    () => server.getStatus()
+  )
 
   // COMMAND: Inspector UI sends commands
   ipcMain.on('INSPECTOR:COMMAND', (event: IpcMainEvent, payload: InspectorCommandPayload) => {

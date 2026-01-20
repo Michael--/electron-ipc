@@ -42,12 +42,14 @@ function calculateBytes(data: any): number {
 
 /** Gets current payload mode from main process */
 let cachedPayloadMode: 'none' | 'redacted' | 'full' = 'redacted'
-try {
-  // Try to get initial mode from main process
-  ipcRenderer.invoke('INSPECTOR:GET_PAYLOAD_MODE').then((mode) => {
+// Silently try to get initial mode from main process (Inspector may not be enabled)
+ipcRenderer.invoke('INSPECTOR:GET_PAYLOAD_MODE')
+  .then((mode) => {
     if (mode) cachedPayloadMode = mode
-  }).catch(() => {})
-} catch {}
+  })
+  .catch(() => {
+    // Inspector not enabled - silently ignore
+  })
 
 /** Creates a payload preview based on current mode */
 function createPayloadPreview(data: any): { mode: 'none' | 'redacted' | 'full', bytes?: number, summary?: string, data?: any } {
