@@ -16,7 +16,7 @@
   },
   "packageManager": "pnpm@9.15.3",
   "bin": {
-    "electron-ipc-generate": "bin/electron-ipc-generate"
+    "electron-ipc-generate": "bin/electron-ipc-generate.js"
   },
   "files": [
     "bin",
