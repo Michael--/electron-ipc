@@ -39,7 +39,11 @@ class MockBrowserWindow {
 
   id: number
   options: unknown
-  webContents: { id: number; send: ReturnType<typeof vi.fn>; isDestroyed: ReturnType<typeof vi.fn> }
+  webContents: {
+    id: number
+    send: ReturnType<typeof vi.fn>
+    isDestroyed: ReturnType<typeof vi.fn<[], boolean>>
+  }
   private listeners: Record<string, Array<(...args: unknown[]) => void>> = {}
 
   constructor(options: unknown) {
@@ -162,7 +166,10 @@ describe('inspector/enable', () => {
 
     const { getWindowRegistry } = await import('../window-manager/registry')
     const registry = getWindowRegistry()
-    expect(registry.getById(window!.id)?.role).toBe('inspector')
+    if (!window) {
+      throw new Error('Expected inspector window to be created')
+    }
+    expect(registry.getById(window.id)?.role).toBe('inspector')
   })
 
   it('registers keyboard shortcut when configured', async () => {
@@ -198,16 +205,19 @@ describe('inspector/enable', () => {
 
     const handler = ipcMainOnHandlers.get('INSPECTOR:COMMAND')
     expect(handler).toBeDefined()
+    if (!handler) {
+      throw new Error('Expected INSPECTOR:COMMAND handler')
+    }
 
     const sender = { send: vi.fn() }
-    handler!({ sender }, { command: { type: 'export', format: 'json' } })
+    handler({ sender }, { command: { type: 'export', format: 'json' } })
     expect(sender.send).toHaveBeenCalledWith('INSPECTOR:COMMAND_RESPONSE', {
       success: true,
       data: { data: { events: [] } },
     })
 
     sender.send.mockClear()
-    handler!({ sender }, { command: { type: 'setBufferSize', size: 10 } })
+    handler({ sender }, { command: { type: 'setBufferSize', size: 10 } })
     expect(sender.send).toHaveBeenCalledWith(
       'INSPECTOR:COMMAND_RESPONSE',
       expect.objectContaining({ success: false })
@@ -225,12 +235,15 @@ describe('inspector/enable', () => {
     const traceHandler = ipcMainOnHandlers.get('INSPECTOR:TRACE')
     expect(helloHandler).toBeDefined()
     expect(traceHandler).toBeDefined()
+    if (!helloHandler || !traceHandler) {
+      throw new Error('Expected inspector IPC handlers to be registered')
+    }
 
     const window = new MockBrowserWindow({})
     const subscriber = { window }
     server.getSubscriber.mockReturnValue(subscriber)
 
-    helloHandler!({ sender: window.webContents })
+    helloHandler({ sender: window.webContents })
     expect(server.sendInit).toHaveBeenCalledWith(subscriber)
 
     const { getWindowRegistry } = await import('../window-manager/registry')
@@ -247,7 +260,7 @@ describe('inspector/enable', () => {
       source: { webContentsId: -1 },
     }
 
-    traceHandler!({ sender: window.webContents }, traceEvent)
+    traceHandler({ sender: window.webContents }, traceEvent)
     expect(server.push).toHaveBeenCalledWith(
       expect.objectContaining({
         source: expect.objectContaining({

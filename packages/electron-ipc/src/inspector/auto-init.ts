@@ -65,14 +65,14 @@ export function ensureInspectorHandlers(): void {
     const payloadModeListeners = ipcMain.listenerCount('INSPECTOR:GET_PAYLOAD_MODE')
 
     if (!payloadModeListeners) {
-      ipcMain.handle('INSPECTOR:GET_PAYLOAD_MODE', () => payloadModeHandler!())
+      ipcMain.handle('INSPECTOR:GET_PAYLOAD_MODE', () => payloadModeHandler?.())
     }
 
     // Register dummy handler for GET_STATUS if not already registered
     const statusListeners = ipcMain.listenerCount('INSPECTOR:GET_STATUS')
 
     if (!statusListeners) {
-      ipcMain.handle('INSPECTOR:GET_STATUS', () => statusHandler!())
+      ipcMain.handle('INSPECTOR:GET_STATUS', () => statusHandler?.())
     }
   } catch (error) {
     // Silently ignore errors (e.g., when not in main process)

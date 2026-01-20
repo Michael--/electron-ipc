@@ -46,8 +46,8 @@ export class InspectorServer {
     if (this.options.batching.enabled) {
       this.batcher = new EventBatcher(
         {
-          maxBatchSize: this.options.batching.maxBatchSize!,
-          maxBatchDelay: this.options.batching.maxBatchDelay!,
+          maxBatchSize: this.options.batching.maxBatchSize ?? 50,
+          maxBatchDelay: this.options.batching.maxBatchDelay ?? 100,
         },
         (events) => {
           this.broadcast({
@@ -223,6 +223,7 @@ export class InspectorServer {
       payload: this.getStatus(),
     })
 
+    // eslint-disable-next-line no-console
     console.log(
       `[Inspector] Buffer size changed to ${size} (restored ${eventsToRestore.length} events)`
     )

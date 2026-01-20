@@ -209,7 +209,7 @@ describe('InspectorServer', () => {
       // Mock BrowserWindow.fromWebContents to return the window
       vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockWindow)
       const subscriber = server.getSubscriber(mockWindow.webContents)
-      server.sendInit(subscriber!)
+      if (subscriber) server.sendInit(subscriber)
 
       expect(mockWindow.webContents.send).toHaveBeenCalledWith(
         'INSPECTOR:INIT',

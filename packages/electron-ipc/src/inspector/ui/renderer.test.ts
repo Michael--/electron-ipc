@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* @vitest-environment jsdom */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -90,7 +91,7 @@ describe('inspector ui renderer', () => {
       id: 'evt-1',
       kind: 'invoke',
       channel: 'Ping',
-      direction: 'renderer->main',
+      direction: 'renderer→main',
       status: 'ok',
       tsStart: Date.now(),
       source: { webContentsId: 1 },
