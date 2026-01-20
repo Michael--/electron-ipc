@@ -158,7 +158,7 @@ RegisterHandler.register()
 const user = await window.api.GetUser(123)
 // TypeScript knows 'user' is User type
 // Passing wrong type → immediate compile error
-await window.api.GetUser("123") // ❌ Error: Argument of type 'string' is not assignable to parameter of type 'number'
+await window.api.invokeGetUser("123") // ❌ Error: Argument of type 'string' is not assignable to parameter of type 'number'
 ````
 
 This compile-time validation extends to:
