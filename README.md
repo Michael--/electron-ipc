@@ -150,10 +150,7 @@ For detailed usage, API reference, and examples, see:
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - [`docs/window-manager.md`](docs/window-manager.md)
 - [`docs/inspector.md`](docs/inspector.md)
-
-## 📝 Release Notes
-
-- [`RELEASE_NOTES.md`](RELEASE_NOTES.md)
+- [`CHANGELOG.md`](CHANGELOG.md)
 
 ## 🛠 Technology Stack
 

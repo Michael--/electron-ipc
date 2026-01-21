@@ -12,7 +12,7 @@ TypeScript code generator for type-safe Electron IPC communication with streamin
 [![electron version](https://img.shields.io/badge/electron-%3E%3D28-9FEAF9)](https://www.electronjs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Docs: **[Full Documentation](https://michael--.github.io/electron-ipc/)** | [npm](https://www.npmjs.com/package/@number10/electron-ipc) | [GitHub](https://github.com/Michael--/electron-ipc) | [Release Notes](../../RELEASE_NOTES.md)
+Docs: **[Full Documentation](https://michael--.github.io/electron-ipc/)** | [npm](https://www.npmjs.com/package/@number10/electron-ipc) | [GitHub](https://github.com/Michael--/electron-ipc) | [Changelog](../../CHANGELOG.md)
 
 ## Why it helps
 
@@ -137,10 +137,6 @@ This library provides a code generation approach to create type-safe IPC communi
 - ✅ **Generator Workflows**: `--watch` and `--check` modes for dev and CI
 - ✅ **Cross-Platform**: Full support for Windows, macOS, and Linux
 - ✅ **Zero Runtime Overhead (Default)**: Type safety at compile time unless validation is enabled
-
-## 📝 Release Notes
-
-- [`RELEASE_NOTES.md`](../../RELEASE_NOTES.md)
 
 ## Communication Patterns
 
