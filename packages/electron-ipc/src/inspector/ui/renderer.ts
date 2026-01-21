@@ -603,7 +603,7 @@ function createEventRow(event: TraceEvent, index: number): HTMLTableRowElement {
 
   // Direction
   const directionCell = document.createElement('td')
-  directionCell.textContent = event.direction
+  directionCell.textContent = getDisplayDirection(event)
   row.appendChild(directionCell)
 
   // Role
@@ -660,7 +660,7 @@ function showDetailPanel(event: TraceEvent) {
   const safeId = escapeHtml(event.id)
   const safeKind = escapeHtml(formatKind(event.kind))
   const safeChannel = escapeHtml(event.channel)
-  const safeDirection = escapeHtml(event.direction)
+  const safeDirection = escapeHtml(getDisplayDirection(event))
   const safeStatus = escapeHtml(event.status.toUpperCase())
 
   let html = `
@@ -903,6 +903,15 @@ function formatKind(kind: string): string {
     default:
       return kind
   }
+}
+
+function getDisplayDirection(event: TraceEvent): string {
+  if (event.kind !== 'invoke') {
+    return event.direction
+  }
+
+  const isResponse = Boolean(event.tsEnd || event.response || event.status === 'error')
+  return isResponse ? 'main→renderer' : 'renderer→main'
 }
 
 function updatePinButton() {
