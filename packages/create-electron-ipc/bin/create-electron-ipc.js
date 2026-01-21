@@ -27,9 +27,14 @@ function parseArgs(argv) {
     appId: null,
     author: null,
     noInstall: false,
+    help: false,
   }
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]
+    if (arg === '--help' || arg === '-h') {
+      args.help = true
+      continue
+    }
     if (arg === '--no-install') {
       args.noInstall = true
       continue
@@ -224,10 +229,10 @@ async function updatePackageJson(targetDir, options) {
   pkg.dependencies['@number10/electron-ipc'] = options.electronIpcVersion
 
   if (options.validation === 'zod') {
-    pkg.dependencies.zod = '^3.23.8'
+    pkg.dependencies.zod = '^3.24.1'
     if (pkg.dependencies.valibot) delete pkg.dependencies.valibot
   } else if (options.validation === 'valibot') {
-    pkg.dependencies.valibot = '^0.33.2'
+    pkg.dependencies.valibot = '^1.0.0'
     if (pkg.dependencies.zod) delete pkg.dependencies.zod
   } else {
     if (pkg.dependencies.zod) delete pkg.dependencies.zod
@@ -310,8 +315,44 @@ const quitHandler = () => {
   }
 }
 
+function showHelp() {
+  console.log(`
+@number10/create-electron-ipc
+
+Create a new Electron app with type-safe IPC contracts.
+
+Usage:
+  npm create @number10/electron-ipc [options]
+  npx @number10/create-electron-ipc [options]
+
+Options:
+  --dir <path>              Target directory (default: current directory)
+  --name <name>             Package name (default: directory name)
+  --package-name <name>     Alias for --name
+  --product-name <name>     Product name (default: formatted package name)
+  --app-id <id>             Application ID (default: com.example.<name>)
+  --author <name>           Author name
+  --pm <manager>            Package manager: pnpm, npm (default: pnpm)
+  --inspector <y/n>         Include IPC Inspector (default: n)
+  --validation <type>       Validation: none, zod, valibot (default: none)
+  --no-install              Skip dependency installation
+  --help, -h                Show this help message
+
+Examples:
+  npm create @number10/electron-ipc
+  npm create @number10/electron-ipc -- --dir my-app --validation zod
+  npx @number10/create-electron-ipc --name my-app --inspector y
+`)
+}
+
 async function run() {
   const args = parseArgs(process.argv.slice(2))
+
+  if (args.help) {
+    showHelp()
+    return
+  }
+
   const rl = createInterface()
   const isInteractive = Boolean(process.stdin.isTTY)
 

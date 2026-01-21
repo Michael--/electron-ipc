@@ -9,15 +9,65 @@ npm install
 npm run dev
 ```
 
+## Available Scripts
+
+- `npm run dev` - Start development server with hot reload
+- `npm run build` - Build app for production
+- `npm run preview` - Preview production build
+- `npm run generate` - Generate IPC contracts from config
+- `npm run generate:watch` - Watch mode for IPC generation
+- `npm run generate:check` - Verify generated code is up-to-date
+- `npm run typecheck` - Run TypeScript type checking
+- `npm run lint` - Lint code with ESLint
+- `npm run format` - Format code with Prettier
+- `npm run package` - Package app for current platform
+- `npm run package:mac` - Package for macOS
+- `npm run package:win` - Package for Windows
+- `npm run package:linux` - Package for Linux
+
 ## What it includes
 
-- Invoke contract: `Add`
-- Event contract: `Quit`
-- Broadcast contract: `About` (triggered from the app menu)
+- Invoke contract: `Add` - Request-response communication
+- Event contract: `Quit` - Fire-and-forget event
+- Broadcast contract: `About` - Main-to-renderer broadcast (triggered from app menu)
 - Optional IPC Inspector (if enabled during setup)
 
-## Structure
+## Project Structure
 
-- `src/main/` - Main process + IPC handlers
-- `src/preload/` - Context bridge exposure
-- `public/` - Renderer (Vite + React)
+```
+.
+├── src/
+│   ├── main/           # Main process code
+│   │   ├── index.ts    # Entry point + window setup
+│   │   ├── ipc-api.ts  # IPC contract definitions
+│   │   └── ipc-config.yaml  # Generator configuration
+│   └── preload/        # Preload script (context bridge)
+│       └── index.ts
+├── public/             # Renderer process (React)
+│   ├── App.tsx         # Main React component
+│   ├── index.html      # HTML entry
+│   └── renderer.tsx    # React setup
+└── dist/               # Generated IPC code & build output
+```
+
+## Building & Packaging
+
+1. Generate IPC contracts: `npm run generate`
+2. Build the app: `npm run build`
+3. Package for distribution: `npm run package`
+
+The packaged app will be in the `out/` directory.
+
+## Troubleshooting
+
+**Generated types not found?**
+- Run `npm run generate` to create IPC contracts
+- Check that `dist/ipc-api.ts` exists
+
+**Hot reload not working?**
+- Ensure `npm run dev` is running
+- Check console for errors
+
+**Build fails?**
+- Run `npm run typecheck` to see type errors
+- Ensure all dependencies are installed
