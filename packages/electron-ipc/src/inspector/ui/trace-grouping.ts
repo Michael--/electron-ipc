@@ -54,6 +54,14 @@ export function buildRenderRows(
   return { filteredEvents, renderRows }
 }
 
+function shouldExpectEnd(event: TraceEvent): boolean {
+  return event.kind === 'invoke' || event.kind === 'streamInvoke' || event.kind === 'streamUpload'
+}
+
+function isSpanIncomplete(event: TraceEvent): boolean {
+  return shouldExpectEnd(event) && event.tsEnd === undefined
+}
+
 function buildSpanSummaries(events: TraceEvent[]): TraceEvent[] {
   const spanMap = new Map<string, SpanAggregate>()
 
@@ -203,7 +211,7 @@ function buildTraceRows(spans: TraceEvent[]): RenderRow[] {
     }, undefined)
     const status = getAggregateStatus(nodes.map((node) => node.event))
     const errorCount = nodes.filter((node) => node.event.status === 'error').length
-    const incompleteCount = nodes.filter((node) => node.tsEnd === undefined).length
+    const incompleteCount = nodes.filter((node) => isSpanIncomplete(node.event)).length
 
     return {
       traceId,
@@ -270,7 +278,7 @@ function appendSpanRows(
     type: 'span',
     event: node.event,
     depth,
-    isIncomplete: node.tsEnd === undefined,
+    isIncomplete: isSpanIncomplete(node.event),
     traceId: node.traceId,
     spanId: node.spanId,
   })
