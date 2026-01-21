@@ -36,6 +36,7 @@
  */
 
 import { BrowserWindow } from 'electron'
+import { getCurrentTraceContext, wrapTracePayload } from '../inspector/trace-propagation'
 
 /**
  * IBroadcastContract: A generic interface defining the structure for IPC send contracts.
@@ -70,7 +71,10 @@ export function createBroadcast<T>() {
     payload: T[K] extends { payload: infer P } ? P : never // Ensure payload compatibility
   ): void => {
     if (!mainWindow.isDestroyed()) {
-      mainWindow.webContents.send(channel as string, payload)
+      mainWindow.webContents.send(
+        channel as string,
+        wrapTracePayload(payload, getCurrentTraceContext())
+      )
     }
   }
 }

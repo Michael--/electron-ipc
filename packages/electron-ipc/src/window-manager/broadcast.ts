@@ -1,3 +1,4 @@
+import { getCurrentTraceContext, wrapTracePayload } from '../inspector/trace-propagation'
 import { getWindowRegistry } from './registry'
 
 /**
@@ -37,13 +38,14 @@ export function createBroadcastToAll<T>() {
   ): void {
     const registry = getWindowRegistry()
     const windows = registry.getAll()
+    const tracePayload = wrapTracePayload(payload, getCurrentTraceContext())
 
     windows.forEach((meta) => {
       // Skip excluded roles
       if (options?.excludeRoles?.includes(meta.role)) return
 
       if (!meta.window.isDestroyed()) {
-        meta.window.webContents.send(channel as string, payload)
+        meta.window.webContents.send(channel as string, tracePayload)
       }
     })
   }
@@ -75,10 +77,11 @@ export function createBroadcastToRole<T>(role: string) {
   function broadcast<K extends keyof T>(channel: K, payload?: BroadcastPayload<T, K>): void {
     const registry = getWindowRegistry()
     const windows = registry.getByRole(role)
+    const tracePayload = wrapTracePayload(payload, getCurrentTraceContext())
 
     windows.forEach((meta) => {
       if (!meta.window.isDestroyed()) {
-        meta.window.webContents.send(channel as string, payload)
+        meta.window.webContents.send(channel as string, tracePayload)
       }
     })
   }

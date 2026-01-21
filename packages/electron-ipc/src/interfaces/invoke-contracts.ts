@@ -38,6 +38,12 @@
  */
 
 import { ipcMain, IpcMainInvokeEvent } from 'electron'
+import {
+  getCurrentTraceContext,
+  runWithTraceContext,
+  unwrapTracePayload,
+  wrapTracePayload,
+} from '../inspector/trace-propagation'
 import type {
   GenericInvokeContract,
   GenericStreamInvokeContract,
@@ -99,7 +105,10 @@ function handle<T extends GenericInvokeContract<T>, K extends keyof T>(
   ) => Promise<ResponseType<T, K>> | ResponseType<T, K>
 ): void {
   ipcMain.removeHandler(channel as string)
-  ipcMain.handle(channel as string, listener)
+  ipcMain.handle(channel as string, (event, args) => {
+    const { payload, trace } = unwrapTracePayload(args)
+    return runWithTraceContext(trace, () => listener(event, payload as RequestType<T, K>))
+  })
 }
 
 /**
@@ -259,42 +268,54 @@ export abstract class AbstractRegisterStreamHandler {
 
     for (const [channel, handler] of Object.entries(this.handlers)) {
       ipcMain.handle(channel as string, async (event, args) => {
-        const stream = handler(event, args)
+        const { payload, trace } = unwrapTracePayload(args)
+        return runWithTraceContext(trace, async () => {
+          const stream = handler(event, payload as StreamRequestType<any, any>)
 
-        // Check if this is a Web Streams API ReadableStream (has getReader method)
-        if (typeof stream.getReader === 'function') {
-          // Web Streams API
-          const reader = stream.getReader()
-          const key = `${event.sender.id}:${channel}`
-          const existingReader = activeReaders.get(key)
-          if (existingReader) {
+          // Check if this is a Web Streams API ReadableStream (has getReader method)
+          if (typeof stream.getReader === 'function') {
+            // Web Streams API
+            const reader = stream.getReader()
+            const key = `${event.sender.id}:${channel}`
+            const existingReader = activeReaders.get(key)
+            if (existingReader) {
+              try {
+                await existingReader.cancel()
+              } catch {
+                // Ignore cancel errors
+              }
+            }
+            activeReaders.set(key, reader)
             try {
-              await existingReader.cancel()
-            } catch {
-              // Ignore cancel errors
+              while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+                event.sender.send(
+                  `${channel}-data`,
+                  wrapTracePayload(value, getCurrentTraceContext())
+                )
+              }
+              event.sender.send(
+                `${channel}-end`,
+                wrapTracePayload(undefined, getCurrentTraceContext())
+              )
+            } catch (err) {
+              event.sender.send(`${channel}-error`, wrapTracePayload(err, getCurrentTraceContext()))
+            } finally {
+              activeReaders.delete(key)
+              reader.releaseLock()
             }
+          } else {
+            // Fallback: Not a Web Streams API stream
+            event.sender.send(
+              `${channel}-error`,
+              wrapTracePayload(
+                new Error('Handler must return a Web Streams API ReadableStream'),
+                getCurrentTraceContext()
+              )
+            )
           }
-          activeReaders.set(key, reader)
-          try {
-            while (true) {
-              const { done, value } = await reader.read()
-              if (done) break
-              event.sender.send(`${channel}-data`, value)
-            }
-            event.sender.send(`${channel}-end`)
-          } catch (err) {
-            event.sender.send(`${channel}-error`, err)
-          } finally {
-            activeReaders.delete(key)
-            reader.releaseLock()
-          }
-        } else {
-          // Fallback: Not a Web Streams API stream
-          event.sender.send(
-            `${channel}-error`,
-            new Error('Handler must return a Web Streams API ReadableStream')
-          )
-        }
+        })
       })
 
       ipcMain.on(`${channel}-cancel`, async (event) => {

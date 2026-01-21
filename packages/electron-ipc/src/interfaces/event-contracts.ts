@@ -36,6 +36,7 @@
  */
 
 import { ipcMain, IpcMainInvokeEvent } from 'electron'
+import { runWithTraceContext, unwrapTracePayload } from '../inspector/trace-propagation'
 import type { EventType, GenericRendererEventContract } from './types'
 
 /**
@@ -68,7 +69,10 @@ function on<T extends GenericRendererEventContract<T>, K extends keyof T>(
   listener: (event: IpcMainInvokeEvent, args: EventType<T, K>) => void
 ): void {
   ipcMain.removeHandler(channel as string)
-  ipcMain.on(channel as string, listener)
+  ipcMain.on(channel as string, (event, args) => {
+    const { payload, trace } = unwrapTracePayload(args)
+    runWithTraceContext(trace, () => listener(event, payload as EventType<T, K>))
+  })
 }
 
 /**

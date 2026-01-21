@@ -93,6 +93,12 @@
  */
 
 import { ipcMain, IpcMainInvokeEvent } from 'electron'
+import {
+  getCurrentTraceContext,
+  runWithTraceContext,
+  unwrapTracePayload,
+  wrapTracePayload,
+} from '../inspector/trace-propagation'
 import type {
   DownloadDataType,
   DownloadRequestType,
@@ -101,6 +107,7 @@ import type {
   UploadDataType,
   UploadRequestType,
 } from './types'
+import type { TraceContext } from '../inspector/types'
 
 /**
  * IStreamUploadContract: A generic interface defining the structure for IPC stream upload contracts.
@@ -201,12 +208,14 @@ export abstract class AbstractRegisterStreamUpload {
         onData: (chunk: import('./types').Serializable) => void
         onEnd: () => void
         onError: (error: unknown) => void
+        trace?: TraceContext
       }
     >()
 
     for (const [channel, handler] of Object.entries(this.handlers)) {
       // Listen for stream start with request parameter
       ipcMain.on(`${channel}-start`, (_event, request) => {
+        const { payload, trace } = unwrapTracePayload(request)
         // Create callback functions that the handler can replace
         let onDataCallback: (chunk: import('./types').Serializable) => void = (_chunk) => {
           // Default: do nothing
@@ -233,25 +242,32 @@ export abstract class AbstractRegisterStreamUpload {
           onData: (chunk) => onDataCallback(chunk),
           onEnd: () => onEndCallback(),
           onError: (error) => onErrorCallback(error),
+          trace,
         })
 
         // Call the handler with the request and callback setters
-        handler(request, onData, onEnd, onError)
+        runWithTraceContext(trace, () => {
+          handler(payload as UploadRequestType<any, any>, onData, onEnd, onError)
+        })
       })
 
       // Listen for data chunks
       ipcMain.on(`${channel}-data`, (_event, chunk) => {
         const callbacks = activeCallbacks.get(channel)
         if (callbacks) {
-          callbacks.onData(chunk)
+          const { payload, trace } = unwrapTracePayload(chunk)
+          const activeTrace = trace ?? callbacks.trace
+          runWithTraceContext(activeTrace, () => callbacks.onData(payload))
         }
       })
 
       // Listen for stream end
-      ipcMain.on(`${channel}-end`, () => {
+      ipcMain.on(`${channel}-end`, (_event, endPayload) => {
         const callbacks = activeCallbacks.get(channel)
         if (callbacks) {
-          callbacks.onEnd()
+          const { trace } = unwrapTracePayload(endPayload)
+          const activeTrace = trace ?? callbacks.trace
+          runWithTraceContext(activeTrace, () => callbacks.onEnd())
           activeCallbacks.delete(channel)
         }
       })
@@ -260,7 +276,9 @@ export abstract class AbstractRegisterStreamUpload {
       ipcMain.on(`${channel}-error`, (_event, err) => {
         const callbacks = activeCallbacks.get(channel)
         if (callbacks) {
-          callbacks.onError(err)
+          const { payload, trace } = unwrapTracePayload(err)
+          const activeTrace = trace ?? callbacks.trace
+          runWithTraceContext(activeTrace, () => callbacks.onError(payload))
           activeCallbacks.delete(channel)
         }
       })
@@ -362,31 +380,40 @@ export abstract class AbstractRegisterStreamDownload {
 
     for (const [channel, handler] of Object.entries(this.handlers)) {
       ipcMain.handle(channel as string, async (event, request) => {
-        const stream = handler(request, event)
-        const reader = stream.getReader()
-        const key = `${event.sender.id}:${channel}`
-        const existingReader = activeReaders.get(key)
-        if (existingReader) {
+        const { payload, trace } = unwrapTracePayload(request)
+        return runWithTraceContext(trace, async () => {
+          const stream = handler(payload as DownloadRequestType<any, any>, event)
+          const reader = stream.getReader()
+          const key = `${event.sender.id}:${channel}`
+          const existingReader = activeReaders.get(key)
+          if (existingReader) {
+            try {
+              await existingReader.cancel()
+            } catch {
+              // Ignore cancel errors
+            }
+          }
+          activeReaders.set(key, reader)
           try {
-            await existingReader.cancel()
-          } catch {
-            // Ignore cancel errors
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              event.sender.send(
+                `${channel}-data`,
+                wrapTracePayload(value, getCurrentTraceContext())
+              )
+            }
+            event.sender.send(
+              `${channel}-end`,
+              wrapTracePayload(undefined, getCurrentTraceContext())
+            )
+          } catch (err) {
+            event.sender.send(`${channel}-error`, wrapTracePayload(err, getCurrentTraceContext()))
+          } finally {
+            activeReaders.delete(key)
+            reader.releaseLock()
           }
-        }
-        activeReaders.set(key, reader)
-        try {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-            event.sender.send(`${channel}-data`, value)
-          }
-          event.sender.send(`${channel}-end`)
-        } catch (err) {
-          event.sender.send(`${channel}-error`, err)
-        } finally {
-          activeReaders.delete(key)
-          reader.releaseLock()
-        }
+        })
       })
 
       ipcMain.on(`${channel}-cancel`, async (event) => {
