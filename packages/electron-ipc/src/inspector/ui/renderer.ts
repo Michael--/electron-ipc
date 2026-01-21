@@ -9,6 +9,7 @@
 
 import type { TraceEvent } from '../types'
 import type { InspectorAPI } from './preload'
+import { computeMetrics } from '../metrics'
 import { buildRenderRows } from './trace-grouping'
 import type { RenderRow, SpanRow, TraceRow, TraceRowFilter } from './trace-grouping'
 
@@ -87,14 +88,6 @@ let serverBufferSize = 5000 // Server-side RingBuffer capacity
 let uiMaxEvents = 10000 // UI-side max events to display
 let lastSeqNumber = 0
 let detectedGaps = 0
-
-// Channel statistics
-interface ChannelStats {
-  count: number
-  errors: number
-  totalDuration: number
-}
-const channelStats = new Map<string, ChannelStats>()
 
 /**
  * Initialize inspector UI
@@ -272,7 +265,6 @@ function setupEventListeners() {
       statsStartTime = Date.now()
       lastSeqNumber = 0
       detectedGaps = 0
-      channelStats.clear()
       elements.gapCount.style.display = 'none'
       elements.gapCount.textContent = ''
       applyFilters()
@@ -424,7 +416,6 @@ function trimToUiLimit(): boolean {
 
 function appendEvent(event: TraceEvent): boolean {
   if (event.seq) detectGap(event.seq)
-  trackChannelStats(event)
   allEvents.push(event)
   renderRowsDirty = true
 
@@ -436,7 +427,6 @@ function appendEventBatch(events: TraceEvent[]): boolean {
   let changed = false
   for (const event of events) {
     if (event.seq) detectGap(event.seq)
-    trackChannelStats(event)
     allEvents.push(event)
     changed = true
   }
@@ -1164,17 +1154,6 @@ async function pollServerStatus() {
 }
 
 /**
- * Track channel statistics
- */
-function trackChannelStats(event: TraceEvent) {
-  const stats = channelStats.get(event.channel) || { count: 0, errors: 0, totalDuration: 0 }
-  stats.count++
-  if (event.status === 'error') stats.errors++
-  if (event.durationMs) stats.totalDuration += event.durationMs
-  channelStats.set(event.channel, stats)
-}
-
-/**
  * Detect sequence number gaps
  */
 function detectGap(seq: number) {
@@ -1224,35 +1203,67 @@ function updateStatistics() {
  * Update statistics panel with channel breakdown
  */
 function updateStatsPanel() {
-  if (channelStats.size === 0) {
+  const metrics = computeMetrics(allEvents)
+  if (metrics.length === 0) {
     elements.statsContent.innerHTML =
       '<p style="color: #888; text-align: center; padding: 20px">No data yet</p>'
     return
   }
 
-  // Sort channels by count
-  const sortedChannels = Array.from(channelStats.entries()).sort((a, b) => b[1].count - a[1].count)
+  let html = `
+    <table class="metrics-table">
+      <thead>
+        <tr>
+          <th>Channel</th>
+          <th>Kind</th>
+          <th>Count</th>
+          <th>Errors</th>
+          <th>Error %</th>
+          <th>p50</th>
+          <th>p95</th>
+          <th>Bytes</th>
+          <th>Throughput</th>
+        </tr>
+      </thead>
+      <tbody>
+  `
 
-  let html = ''
-  for (const [channel, stats] of sortedChannels) {
-    const safeChannel = escapeHtml(channel)
-    const avgDuration = stats.count > 0 ? (stats.totalDuration / stats.count).toFixed(2) : '0'
-    const errorRate = stats.count > 0 ? ((stats.errors / stats.count) * 100).toFixed(1) : '0'
-    const hasErrors = stats.errors > 0
+  for (const metric of metrics) {
+    const safeChannel = escapeHtml(metric.channel)
+    const safeKind = escapeHtml(formatKind(metric.kind))
+    const errorRate = formatPercent(metric.errorRate)
+    const p50 = formatDuration(metric.p50)
+    const p95 = formatDuration(metric.p95)
+    const bytes = metric.bytes > 0 ? formatBytes(metric.bytes) : '-'
+    const throughput =
+      metric.throughputBps !== undefined ? `${formatBytes(metric.throughputBps)}/s` : '-'
 
     html += `
-      <div class="channel-stat ${hasErrors ? 'has-errors' : ''}">
-        <div class="channel-name">${safeChannel}</div>
-        <div class="channel-metrics">
-          <span class="channel-metric">📊 ${stats.count} calls</span>
-          ${stats.errors > 0 ? `<span class="channel-metric" style="color: #f48771">❌ ${stats.errors} errors (${errorRate}%)</span>` : ''}
-          ${stats.totalDuration > 0 ? `<span class="channel-metric">⏱ ${avgDuration}ms avg</span>` : ''}
-        </div>
-      </div>
+      <tr class="${metric.errorCount > 0 ? 'metric-row-error' : ''}">
+        <td class="metric-channel">${safeChannel}</td>
+        <td>${safeKind}</td>
+        <td class="metric-number">${metric.count}</td>
+        <td class="metric-number">${metric.errorCount}</td>
+        <td class="metric-number">${errorRate}</td>
+        <td class="metric-number">${p50}</td>
+        <td class="metric-number">${p95}</td>
+        <td class="metric-number">${bytes}</td>
+        <td class="metric-number">${throughput}</td>
+      </tr>
     `
   }
 
+  html += '</tbody></table>'
   elements.statsContent.innerHTML = html
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`
+}
+
+function formatDuration(value?: number): string {
+  if (value === undefined) return '-'
+  return `${value.toFixed(2)}ms`
 }
 
 function isNearBottom(element: HTMLElement, threshold: number): boolean {
