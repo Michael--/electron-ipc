@@ -1,0 +1,29 @@
+{
+  "name": "@number10/create-electron-ipc",
+  "version": "0.1.0",
+  "description": "Scaffold a new Electron IPC app powered by @number10/electron-ipc",
+  "type": "commonjs",
+  "bin": {
+    "create-electron-ipc": "bin/create-electron-ipc.js"
+  },
+  "files": [
+    "bin",
+    "templates",
+    "README.md"
+  ],
+  "keywords": [
+    "electron",
+    "electron-ipc",
+    "scaffold",
+    "create",
+    "cli",
+    "template",
+    "vite",
+    "react"
+  ],
+  "author": "Michael Rieck (Michael--) <mr@number10.de>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

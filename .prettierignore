@@ -26,3 +26,6 @@ coverage
 # Generated files
 *-generated.ts
 *-generated.js
+
+# Template files (keep placeholders intact)
+packages/create-electron-ipc/templates/**

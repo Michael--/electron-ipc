@@ -1,0 +1,259 @@
+body {
+  margin: 0;
+  padding: 20px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #404040;
+}
+
+h1 {
+  color: #61dafb;
+  margin-bottom: 8px;
+  font-size: 2em;
+}
+
+.subtitle {
+  color: #888;
+  font-size: 0.9em;
+  margin: 0;
+}
+
+.section {
+  margin-bottom: 25px;
+}
+
+.section-title {
+  color: #61dafb;
+  font-size: 1.2em;
+  margin-bottom: 12px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #404040;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.demo-card {
+  background: #2d2d2d;
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid #404040;
+}
+
+.demo-card.broadcast {
+  border-left: 3px solid #4ade80;
+}
+
+.demo-card.invoke {
+  border-left: 3px solid #60a5fa;
+}
+
+.demo-card.event {
+  border-left: 3px solid #f87171;
+}
+
+.demo-title {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #d4d4d4;
+}
+
+.demo-description {
+  font-size: 0.85em;
+  color: #888;
+  margin: 0 0 12px 0;
+}
+
+.demo-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.demo-result {
+  margin-top: 8px;
+  padding: 8px;
+  background: #1e1e1e;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #ce9178;
+}
+
+button {
+  background: #404040;
+  color: #d4d4d4;
+  border: 1px solid #555;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: #555;
+  border-color: #777;
+}
+
+button.primary {
+  background: #61dafb;
+  color: #1e1e1e;
+  border-color: #61dafb;
+}
+
+button.primary:hover {
+  background: #4fa8d1;
+}
+
+input[type='text'],
+input[type='number'] {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border: 1px solid #404040;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  width: 80px;
+}
+
+code {
+  background: #1e1e1e;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #ce9178;
+  font-size: 0.9em;
+}
+
+.demo-error {
+  color: #f48771;
+  background: rgba(244, 135, 113, 0.1);
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-top: 8px;
+  font-size: 0.85em;
+}
+
+.stream-output {
+  max-height: 100px;
+  min-height: 60px;
+  height: 100px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #252525;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  padding: 8px;
+  margin-top: 8px;
+  scroll-behavior: smooth;
+}
+
+.stream-output em {
+  color: #888;
+  font-style: italic;
+}
+
+.stream-message {
+  padding: 4px 8px;
+  margin: 2px 0;
+  background: #2d2d2d;
+  border-left: 2px solid #61dafb;
+  border-radius: 2px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.footer {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #404040;
+  text-align: center;
+  font-size: 0.8em;
+  color: #666;
+}
+
+/* Toggle Styles */
+.api-toggle {
+  display: flex;
+  gap: 0;
+  justify-content: center;
+  margin-bottom: 24px;
+  background: #2d2d2d;
+  padding: 4px;
+  border-radius: 6px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.toggle-button {
+  padding: 8px 20px;
+  font-size: 0.9em;
+  border: none;
+  background: transparent;
+  color: #888;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+
+.toggle-button.active {
+  background: #61dafb;
+  color: #1e1e1e;
+  font-weight: 600;
+}
+
+.toggle-button:hover:not(.active) {
+  background: #404040;
+  color: #d4d4d4;
+}
+
+/* Variant Badge */
+.variant-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: #404040;
+  color: #61dafb;
+  font-size: 0.8em;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+/* Stream specific */
+.demo-card.stream {
+  border-left: 3px solid #c084fc;
+}

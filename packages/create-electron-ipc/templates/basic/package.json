@@ -1,0 +1,61 @@
+{
+  "name": "__PACKAGE_NAME__",
+  "version": "0.1.0",
+  "description": "Electron app powered by @number10/electron-ipc",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "dev": "mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml && electron-vite dev",
+    "build": "mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml && electron-vite build",
+    "preview": "electron-vite preview",
+    "clean": "rimraf dist out *.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,html,css}\"",
+    "generate": "mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml",
+    "generate:watch": "mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml --watch",
+    "generate:check": "mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml --check",
+    "package": "electron-builder",
+    "package:mac": "electron-builder --mac",
+    "package:win": "electron-builder --win",
+    "package:linux": "electron-builder --linux"
+  },
+  "keywords": [],
+  "author": "__AUTHOR__",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "@vitest/ui": "^1.0.4",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "electron-vite": "^2.0.0",
+    "mkdirp": "^3.0.1",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.8",
+    "vitest": "^1.0.4"
+  },
+  "dependencies": {
+    "@number10/electron-ipc": "__ELECTRON_IPC_VERSION__",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^3.23.8"
+  },
+  "build": {
+    "appId": "__APP_ID__",
+    "productName": "__PRODUCT_NAME__",
+    "directories": {
+      "output": "out"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools"
+    }
+  }
+}

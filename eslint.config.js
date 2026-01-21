@@ -14,6 +14,7 @@ export default [
       '**/build/**',
       '**/*.config.{js,ts}',
       '**/.electron/**',
+      'packages/create-electron-ipc/templates/**',
     ],
   },
   js.configs.recommended,
