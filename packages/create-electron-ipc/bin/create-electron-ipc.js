@@ -273,28 +273,35 @@ const quitHandler = withEventValidation(voidValidator, () => {
   if (mode === 'valibot') {
     return {
       helperImports: '  validatorFromSafeParse,\n  withEventValidation,\n  withInvokeValidation,\n',
-      libraryImports: "import { number, object, safeParse } from 'valibot'\n",
+      libraryImports:
+        "import { type GenericSchema, number, object, safeParse, undefined as undefinedSchema } from 'valibot'\n",
       handlers: `const addSchema = object({ a: number(), b: number() })
 const addResponseSchema = number()
+const voidSchema = undefinedSchema() as GenericSchema<void>
 
-const safeParseValibot = (schema, input) => {
+const safeParseValibot = <T>(schema: GenericSchema<T>, input: unknown) => {
   const result = safeParse(schema, input)
-  if (result.success) return { success: true, data: result.output }
-  return { success: false, error: result.issues }
+  if (result.success) {
+    return { success: true as const, data: result.output }
+  }
+  return { success: false as const, error: result.issues }
 }
 
-const voidValidator = validatorFromSafeParse((input) => {
-  if (input === undefined) return { success: true, data: undefined }
-  return { success: false, error: new Error('Expected undefined') }
-})
-const addRequestValidator = validatorFromSafeParse((input) => safeParseValibot(addSchema, input))
-const addResponseValidator = validatorFromSafeParse((input) =>
+const voidValidator = validatorFromSafeParse<void>((input: unknown) =>
+  safeParseValibot(voidSchema, input)
+)
+const addRequestValidator = validatorFromSafeParse((input: unknown) =>
+  safeParseValibot(addSchema, input)
+)
+const addResponseValidator = validatorFromSafeParse((input: unknown) =>
   safeParseValibot(addResponseSchema, input)
 )
 
 const addHandler = withInvokeValidation(
   { request: addRequestValidator, response: addResponseValidator },
-  async (_event, request) => request.a + request.b
+  async (_event, request) => {
+    return request.a + request.b
+  }
 )
 
 const quitHandler = withEventValidation(voidValidator, () => {
@@ -307,8 +314,14 @@ const quitHandler = withEventValidation(voidValidator, () => {
   return {
     helperImports: '',
     libraryImports: '',
-    handlers: `const addHandler = async (_event, request) => request.a + request.b
-const quitHandler = () => {
+    handlers: `const addHandler = async (
+  _event: Electron.IpcMainInvokeEvent,
+  request: { a: number; b: number }
+): Promise<number> => {
+  return request.a + request.b
+}
+
+const quitHandler = (): void => {
   app.quit()
 }
 `,
@@ -447,8 +460,17 @@ async function run() {
     }
     if (!shouldInstall) {
       console.log(`  ${pm} install`)
+      if (pm === 'pnpm') {
+        console.log(`  ${pm} approve-builds`)
+      }
     }
     console.log(`  ${pm} run dev`)
+    if (pm === 'pnpm') {
+      console.log(`\nNote: If you see "Ignored build scripts" warning, run:`)
+      console.log(`  pnpm approve-builds`)
+    }
+    console.log(`\nNote: On Windows, if Electron fails to start, try:`)
+    console.log(`  ${pm} rebuild electron`)
   } catch (error) {
     console.error('\nFailed to create project.')
     console.error(error.message || error)

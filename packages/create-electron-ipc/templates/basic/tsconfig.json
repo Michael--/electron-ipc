@@ -29,6 +29,6 @@
       "@gen/*": ["./dist/*"]
     }
   },
-  "include": ["src/**/*", "public/**/*", "dist/**/*"],
+  "include": ["src/**/*", "public/**/*", "dist/**/*", "electron.vite.config.ts"],
   "exclude": ["node_modules", "dist", "out"]
 }

@@ -8,9 +8,9 @@
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-vite",
       "args": ["dev", "--sourcemap"],
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "resolveSourceMapLocations": [
-        "${workspaceFolder}/dist/**",
+        "${workspaceFolder}/out/**",
         "!**/node_modules/**"
       ],
       "skipFiles": ["<node_internals>/**"]

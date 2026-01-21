@@ -71,3 +71,19 @@ The packaged app will be in the `out/` directory.
 **Build fails?**
 - Run `npm run typecheck` to see type errors
 - Ensure all dependencies are installed
+
+**pnpm "Ignored build scripts" warning?**
+- Run `pnpm approve-builds` to allow electron and esbuild to run build scripts
+- Or add to `.npmrc`: `enable-pre-post-scripts=true`
+- This is a pnpm security feature to control which packages can run scripts
+
+**"Electron uninstall" error on Windows?**
+- Delete `node_modules` and lock file
+- Reinstall: `npm install` or `pnpm install`
+- If still failing: `npm rebuild electron` or `pnpm rebuild electron`
+- Check antivirus isn't blocking Electron installation
+
+**Electron fails to start?**
+- Check if `out/main/index.js` exists after build
+- Verify preload script path in console
+- Try `npm run clean` then `npm run dev`

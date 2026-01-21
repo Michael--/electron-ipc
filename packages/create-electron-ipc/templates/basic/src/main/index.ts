@@ -1,4 +1,4 @@
-import { BroadcastContracts, EventContracts, InvokeContracts } from '@gen/ipc-api'
+import type { BroadcastContracts, EventContracts, InvokeContracts } from '@gen/ipc-api'
 import {
   AbstractRegisterEvent,
   AbstractRegisterHandler,
@@ -7,7 +7,6 @@ import {
 __VALIDATION_HELPER_IMPORTS__
 } from '@number10/electron-ipc'
 import {
-  closeInspector,
   enableIpcInspector,
   getInspectorWindow,
 } from '@number10/electron-ipc/inspector'
@@ -18,6 +17,14 @@ __VALIDATION_LIBRARY_IMPORTS__
 
 // Prevent Electron warning about unsupported NODE_OPTIONS.
 delete process.env.NODE_OPTIONS
+
+// Suppress harmless Autofill DevTools protocol warnings
+process.on('warning', (warning) => {
+  if (warning.message?.includes('Autofill')) {
+    return
+  }
+  console.warn(warning)
+})
 
 const inspectorEnabled = __INSPECTOR_ENABLED__
 
@@ -37,58 +44,63 @@ class RegisterEvent extends AbstractRegisterEvent {
 
 let mainWindow: BrowserWindow | null = null
 
-function toggleInspectorWindow() {
+function toggleInspectorWindow(): void {
   const inspectorWindow = getInspectorWindow()
   if (inspectorWindow) {
     if (inspectorWindow.isVisible()) {
-      closeInspector()
+      inspectorWindow.hide()
     } else {
       inspectorWindow.show()
       inspectorWindow.focus()
     }
-    return
+  } else {
+    enableIpcInspector({ openOnStart: true })
   }
-
-  enableIpcInspector({ openOnStart: true })
 }
 
-function buildMenu() {
+function buildMenu(): void {
   const broadcastAll = createBroadcastToAll<BroadcastContracts>()
-  const appMenu = {
+  const appMenu: Electron.MenuItemConstructorOptions = {
     label: '__PRODUCT_NAME__',
     submenu: [
       {
         label: 'About',
-        click: () => broadcastAll('About'),
+        click: () => {
+          broadcastAll('About')
+        },
       },
       { type: 'separator' },
       {
         label: 'Quit',
-        click: () => app.quit(),
+        click: () => {
+          app.quit()
+        },
       },
     ],
   }
 
-  const viewMenu = {
+  const viewMenu: Electron.MenuItemConstructorOptions = {
     label: 'View',
     submenu: [
       { role: 'reload' },
-      { role: 'toggleDevTools', accelerator: 'CmdOrCtrl+Alt+I' },
+      { role: 'toggleDevTools' },
     ],
   }
 
   if (inspectorEnabled) {
-    appMenu.submenu.splice(1, 0, {
+    const appSubmenu = appMenu.submenu as Electron.MenuItemConstructorOptions[]
+    appSubmenu.splice(1, 0, {
       label: 'Toggle IPC Inspector',
       accelerator: 'CmdOrCtrl+Shift+I',
       click: toggleInspectorWindow,
     })
-    viewMenu.submenu.unshift({
+    const viewSubmenu = viewMenu.submenu as Electron.MenuItemConstructorOptions[]
+    viewSubmenu.unshift({
       label: 'Toggle IPC Inspector',
       accelerator: 'CmdOrCtrl+Shift+I',
       click: toggleInspectorWindow,
     })
-    viewMenu.submenu.splice(1, 0, { type: 'separator' })
+    viewSubmenu.splice(1, 0, { type: 'separator' })
   }
 
   Menu.setApplicationMenu(Menu.buildFromTemplate([appMenu, viewMenu]))
@@ -112,11 +124,11 @@ function createWindow() {
   RegisterHandler.register()
   RegisterEvent.register()
 
-  const devServerUrl = process.env.ELECTRON_RENDERER_URL || process.env.VITE_DEV_SERVER_URL
+  const devServerUrl = process.env.ELECTRON_RENDERER_URL ?? process.env.VITE_DEV_SERVER_URL
   if (devServerUrl) {
-    mainWindow.loadURL(devServerUrl)
+    void mainWindow.loadURL(devServerUrl)
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
+    void mainWindow.loadFile(path.join(__dirname, '../../renderer/index.html'))
   }
 
   mainWindow.on('closed', () => {
@@ -126,14 +138,16 @@ function createWindow() {
   buildMenu()
 }
 
-app.whenReady().then(() => {
+void app.whenReady().then(() => {
   if (inspectorEnabled) {
     enableIpcInspector({ openOnStart: false })
   }
   createWindow()
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow()
+    }
   })
 })
 

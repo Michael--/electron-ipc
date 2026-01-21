@@ -54,13 +54,17 @@ export function App() {
               <input
                 type="number"
                 value={a}
-                onChange={(event) => setA(event.target.value)}
+                onChange={(event) => {
+                  setA(event.target.value)
+                }}
                 aria-label="Number A"
               />
               <input
                 type="number"
                 value={b}
-                onChange={(event) => setB(event.target.value)}
+                onChange={(event) => {
+                  setB(event.target.value)
+                }}
                 aria-label="Number B"
               />
               <button className="primary" onClick={onAdd}>

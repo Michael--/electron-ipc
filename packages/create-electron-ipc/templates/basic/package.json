@@ -2,8 +2,7 @@
   "name": "__PACKAGE_NAME__",
   "version": "0.1.0",
   "description": "Electron app powered by @number10/electron-ipc",
-  "main": "dist/main/index.js",
-  "type": "module",
+  "main": "out/main/index.js",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -46,7 +45,7 @@
     "rimraf": "^6.0.1",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.19.1",
-    "vite": "^6.0.7",
+    "vite": "^5.4.11",
     "vitest": "^2.1.8"
   },
   "dependencies": {
@@ -59,10 +58,10 @@
     "appId": "__APP_ID__",
     "productName": "__PRODUCT_NAME__",
     "directories": {
-      "output": "out"
+      "output": "dist"
     },
     "files": [
-      "dist/**/*",
+      "out/**/*",
       "package.json"
     ],
     "mac": {
