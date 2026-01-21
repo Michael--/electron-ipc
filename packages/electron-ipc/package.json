@@ -1,6 +1,6 @@
 {
   "name": "@number10/electron-ipc",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "TypeScript code generator for type-safe Electron IPC communication",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
