@@ -322,13 +322,12 @@ The test app includes CSP headers to prevent XSS attacks:
 - [x] IPC call logging/debugging (IPC Inspector with trace system)
 - [x] Support for streams (Stream Invoke, Stream Upload, Stream Download)
 - [x] Multiple window support (Window Manager with registry and role-based broadcasts)
+- [x] Metrics view backed by the ring buffer (p50/p95, error rate, payload/byte volume, throughput)
 
 ### Planned Features
 
 - P1 (High): Transaction-level tracing and correlation
   Detail: Stable IDs for invoke/stream lifecycles, group related events in the Inspector UI, and expose end-to-end timings.
-- P2 (High): Metrics view backed by the ring buffer
-  Detail: p50/p95 latency, error rate, payload/byte volume, and stream throughput per channel and contract kind.
 - P3 (Medium): Versioned export schema
   Detail: Add a `traceFormatVersion` and optional anonymized export to support reproducible bug reports and future tooling.
 - P4 (Medium): Automatic multi-window metadata
