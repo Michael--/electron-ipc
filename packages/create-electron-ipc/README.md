@@ -7,14 +7,30 @@ Scaffold a new Electron app using `@number10/electron-ipc` with a production-rea
 
 ## Quick Start
 
+**macOS/Linux:**
+
 ```bash
 npm create @number10/electron-ipc
 ```
 
-Or with options:
+**Windows:**
+
+```bash
+npx @number10/create-electron-ipc
+```
+
+> **Important:** Always use forward-slash `/` (not backslash `\`) in the package name, even on Windows. Use `npx` instead of `npm create` on Windows.
+
+**With options:**
 
 ```bash
 npx @number10/create-electron-ipc --name my-app --validation zod --inspector y
+```
+
+**Using pnpm (all platforms):**
+
+```bash
+pnpm dlx @number10/create-electron-ipc
 ```
 
 ## What You Get

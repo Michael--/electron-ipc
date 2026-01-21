@@ -28,8 +28,17 @@ Docs: **[Full Documentation](https://michael--.github.io/electron-ipc/)** | [npm
 Scaffold a complete Electron app with IPC contracts pre-configured:
 
 ```bash
+# macOS/Linux
 npm create @number10/electron-ipc
+
+# Windows (use npx with forward-slash /)
+npx @number10/create-electron-ipc
+
+# pnpm (all platforms, use forward-slash /)
+pnpm dlx @number10/create-electron-ipc
 ```
+
+> **Windows Note:** Always use forward-slash `/` in the package name, not backslash `\`.
 
 This gives you:
 

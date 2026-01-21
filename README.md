@@ -40,10 +40,17 @@ Scaffold new Electron apps with type-safe IPC contracts pre-configured.
 **Quick Start:**
 
 ```bash
+# macOS/Linux
 npm create @number10/electron-ipc
-# or
+
+# Windows (use npx with forward-slash /)
 npx @number10/create-electron-ipc
+
+# pnpm (all platforms, use forward-slash /)
+pnpm dlx @number10/create-electron-ipc
 ```
+
+> **Windows Note:** Always use forward-slash `/` in the package name, not backslash `\`.
 
 **Features:**
 
