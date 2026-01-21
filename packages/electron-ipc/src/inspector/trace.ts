@@ -1,4 +1,4 @@
-import type { PayloadMode, PayloadPreview, TraceEvent } from './types'
+import type { PayloadMode, PayloadPreview, TraceContext, TraceEnvelope, TraceEvent } from './types'
 
 /**
  * Trace sink function type
@@ -104,6 +104,52 @@ export function shouldTrace(channel: string, windowRole?: string): boolean {
  */
 export function generateTraceId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+}
+
+/**
+ * Generates a unique span ID
+ */
+export function generateSpanId(): string {
+  return Math.random().toString(36).slice(2, 10)
+}
+
+/**
+ * Creates a trace context for correlation
+ *
+ * @param parent - Optional parent trace context
+ */
+export function createTraceContext(parent?: TraceContext): TraceContext {
+  if (parent) {
+    return {
+      traceId: parent.traceId,
+      spanId: generateSpanId(),
+      parentSpanId: parent.spanId,
+    }
+  }
+
+  const traceId = generateTraceId()
+  return {
+    traceId,
+    spanId: traceId,
+  }
+}
+
+/**
+ * Creates a trace envelope with timestamps
+ *
+ * @param context - Trace context for this span
+ * @param tsStart - Start timestamp
+ * @param tsEnd - Optional end timestamp
+ */
+export function createTraceEnvelope(
+  context: TraceContext,
+  tsStart: number,
+  tsEnd?: number
+): TraceEnvelope {
+  if (tsEnd === undefined) {
+    return { ...context, tsStart }
+  }
+  return { ...context, tsStart, tsEnd }
 }
 
 /**

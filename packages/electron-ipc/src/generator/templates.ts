@@ -31,6 +31,31 @@ function generateTraceId(): string {
   return \`\${Date.now()}-\${Math.random().toString(36).slice(2, 11)}\`
 }
 
+/** Generates a unique span ID */
+function generateSpanId(): string {
+  return Math.random().toString(36).slice(2, 10)
+}
+
+/** Creates a trace context for correlation */
+function createTraceContext(parent?: { traceId: string, spanId: string }): { traceId: string, spanId: string, parentSpanId?: string } {
+  if (parent) {
+    return { traceId: parent.traceId, spanId: generateSpanId(), parentSpanId: parent.spanId }
+  }
+
+  const traceId = generateTraceId()
+  return { traceId, spanId: traceId }
+}
+
+/** Creates a trace envelope with timestamps */
+function createTraceEnvelope(
+  context: { traceId: string, spanId: string, parentSpanId?: string },
+  tsStart: number,
+  tsEnd?: number
+): { traceId: string, spanId: string, parentSpanId?: string, tsStart: number, tsEnd?: number } {
+  if (tsEnd === undefined) return { ...context, tsStart }
+  return { ...context, tsStart, tsEnd }
+}
+
 /** Calculates byte size of JSON-serializable data */
 function calculateBytes(data: any): number {
   try {
@@ -93,17 +118,18 @@ async function traceInvoke<TRequest, TResponse>(
     return invoke(channel, request)
   }
 
-  const traceId = generateTraceId()
+  const traceContext = createTraceContext()
   const tsStart = Date.now()
 
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
-      id: traceId,
+      id: traceContext.spanId,
       kind: 'invoke',
       channel,
       direction: 'renderer→main',
       status: 'ok',
       tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart),
       source: { webContentsId: -1 },
       request: createPayloadPreview(request)
     })
@@ -115,7 +141,7 @@ async function traceInvoke<TRequest, TResponse>(
 
     try {
       ipcRenderer.send('INSPECTOR:TRACE', {
-        id: traceId,
+        id: traceContext.spanId,
         kind: 'invoke',
         channel,
         direction: 'renderer→main',
@@ -123,6 +149,7 @@ async function traceInvoke<TRequest, TResponse>(
         tsStart,
         tsEnd,
         durationMs: tsEnd - tsStart,
+        trace: createTraceEnvelope(traceContext, tsStart, tsEnd),
         source: { webContentsId: -1 },
         request: createPayloadPreview(request),
         response: createPayloadPreview(response)
@@ -135,7 +162,7 @@ async function traceInvoke<TRequest, TResponse>(
 
     try {
       ipcRenderer.send('INSPECTOR:TRACE', {
-        id: traceId,
+        id: traceContext.spanId,
         kind: 'invoke',
         channel,
         direction: 'renderer→main',
@@ -143,6 +170,7 @@ async function traceInvoke<TRequest, TResponse>(
         tsStart,
         tsEnd,
         durationMs: tsEnd - tsStart,
+        trace: createTraceEnvelope(traceContext, tsStart, tsEnd),
         source: { webContentsId: -1 },
         request: createPayloadPreview(request),
         error: {
@@ -161,14 +189,18 @@ async function traceInvoke<TRequest, TResponse>(
 function traceEvent<TPayload>(channel: string, payload: TPayload): void {
   if (!shouldTraceChannel(channel)) return
 
+  const traceContext = createTraceContext()
+  const tsStart = Date.now()
+
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
-      id: generateTraceId(),
+      id: traceContext.spanId,
       kind: 'event',
       channel,
       direction: 'renderer→main',
       status: 'ok',
-      tsStart: Date.now(),
+      tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart),
       source: { webContentsId: -1 },
       payload: createPayloadPreview(payload)
     })
@@ -179,14 +211,18 @@ function traceEvent<TPayload>(channel: string, payload: TPayload): void {
 function traceBroadcast<TPayload>(channel: string, payload: TPayload): void {
   if (!shouldTraceChannel(channel)) return
 
+  const traceContext = createTraceContext()
+  const tsStart = Date.now()
+
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
-      id: generateTraceId(),
+      id: traceContext.spanId,
       kind: 'broadcast',
       channel,
       direction: 'main→renderer',
       status: 'ok',
-      tsStart: Date.now(),
+      tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart),
       target: { webContentsId: -1 },
       payload: createPayloadPreview(payload)
     })
@@ -197,17 +233,19 @@ function traceBroadcast<TPayload>(channel: string, payload: TPayload): void {
 function traceStreamInvoke(channel: string, request: any): string {
   if (!shouldTraceChannel(channel)) return ''
 
-  const traceId = generateTraceId()
+  const traceContext = createTraceContext()
+  const traceId = traceContext.spanId
   const tsStart = Date.now()
 
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
-      id: traceId,
+      id: traceContext.spanId,
       kind: 'streamInvoke',
       channel,
       direction: 'renderer→main',
       status: 'streaming',
       tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart),
       source: { webContentsId: -1 },
       request: createPayloadPreview(request)
     })
@@ -220,6 +258,9 @@ function traceStreamInvoke(channel: string, request: any): string {
 function traceStreamInvokeChunk(traceId: string, channel: string, chunk: any): void {
   if (!traceId || !shouldTraceChannel(channel)) return
 
+  const tsStart = Date.now()
+  const traceContext = { traceId, spanId: traceId }
+
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
       id: traceId,
@@ -227,7 +268,8 @@ function traceStreamInvokeChunk(traceId: string, channel: string, chunk: any): v
       channel,
       direction: 'renderer→main',
       status: 'streaming',
-      tsStart: Date.now(),
+      tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart),
       source: { webContentsId: -1 },
       stream: createPayloadPreview(chunk)
     })
@@ -239,6 +281,7 @@ function traceStreamInvokeEnd(traceId: string, channel: string, tsStart: number)
   if (!traceId || !shouldTraceChannel(channel)) return
 
   const tsEnd = Date.now()
+  const traceContext = { traceId, spanId: traceId }
 
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
@@ -250,6 +293,7 @@ function traceStreamInvokeEnd(traceId: string, channel: string, tsStart: number)
       tsStart,
       tsEnd,
       durationMs: tsEnd - tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart, tsEnd),
       source: { webContentsId: -1 }
     })
   } catch {}
@@ -260,6 +304,7 @@ function traceStreamInvokeError(traceId: string, channel: string, tsStart: numbe
   if (!traceId || !shouldTraceChannel(channel)) return
 
   const tsEnd = Date.now()
+  const traceContext = { traceId, spanId: traceId }
 
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
@@ -271,6 +316,7 @@ function traceStreamInvokeError(traceId: string, channel: string, tsStart: numbe
       tsStart,
       tsEnd,
       durationMs: tsEnd - tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart, tsEnd),
       source: { webContentsId: -1 },
       error: {
         name: error instanceof Error ? error.name : 'Error',
@@ -285,16 +331,19 @@ function traceStreamInvokeError(traceId: string, channel: string, tsStart: numbe
 function traceStreamUploadStart(channel: string, request: any): string {
   if (!shouldTraceChannel(channel)) return ''
 
-  const traceId = generateTraceId()
+  const traceContext = createTraceContext()
+  const traceId = traceContext.spanId
+  const tsStart = Date.now()
 
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
-      id: traceId,
+      id: traceContext.spanId,
       kind: 'streamUpload',
       channel,
       direction: 'renderer→main',
       status: 'streaming',
-      tsStart: Date.now(),
+      tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart),
       source: { webContentsId: -1 },
       request: createPayloadPreview(request)
     })
@@ -307,6 +356,9 @@ function traceStreamUploadStart(channel: string, request: any): string {
 function traceStreamUploadData(traceId: string, channel: string, chunk: any): void {
   if (!traceId || !shouldTraceChannel(channel)) return
 
+  const tsStart = Date.now()
+  const traceContext = { traceId, spanId: traceId }
+
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
       id: traceId,
@@ -314,7 +366,8 @@ function traceStreamUploadData(traceId: string, channel: string, chunk: any): vo
       channel,
       direction: 'renderer→main',
       status: 'streaming',
-      tsStart: Date.now(),
+      tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart),
       source: { webContentsId: -1 },
       data: createPayloadPreview(chunk)
     })
@@ -325,6 +378,9 @@ function traceStreamUploadData(traceId: string, channel: string, chunk: any): vo
 function traceStreamUploadEnd(traceId: string, channel: string): void {
   if (!traceId || !shouldTraceChannel(channel)) return
 
+  const tsStart = Date.now()
+  const traceContext = { traceId, spanId: traceId }
+
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
       id: traceId,
@@ -332,7 +388,8 @@ function traceStreamUploadEnd(traceId: string, channel: string): void {
       channel,
       direction: 'renderer→main',
       status: 'ok',
-      tsStart: Date.now(),
+      tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart),
       source: { webContentsId: -1 }
     })
   } catch {}
@@ -342,14 +399,18 @@ function traceStreamUploadEnd(traceId: string, channel: string): void {
 function traceStreamDownload(channel: string, chunk: any): void {
   if (!shouldTraceChannel(channel)) return
 
+  const traceContext = createTraceContext()
+  const tsStart = Date.now()
+
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
-      id: generateTraceId(),
+      id: traceContext.spanId,
       kind: 'streamDownload',
       channel,
       direction: 'main→renderer',
       status: 'ok',
-      tsStart: Date.now(),
+      tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart),
       target: { webContentsId: -1 },
       data: createPayloadPreview(chunk)
     })

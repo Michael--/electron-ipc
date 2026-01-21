@@ -20,10 +20,27 @@ export type TraceKind =
 export type TraceStatus = 'ok' | 'error' | 'timeout' | 'cancelled'
 
 /**
+ * Trace context for correlation across related operations
+ */
+export interface TraceContext {
+  traceId: string
+  spanId: string
+  parentSpanId?: string
+}
+
+/**
+ * Trace metadata envelope attached to events
+ */
+export interface TraceEnvelope extends TraceContext {
+  tsStart: number
+  tsEnd?: number
+}
+
+/**
  * Base structure for all trace events
  */
 export interface TraceEventBase {
-  /** Unique identifier for this trace */
+  /** Unique identifier for this span */
   id: string
 
   /** Sequence number (server-side incrementing counter) */
@@ -52,6 +69,9 @@ export interface TraceEventBase {
 
   /** Operation status */
   status: TraceStatus
+
+  /** Optional trace metadata for correlation */
+  trace?: TraceEnvelope
 }
 
 /**

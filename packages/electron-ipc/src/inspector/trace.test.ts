@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   createPayloadPreview,
+  createTraceContext,
+  createTraceEnvelope,
   emitTrace,
   estimatePayloadBytes,
   generateTraceId,
@@ -138,6 +140,33 @@ describe('Trace System', () => {
 
       expect(timestamp).toBeGreaterThan(Date.now() - 1000)
       expect(timestamp).toBeLessThanOrEqual(Date.now())
+    })
+  })
+
+  describe('createTraceContext', () => {
+    it('creates a root context with matching trace and span IDs', () => {
+      const context = createTraceContext()
+      expect(context.traceId).toBe(context.spanId)
+      expect(context.parentSpanId).toBeUndefined()
+    })
+
+    it('creates a child context with shared trace ID', () => {
+      const parent = createTraceContext()
+      const child = createTraceContext(parent)
+      expect(child.traceId).toBe(parent.traceId)
+      expect(child.parentSpanId).toBe(parent.spanId)
+      expect(child.spanId).not.toBe(parent.spanId)
+    })
+  })
+
+  describe('createTraceEnvelope', () => {
+    it('attaches timestamps to a context', () => {
+      const context = createTraceContext()
+      const envelope = createTraceEnvelope(context, 100, 200)
+      expect(envelope.traceId).toBe(context.traceId)
+      expect(envelope.spanId).toBe(context.spanId)
+      expect(envelope.tsStart).toBe(100)
+      expect(envelope.tsEnd).toBe(200)
     })
   })
 

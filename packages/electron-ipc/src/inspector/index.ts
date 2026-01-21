@@ -13,6 +13,8 @@ export type {
   InvokeTrace,
   PayloadMode,
   PayloadPreview,
+  TraceContext,
+  TraceEnvelope,
   StreamTrace,
   StreamType,
   TraceEvent,
@@ -44,8 +46,11 @@ export type { TraceSink } from './trace'
 
 export {
   createPayloadPreview,
+  createTraceContext,
+  createTraceEnvelope,
   emitTrace,
   estimatePayloadBytes,
+  generateSpanId,
   generateTraceId,
   isTracingEnabled,
   serializeError,

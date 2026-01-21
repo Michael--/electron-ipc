@@ -6,8 +6,8 @@
  */
 
 import { ipcRenderer } from 'electron'
-import { createPayloadPreview, generateTraceId, shouldTrace } from './trace'
-import type { BroadcastTrace, EventTrace, InvokeTrace } from './types'
+import { createPayloadPreview, createTraceContext, createTraceEnvelope, shouldTrace } from './trace'
+import type { BroadcastTrace, EventTrace, InvokeTrace, TraceContext } from './types'
 
 /**
  * Traces an invoke IPC call (renderer → main → renderer)
@@ -20,24 +20,26 @@ import type { BroadcastTrace, EventTrace, InvokeTrace } from './types'
 export async function traceInvoke<TRequest, TResponse>(
   channel: string,
   request: TRequest,
-  invoke: (channel: string, request: TRequest) => Promise<TResponse>
+  invoke: (channel: string, request: TRequest) => Promise<TResponse>,
+  parentTrace?: TraceContext
 ): Promise<TResponse> {
   // Check if we should trace this channel
   if (!shouldTrace(channel)) {
     return invoke(channel, request)
   }
 
-  const traceId = generateTraceId()
+  const traceContext = createTraceContext(parentTrace)
   const tsStart = Date.now()
 
   // Emit start event
   const startEvent: InvokeTrace = {
-    id: traceId,
+    id: traceContext.spanId,
     kind: 'invoke',
     channel,
     direction: 'renderer→main',
     status: 'ok',
     tsStart,
+    trace: createTraceEnvelope(traceContext, tsStart),
     source: {
       webContentsId: -1, // Will be filled by main process
     },
@@ -61,6 +63,7 @@ export async function traceInvoke<TRequest, TResponse>(
       ...startEvent,
       tsEnd,
       durationMs: tsEnd - tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart, tsEnd),
       response: createPayloadPreview(response, 'full'),
     }
 
@@ -79,6 +82,7 @@ export async function traceInvoke<TRequest, TResponse>(
       status: 'error',
       tsEnd,
       durationMs: tsEnd - tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart, tsEnd),
       error: {
         name: error instanceof Error ? error.name : 'Error',
         message: error instanceof Error ? error.message : String(error),
@@ -101,22 +105,27 @@ export async function traceInvoke<TRequest, TResponse>(
  * @param channel - IPC channel name
  * @param payload - Event payload
  */
-export function traceEvent<TPayload>(channel: string, payload: TPayload): void {
+export function traceEvent<TPayload>(
+  channel: string,
+  payload: TPayload,
+  parentTrace?: TraceContext
+): void {
   // Check if we should trace this channel
   if (!shouldTrace(channel)) {
     return
   }
 
-  const traceId = generateTraceId()
+  const traceContext = createTraceContext(parentTrace)
   const tsStart = Date.now()
 
   const event: EventTrace = {
-    id: traceId,
+    id: traceContext.spanId,
     kind: 'event',
     channel,
     direction: 'renderer→main',
     status: 'ok',
     tsStart,
+    trace: createTraceEnvelope(traceContext, tsStart),
     source: {
       webContentsId: -1, // Will be filled by main process
     },
@@ -136,22 +145,27 @@ export function traceEvent<TPayload>(channel: string, payload: TPayload): void {
  * @param channel - IPC channel name
  * @param payload - Broadcast payload
  */
-export function traceBroadcast<TPayload>(channel: string, payload: TPayload): void {
+export function traceBroadcast<TPayload>(
+  channel: string,
+  payload: TPayload,
+  parentTrace?: TraceContext
+): void {
   // Check if we should trace this channel
   if (!shouldTrace(channel)) {
     return
   }
 
-  const traceId = generateTraceId()
+  const traceContext = createTraceContext(parentTrace)
   const tsStart = Date.now()
 
   const event: BroadcastTrace = {
-    id: traceId,
+    id: traceContext.spanId,
     kind: 'broadcast',
     channel,
     direction: 'main→renderer',
     status: 'ok',
     tsStart,
+    trace: createTraceEnvelope(traceContext, tsStart),
     target: {
       webContentsId: -1, // Will be filled by main process
     },

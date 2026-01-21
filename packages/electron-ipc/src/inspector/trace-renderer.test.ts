@@ -32,11 +32,16 @@ describe('trace-renderer', () => {
       expect(startCall[1].kind).toBe('invoke')
       expect(startCall[1].status).toBe('ok')
       expect(startCall[1].tsEnd).toBeUndefined()
+      expect(startCall[1].trace?.traceId).toBeDefined()
+      expect(startCall[1].trace?.spanId).toBeDefined()
+      expect(startCall[1].trace?.tsStart).toBeDefined()
 
       expect(endCall[0]).toBe('INSPECTOR:TRACE')
       expect(endCall[1].status).toBe('ok')
       expect(endCall[1].tsEnd).toBeDefined()
       expect(endCall[1].response).toBeDefined()
+      expect(endCall[1].trace?.tsEnd).toBeDefined()
+      expect(endCall[1].trace?.traceId).toBe(startCall[1].trace?.traceId)
     })
 
     it('sends error trace when invoke throws', async () => {
