@@ -107,6 +107,7 @@ import type {
   UploadDataType,
   UploadRequestType,
 } from './types'
+import type { Serializable } from './types'
 import type { TraceContext } from '../inspector/types'
 
 /**
@@ -139,6 +140,11 @@ type IPCStreamUploadHandler<T extends GenericStreamUploadContract<T>, K extends 
   onEnd: (callback: () => void) => void,
   onError: (callback: (error: unknown) => void) => void
 ) => void
+
+type AnyStreamUploadContract = GenericStreamUploadContract<
+  Record<string, IStreamUploadContract<Serializable, Serializable>>
+>
+type AnyStreamUploadRequest = UploadRequestType<AnyStreamUploadContract, string>
 
 /**
  * Maps IPC stream upload contract keys to their respective handler functions.
@@ -247,7 +253,7 @@ export abstract class AbstractRegisterStreamUpload {
 
         // Call the handler with the request and callback setters
         runWithTraceContext(trace, () => {
-          handler(payload as UploadRequestType<any, any>, onData, onEnd, onError)
+          handler(payload as AnyStreamUploadRequest, onData, onEnd, onError)
         })
       })
 
@@ -314,6 +320,11 @@ type IPCStreamDownloadHandler<T extends GenericStreamDownloadContract<T>, K exte
   request: DownloadRequestType<T, K>,
   event: IpcMainInvokeEvent
 ) => ReadableStream<DownloadDataType<T, K>>
+
+type AnyStreamDownloadContract = GenericStreamDownloadContract<
+  Record<string, IStreamDownloadContract<Serializable, Serializable>>
+>
+type AnyStreamDownloadRequest = DownloadRequestType<AnyStreamDownloadContract, string>
 
 /**
  * Maps IPC stream download contract keys to their respective handler functions.
@@ -382,7 +393,7 @@ export abstract class AbstractRegisterStreamDownload {
       ipcMain.handle(channel as string, async (event, request) => {
         const { payload, trace } = unwrapTracePayload(request)
         return runWithTraceContext(trace, async () => {
-          const stream = handler(payload as DownloadRequestType<any, any>, event)
+          const stream = handler(payload as AnyStreamDownloadRequest, event)
           const reader = stream.getReader()
           const key = `${event.sender.id}:${channel}`
           const existingReader = activeReaders.get(key)
@@ -403,10 +414,12 @@ export abstract class AbstractRegisterStreamDownload {
                 wrapTracePayload(value, getCurrentTraceContext())
               )
             }
-            event.sender.send(
-              `${channel}-end`,
-              wrapTracePayload(undefined, getCurrentTraceContext())
-            )
+            const trace = getCurrentTraceContext()
+            if (trace) {
+              event.sender.send(`${channel}-end`, wrapTracePayload(undefined, trace))
+            } else {
+              event.sender.send(`${channel}-end`)
+            }
           } catch (err) {
             event.sender.send(`${channel}-error`, wrapTracePayload(err, getCurrentTraceContext()))
           } finally {

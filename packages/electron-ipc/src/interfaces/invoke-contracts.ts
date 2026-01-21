@@ -52,6 +52,7 @@ import type {
   StreamDataType,
   StreamRequestType,
 } from './types'
+import type { Serializable } from './types'
 
 /**
  * Represents a generic interface for IPC invocation contracts, specifying a structured contract
@@ -153,6 +154,11 @@ type IPCStreamHandler<T extends GenericStreamInvokeContract<T>, K extends keyof 
   event: IpcMainInvokeEvent,
   request: StreamRequestType<T, K>
 ) => ReadableStream<StreamDataType<T, K>>
+
+type AnyStreamInvokeContract = GenericStreamInvokeContract<
+  Record<string, IStreamInvokeContract<Serializable | void, Serializable>>
+>
+type AnyStreamInvokeRequest = StreamRequestType<AnyStreamInvokeContract, string>
 
 /**
  * Maps IPC stream contract keys to their respective handler functions.
@@ -270,7 +276,7 @@ export abstract class AbstractRegisterStreamHandler {
       ipcMain.handle(channel as string, async (event, args) => {
         const { payload, trace } = unwrapTracePayload(args)
         return runWithTraceContext(trace, async () => {
-          const stream = handler(event, payload as StreamRequestType<any, any>)
+          const stream = handler(event, payload as AnyStreamInvokeRequest)
 
           // Check if this is a Web Streams API ReadableStream (has getReader method)
           if (typeof stream.getReader === 'function') {
@@ -295,10 +301,12 @@ export abstract class AbstractRegisterStreamHandler {
                   wrapTracePayload(value, getCurrentTraceContext())
                 )
               }
-              event.sender.send(
-                `${channel}-end`,
-                wrapTracePayload(undefined, getCurrentTraceContext())
-              )
+              const trace = getCurrentTraceContext()
+              if (trace) {
+                event.sender.send(`${channel}-end`, wrapTracePayload(undefined, trace))
+              } else {
+                event.sender.send(`${channel}-end`)
+              }
             } catch (err) {
               event.sender.send(`${channel}-error`, wrapTracePayload(err, getCurrentTraceContext()))
             } finally {
