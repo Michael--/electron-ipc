@@ -60,11 +60,18 @@
   },
   "keywords": [
     "electron",
+    "electron-ipc",
     "ipc",
-    "typescript",
-    "generator",
+    "preload",
+    "renderer",
+    "main-process",
+    "codegen",
+    "code-generation",
+    "typesafe",
     "type-safe",
-    "code-generation"
+    "typescript",
+    "stream",
+    "streams"
   ],
   "author": "Michael Rieck (Michael--) <mr@number10.de>",
   "license": "MIT",

@@ -7,41 +7,25 @@
 TypeScript code generator for type-safe Electron IPC communication with streaming support.
 
 [![npm version](https://img.shields.io/npm/v/@number10/electron-ipc.svg)](https://www.npmjs.com/package/@number10/electron-ipc)
+[![npm downloads](https://img.shields.io/npm/dm/@number10/electron-ipc.svg)](https://www.npmjs.com/package/@number10/electron-ipc)
+[![node version](https://img.shields.io/node/v/@number10/electron-ipc.svg)](https://www.npmjs.com/package/@number10/electron-ipc)
+[![electron version](https://img.shields.io/badge/electron-%3E%3D28-9FEAF9)](https://www.electronjs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 📚 Documentation
+Docs: **[Full Documentation](https://michael--.github.io/electron-ipc/)** | [npm](https://www.npmjs.com/package/@number10/electron-ipc) | [GitHub](https://github.com/Michael--/electron-ipc) | [Release Notes](../../RELEASE_NOTES.md)
 
-**[Full Documentation](https://michael--.github.io/electron-ipc/)** - Complete guides, examples, and API reference
+## Why it helps
 
-## Overview
+- Define contracts once and generate main/preload/renderer APIs (plus React hooks).
+- Change a signature and TypeScript flags every mismatch immediately.
+- Keep large data flows safe with stream contracts.
+- Add runtime validation only when you want it (Zod/Valibot).
 
-This library provides a code generation approach to create type-safe IPC communication between Electron's main and renderer processes. It supports traditional request/response patterns, events, broadcasts, and streaming for large data transfers.
-
-## Features
-
-- ✅ **Type-Safe Communication**: Full TypeScript support with compile-time type checking
-- ✅ **Four Communication Patterns**: Invoke, Event, Broadcast, and Streaming
-- ✅ **Streaming Support**: Handle large data transfers efficiently using Web Streams API
-- ✅ **React Hooks**: Automatic generation of React hooks for all contract types
-- ✅ **Runtime Validation (Optional)**: Validator helpers for Zod/Valibot and stream chunk checks
-- ✅ **YAML Configuration**: Clean, maintainable configuration for multiple APIs
-- ✅ **Generator Workflows**: `--watch` and `--check` modes for dev and CI
-- ✅ **Cross-Platform**: Full support for Windows, macOS, and Linux
-- ✅ **Zero Runtime Overhead (Default)**: Type safety at compile time unless validation is enabled
-
-## Installation
+## Quickstart (60 seconds)
 
 ```bash
 npm install @number10/electron-ipc
 ```
-
-## 📝 Release Notes
-
-- [`RELEASE_NOTES.md`](../../RELEASE_NOTES.md)
-
-## Quick Start
-
-Here's a minimal example to get you started:
 
 ```typescript
 // 1. Define contracts (src/main/ipc-api.ts)
@@ -74,13 +58,26 @@ npx electron-ipc-generate --config=./ipc-config.yaml
 ```
 
 ```typescript
-// 4. Use in renderer
+// 4. Expose in preload (src/preload/index.ts)
+import { exposeMyApi, MyApiType } from './api-generated'
+
+declare global {
+  interface Window {
+    myApi: MyApiType
+  }
+}
+
+exposeMyApi()
+```
+
+```typescript
+// 5. Use in renderer
 const result = await window.myApi.invokeAddNumbers({ a: 1, b: 2 })
 window.myApi.sendLogMessage('Hello from renderer!')
 ```
 
 ```typescript
-// 5. Handle in main process
+// 6. Handle in main process
 import {
   AbstractRegisterHandler,
   AbstractRegisterEvent,
@@ -104,6 +101,26 @@ class RegisterEvent extends AbstractRegisterEvent {
 RegisterHandler.register()
 RegisterEvent.register()
 ```
+
+## Overview
+
+This library provides a code generation approach to create type-safe IPC communication between Electron's main and renderer processes. It supports traditional request/response patterns, events, broadcasts, and streaming for large data transfers.
+
+## Features
+
+- ✅ **Type-Safe Communication**: Full TypeScript support with compile-time type checking
+- ✅ **Four Communication Patterns**: Invoke, Event, Broadcast, and Streaming
+- ✅ **Streaming Support**: Handle large data transfers efficiently using Web Streams API
+- ✅ **React Hooks**: Automatic generation of React hooks for all contract types
+- ✅ **Runtime Validation (Optional)**: Validator helpers for Zod/Valibot and stream chunk checks
+- ✅ **YAML Configuration**: Clean, maintainable configuration for multiple APIs
+- ✅ **Generator Workflows**: `--watch` and `--check` modes for dev and CI
+- ✅ **Cross-Platform**: Full support for Windows, macOS, and Linux
+- ✅ **Zero Runtime Overhead (Default)**: Type safety at compile time unless validation is enabled
+
+## 📝 Release Notes
+
+- [`RELEASE_NOTES.md`](../../RELEASE_NOTES.md)
 
 ## Communication Patterns
 
