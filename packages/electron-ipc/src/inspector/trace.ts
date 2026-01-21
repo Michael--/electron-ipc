@@ -103,14 +103,14 @@ export function shouldTrace(channel: string, windowRole?: string): boolean {
  * Generates a unique trace ID
  */
 export function generateTraceId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
 /**
  * Generates a unique span ID
  */
 export function generateSpanId(): string {
-  return Math.random().toString(36).slice(2, 10)
+  return Math.random().toString(36).slice(2, 8)
 }
 
 /**

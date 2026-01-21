@@ -136,7 +136,7 @@ describe('Trace System', () => {
 
     it('should include timestamp', () => {
       const id = generateTraceId()
-      const timestamp = parseInt(id.split('-')[0])
+      const timestamp = parseInt(id.split('-')[0], 36)
 
       expect(timestamp).toBeGreaterThan(Date.now() - 1000)
       expect(timestamp).toBeLessThanOrEqual(Date.now())

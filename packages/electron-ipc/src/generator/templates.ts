@@ -28,12 +28,12 @@ function shouldTraceChannel(channel: string): boolean {
 
 /** Generates a unique trace ID */
 function generateTraceId(): string {
-  return \`\${Date.now()}-\${Math.random().toString(36).slice(2, 11)}\`
+  return \`\${Date.now().toString(36)}-\${Math.random().toString(36).slice(2, 8)}\`
 }
 
 /** Generates a unique span ID */
 function generateSpanId(): string {
-  return Math.random().toString(36).slice(2, 10)
+  return Math.random().toString(36).slice(2, 8)
 }
 
 /** Creates a trace context for correlation */
