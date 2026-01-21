@@ -32,6 +32,7 @@
     "@vitest/ui": "^4.0.17",
     "electron": "^40.0.0",
     "electron-builder": "^26.4.0",
+    "electron-builder-squirrel-windows": "^26.4.0",
     "electron-vite": "^5.0.0",
     "mkdirp": "^3.0.1",
     "rimraf": "^6.1.2",

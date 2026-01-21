@@ -12,3 +12,4 @@ ignoredBuiltDependencies:
 
 onlyBuiltDependencies:
   - electron
+  - electron-winstaller
