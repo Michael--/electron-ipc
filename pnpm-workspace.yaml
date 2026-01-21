@@ -1,4 +1,14 @@
 packages:
-  - 'packages/*'
-  - 'apps/*'
-  - 'docs-site'
+  - packages/*
+  - apps/*
+  - docs-site
+
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
+  - '@swc/core'
+  - esbuild
+  - lmdb
+  - msgpackr-extract
+
+onlyBuiltDependencies:
+  - electron
