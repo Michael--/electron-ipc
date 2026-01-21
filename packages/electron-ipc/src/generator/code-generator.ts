@@ -244,6 +244,7 @@ export function generateMainBroadcastApi(
   add(createMainFileHeader())
 
   add(`import { BrowserWindow } from 'electron'`)
+  add(`import { getCurrentTraceContext, wrapTracePayload } from '@number10/electron-ipc/inspector'`)
   add(`import { ${contractName} } from '${importPath}'`)
   add('')
 
@@ -309,12 +310,12 @@ export function generateMainBroadcastApi(
       if (isVoidPayload) {
         // For void payload, make parameter optional
         method = `${propName}: (mainWindow: BrowserWindow, payload?: ${payloadType}): void => {
-  mainWindow.webContents.send('${propName}', payload)
+  mainWindow.webContents.send('${propName}', wrapTracePayload(payload, getCurrentTraceContext()))
 }`
       } else {
         // For non-void payload, require parameter
         method = `${propName}: (mainWindow: BrowserWindow, payload: ${payloadType}): void => {
-  mainWindow.webContents.send('${propName}', payload)
+  mainWindow.webContents.send('${propName}', wrapTracePayload(payload, getCurrentTraceContext()))
 }`
       }
 

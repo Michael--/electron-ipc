@@ -363,6 +363,7 @@ Done:
 - Trace envelope fields (`traceId`, `spanId`, `parentSpanId`) are attached to trace events and stored in the ring buffer schema.
 - Root trace/span ID generation is in place for invoke/event/broadcast/stream traces.
 - Generated APIs accept an optional trace context for manual parent/child propagation.
+- Automatic propagation carries trace context across invoke/event/stream payloads and broadcasts.
 - Inspector UI groups spans by `traceId`, renders parent/child indentation, shows end-to-end timing, and highlights open spans.
 - Exports include `traceFormatVersion` for compatibility tracking.
 
@@ -373,7 +374,7 @@ Partial:
 
 Open:
 
-- Propagation rules across invoke requests, stream chunk boundaries, and broadcasts triggered from an existing trace (automatic propagation still open).
+- None.
 
 Risks / open questions:
 

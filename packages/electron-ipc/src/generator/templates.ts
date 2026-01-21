@@ -21,6 +21,39 @@ import { contextBridge, ipcRenderer } from "electron"
 
 type TraceContext = { traceId: string, spanId: string, parentSpanId?: string }
 type TraceOptions = { trace?: TraceContext }
+type TraceEnvelopePayload<T> = { __ipcTrace: TraceContext, __ipcData: T }
+
+const TRACE_CONTEXT_KEY = '__ipcTrace'
+const TRACE_DATA_KEY = '__ipcData'
+
+function isTraceEnvelopePayload(value: any): value is TraceEnvelopePayload<any> {
+  if (!value || typeof value !== 'object') return false
+  const record = value as { [key: string]: any }
+  if (!(TRACE_CONTEXT_KEY in record) || !(TRACE_DATA_KEY in record)) return false
+  const trace = record[TRACE_CONTEXT_KEY]
+  return (
+    trace &&
+    typeof trace === 'object' &&
+    typeof trace.traceId === 'string' &&
+    typeof trace.spanId === 'string' &&
+    (trace.parentSpanId === undefined || typeof trace.parentSpanId === 'string')
+  )
+}
+
+function wrapTracePayload<T>(payload: T, trace?: TraceContext): T | TraceEnvelopePayload<T> {
+  if (!trace) return payload
+  if (isTraceEnvelopePayload(payload)) return payload
+  return { [TRACE_CONTEXT_KEY]: trace, [TRACE_DATA_KEY]: payload } as TraceEnvelopePayload<T>
+}
+
+function unwrapTracePayload<T>(
+  input: T | TraceEnvelopePayload<T>
+): { payload: T, trace?: TraceContext } {
+  if (isTraceEnvelopePayload(input)) {
+    return { payload: input.__ipcData, trace: input.__ipcTrace }
+  }
+  return { payload: input as T }
+}
 
 /** Checks if tracing should be enabled for this channel */
 function shouldTraceChannel(channel: string): boolean {
@@ -124,6 +157,7 @@ async function traceInvoke<TRequest, TResponse>(
 
   const traceContext = createTraceContext(parentTrace)
   const tsStart = Date.now()
+  const requestWithTrace = wrapTracePayload(request, traceContext)
 
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
@@ -140,7 +174,7 @@ async function traceInvoke<TRequest, TResponse>(
   } catch {}
 
   try {
-    const response = await invoke(channel, request)
+    const response = await invoke(channel, requestWithTrace as any)
     const tsEnd = Date.now()
 
     try {
@@ -194,8 +228,8 @@ function traceEvent<TPayload>(
   channel: string,
   payload: TPayload,
   parentTrace?: TraceContext
-): void {
-  if (!shouldTraceChannel(channel)) return
+): TraceContext | null {
+  if (!shouldTraceChannel(channel)) return null
 
   const traceContext = createTraceContext(parentTrace)
   const tsStart = Date.now()
@@ -213,6 +247,8 @@ function traceEvent<TPayload>(
       payload: createPayloadPreview(payload)
     })
   } catch {}
+
+  return traceContext
 }
 
 /** Traces a broadcast IPC event */
@@ -246,11 +282,10 @@ function traceStreamInvoke(
   channel: string,
   request: any,
   parentTrace?: TraceContext
-): string {
-  if (!shouldTraceChannel(channel)) return ''
+): TraceContext | null {
+  if (!shouldTraceChannel(channel)) return null
 
   const traceContext = createTraceContext(parentTrace)
-  const traceId = traceContext.spanId
   const tsStart = Date.now()
 
   try {
@@ -267,7 +302,7 @@ function traceStreamInvoke(
     })
   } catch {}
 
-  return traceId
+  return traceContext
 }
 
 /** Updates stream invoke trace with chunk data */
@@ -348,11 +383,10 @@ function traceStreamUploadStart(
   channel: string,
   request: any,
   parentTrace?: TraceContext
-): string {
-  if (!shouldTraceChannel(channel)) return ''
+): TraceContext | null {
+  if (!shouldTraceChannel(channel)) return null
 
   const traceContext = createTraceContext(parentTrace)
-  const traceId = traceContext.spanId
   const tsStart = Date.now()
 
   try {
@@ -369,7 +403,7 @@ function traceStreamUploadStart(
     })
   } catch {}
 
-  return traceId
+  return traceContext
 }
 
 /** Traces a stream upload data chunk */
@@ -503,8 +537,8 @@ const send${contract} = <K extends keyof ${contract}>(
   request: ${contract}[K]["request"],
   options?: TraceOptions
 ): void => {
-   traceEvent(channel as string, request, options?.trace)
-   ipcRenderer.send(channel as string, request)
+   const traceContext = traceEvent(channel as string, request, options?.trace)
+   ipcRenderer.send(channel as string, wrapTracePayload(request, traceContext ?? undefined))
 }
 `
 
@@ -523,9 +557,10 @@ const on${contract} = <K extends keyof ${contract}>(
   callback: (payload: ${contract}[K]["payload"]) => void,
   options?: TraceOptions
 ): (() => void) => {
-   const handler = (event: any, data: any) => {
-     traceBroadcast(channel as string, data, options?.trace)
-     callback(data)
+   const handler = (_event: any, data: any) => {
+     const { payload, trace } = unwrapTracePayload(data)
+     traceBroadcast(channel as string, payload, trace ?? options?.trace)
+     callback(payload)
    }
    ipcRenderer.on(channel as string, handler)
    return () => ipcRenderer.removeListener(channel as string, handler)
@@ -561,7 +596,8 @@ const invokeStream${contract} = <K extends keyof ${contract}>(
   callbacks: StreamCallbacks<${contract}[K]["stream"]>,
   options?: { signal?: AbortSignal } & TraceOptions
 ): (() => void) => {
-   const traceId = traceStreamInvoke(channel as string, request, options?.trace)
+   const traceContext = traceStreamInvoke(channel as string, request, options?.trace)
+   const traceId = traceContext?.spanId ?? ''
    const tsStart = Date.now()
 
    const dataChannel = \`\${channel as string}-data\`
@@ -569,17 +605,19 @@ const invokeStream${contract} = <K extends keyof ${contract}>(
    const errorChannel = \`\${channel as string}-error\`
 
    const dataHandler = (_event: any, chunk: ${contract}[K]["stream"]) => {
-     traceStreamInvokeChunk(traceId, channel as string, chunk)
-     callbacks.onData(chunk)
+     const { payload } = unwrapTracePayload(chunk)
+     traceStreamInvokeChunk(traceId, channel as string, payload)
+     callbacks.onData(payload)
    }
-   const endHandler = () => {
+   const endHandler = (_event: any, _endPayload: any) => {
      traceStreamInvokeEnd(traceId, channel as string, tsStart)
      callbacks.onEnd()
      cleanup()
    }
    const errorHandler = (_event: any, err: any) => {
-     traceStreamInvokeError(traceId, channel as string, tsStart, err)
-     callbacks.onError(err instanceof Error ? err : new Error(String(err)))
+     const { payload } = unwrapTracePayload(err)
+     traceStreamInvokeError(traceId, channel as string, tsStart, payload)
+     callbacks.onError(payload instanceof Error ? payload : new Error(String(payload)))
      cleanup()
    }
 
@@ -616,7 +654,7 @@ const invokeStream${contract} = <K extends keyof ${contract}>(
    }
 
    // Start the stream
-   ipcRenderer.invoke(channel as string, request)
+   ipcRenderer.invoke(channel as string, wrapTracePayload(request, traceContext ?? undefined))
 
    return stop
 }
@@ -643,19 +681,32 @@ const upload${contract} = <K extends keyof ${contract}>(
   request: ${contract}[K]["request"],
   options?: TraceOptions
 ): StreamWriter<${contract}[K]["data"]> => {
-   const traceId = traceStreamUploadStart(channel as string, request, options?.trace)
-   ipcRenderer.send(\`\${channel as string}-start\`, request)
+   const traceContext = traceStreamUploadStart(channel as string, request, options?.trace)
+   const traceId = traceContext?.spanId ?? ''
+   ipcRenderer.send(
+     \`\${channel as string}-start\`,
+     wrapTracePayload(request, traceContext ?? undefined)
+   )
    return {
      write: async (chunk: ${contract}[K]["data"]) => {
        traceStreamUploadData(traceId, channel as string, chunk)
-       ipcRenderer.send(\`\${channel as string}-data\`, chunk)
+       ipcRenderer.send(
+         \`\${channel as string}-data\`,
+         wrapTracePayload(chunk, traceContext ?? undefined)
+       )
      },
      close: async () => {
        traceStreamUploadEnd(traceId, channel as string)
-       ipcRenderer.send(\`\${channel as string}-end\`)
+       ipcRenderer.send(
+         \`\${channel as string}-end\`,
+         wrapTracePayload(undefined, traceContext ?? undefined)
+       )
      },
      abort: async (reason?: any) => {
-       ipcRenderer.send(\`\${channel as string}-error\`, reason)
+       ipcRenderer.send(
+         \`\${channel as string}-error\`,
+         wrapTracePayload(reason, traceContext ?? undefined)
+       )
      }
    }
 }
@@ -684,15 +735,17 @@ const download${contract} = <K extends keyof ${contract}>(
    const errorChannel = \`\${channel as string}-error\`
 
    const dataHandler = (_event: any, data: ${contract}[K]["data"]) => {
-     traceStreamDownload(channel as string, data, options?.trace)
-     callback(data)
+     const { payload, trace } = unwrapTracePayload(data)
+     traceStreamDownload(channel as string, payload, trace ?? options?.trace)
+     callback(payload)
    }
    const endHandler = () => {
      onEnd?.()
      cleanup()
    }
    const errorHandler = (_event: any, err: any) => {
-     onError?.(err)
+     const { payload } = unwrapTracePayload(err)
+     onError?.(payload)
      cleanup()
    }
 

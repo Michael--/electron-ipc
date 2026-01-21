@@ -58,6 +58,13 @@ export {
   shouldTrace,
 } from './trace'
 
+export {
+  getCurrentTraceContext,
+  runWithTraceContext,
+  unwrapTracePayload,
+  wrapTracePayload,
+} from './trace-propagation'
+
 // Export renderer-side trace helpers (for generated code)
 export { traceBroadcast, traceEvent, traceInvoke } from './trace-renderer'
 
