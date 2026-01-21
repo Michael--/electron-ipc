@@ -46,12 +46,12 @@
   "devDependencies": {
     "@parcel/config-default": "^2.12.0",
     "@parcel/transformer-typescript-tsc": "^2.12.0",
-    "@types/node": "^20.10.0",
-    "electron": "^28.0.0",
+    "@types/node": "^25.0.9",
+    "electron": "^40.0.0",
     "mkdirp": "^3.0.1",
     "parcel": "^2.12.0",
-    "rimraf": "^5.0.5",
-    "typescript": "^5.3.3"
+    "rimraf": "^6.1.2",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@number10/electron-ipc": "workspace:*"
