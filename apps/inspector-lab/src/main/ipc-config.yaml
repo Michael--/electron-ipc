@@ -1,0 +1,22 @@
+# IPC Generator Configuration
+# $schema: ../electron-ipc/ipc-config.schema.json
+
+apis:
+  - name: labApi
+    input: ./src/main/ipc-api.ts
+    output: ./dist/lab-api.ts
+    reactHooksOutput: ./dist/lab-api-react-hooks.ts
+    mainBroadcastOutput: ./dist/lab-api-main-broadcast.ts
+    contracts:
+      invoke: InvokeContracts
+      event: EventContracts
+      send: BroadcastContracts
+
+  - name: labStreamApi
+    input: ./src/main/ipc-api-stream.ts
+    output: ./dist/lab-stream-api.ts
+    reactHooksOutput: ./dist/lab-stream-api-react-hooks.ts
+    contracts:
+      streamInvoke: StreamInvokeContracts
+      streamUpload: StreamUploadContracts
+      streamDownload: StreamDownloadContracts

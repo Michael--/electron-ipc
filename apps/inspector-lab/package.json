@@ -1,0 +1,62 @@
+{
+  "name": "electron-ipc-inspector-lab",
+  "version": "2.3.0",
+  "private": true,
+  "description": "Inspector lab app for electron-ipc",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "dev": "pnpm --filter electron-ipc run build && mkdirp dist && pnpm run generate:all && electron-vite dev",
+    "build": "pnpm --filter electron-ipc run build && mkdirp dist && pnpm run generate:all && electron-vite build",
+    "preview": "electron-vite preview",
+    "clean": "rimraf dist out *.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,html,css}\"",
+    "generate:all": "pnpm --filter electron-ipc run build && mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml",
+    "generate:watch": "pnpm --filter electron-ipc run build && mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml --watch",
+    "generate:check": "pnpm --filter electron-ipc run build && mkdirp dist && electron-ipc-generate --config=./src/main/ipc-config.yaml --check",
+    "package": "electron-builder",
+    "package:mac": "electron-builder --mac",
+    "package:win": "electron-builder --win",
+    "package:linux": "electron-builder --linux"
+  },
+  "keywords": [],
+  "author": "Michael Rieck (Michael--) <mr@number10.de>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/ui": "^4.0.17",
+    "electron": "^40.0.0",
+    "electron-builder": "^26.4.0",
+    "electron-builder-squirrel-windows": "^26.4.0",
+    "electron-vite": "^5.0.0",
+    "mkdirp": "^3.0.1",
+    "rimraf": "^6.1.2",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.17"
+  },
+  "dependencies": {
+    "@number10/electron-ipc": "workspace:*",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "build": {
+    "appId": "com.example.electron-ipc-inspector-lab",
+    "productName": "Electron IPC Inspector Lab",
+    "directories": {
+      "output": "out"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools"
+    }
+  }
+}
