@@ -30,7 +30,7 @@
   "author": "Michael Rieck (Michael--) <mr@number10.de>",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.19.0",
     "pnpm": ">=8.0.0"
   },
   "devDependencies": {
