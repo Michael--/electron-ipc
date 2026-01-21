@@ -340,6 +340,65 @@ The test app includes CSP headers to prevent XSS attacks:
 - P7 (Low): Bi-directional invoke
   Detail: Renderer-to-renderer invocation routed via main with clear targeting and failure behavior.
 
+### P1 Detail Plan
+
+#### P1 (High): Transaction-level tracing and correlation
+
+Goal: Provide stable, end-to-end trace IDs for invoke/stream lifecycles, with Inspector grouping and timing visibility.
+
+Plan:
+
+- **Trace envelope** - Define `traceId`, `spanId`, `parentSpanId`, and timestamps in an internal metadata envelope for invoke, stream, event, and broadcast records.
+- **ID generation** - Generate `traceId` in the renderer for new user-initiated calls; allow propagation from an existing trace for nested or chained calls.
+- **Propagation rules** - Carry trace metadata through invoke requests, stream chunk boundaries, and completion/error events; attach to outgoing broadcasts if triggered from a trace.
+- **Ring buffer schema** - Extend the trace record schema (or attach sidecar metadata) to store `traceId` and start/end timestamps without breaking existing consumers.
+- **Inspector UI** - Group by `traceId`, show a parent/child tree, compute end-to-end latency, and highlight incomplete or dangling spans.
+- **Export compatibility** - Include trace metadata in exports; keep backward compatibility by making the envelope optional and versioned.
+- **Tests** - Cover single invoke, nested invoke, and stream lifecycle correlation; verify grouping and timing accuracy.
+
+Current status:
+
+Done:
+
+- Trace envelope fields (`traceId`, `spanId`, `parentSpanId`) are attached to trace events and stored in the ring buffer schema.
+- Root trace/span ID generation is in place for invoke/event/broadcast/stream traces.
+- Inspector UI groups spans by `traceId`, renders parent/child indentation, shows end-to-end timing, and highlights open spans.
+- Exports include `traceFormatVersion` for compatibility tracking.
+
+Partial:
+
+- Parent/child propagation hooks exist in the library, but generated APIs do not pass parent trace context yet.
+- Stream traces reuse the same span ID across lifecycle events; child spans for per-chunk work are not modeled.
+
+Open:
+
+- Propagation rules across invoke requests, stream chunk boundaries, and broadcasts triggered from an existing trace.
+- Tests for nested invoke and stream lifecycle correlation (incl. parent/child relationships).
+
+Risks / open questions:
+
+- **Cross-process clocks** - Decide on monotonic vs wall-clock timestamps and normalize display for renderer/main drift.
+- **Performance impact** - Measure overhead of metadata attachment and UI grouping for high-volume streams.
+
+#### P1 (High): Plugin system for transformations
+
+Goal: Provide a hookable generator pipeline that allows AST and output customization without forking.
+
+Plan:
+
+- **Intermediate model (IR)** - Introduce a stable, typed representation of contracts and generated outputs so plugins avoid raw AST fragility.
+- **Hook points** - Expose `parse`, `transform`, and `emit` stages; allow plugins to modify the IR, naming, or output layout.
+- **Plugin API** - Define a typed interface with metadata, ordering (before/after), and scoped options; include a `context` with ts-morph project and config.
+- **Loading and config** - Support a generator config file that lists plugins and options; resolve relative paths and node_modules packages.
+- **Safety and errors** - Fail fast with actionable errors; isolate plugin failures and show which hook and contract caused the error.
+- **Compatibility** - Implement built-in transforms as default plugins to validate the system and preserve current output.
+- **Tests and examples** - Provide a sample plugin (naming convention or file structure) and test plugin ordering and output stability.
+
+Risks / open questions:
+
+- **API stability** - Decide versioning for the plugin API and IR to avoid breaking third-party plugins.
+- **Debuggability** - Define tracing/logging for plugin steps to ease troubleshooting.
+
 ### Extensibility Points
 
 - P1 (High): Plugin system for transformations
