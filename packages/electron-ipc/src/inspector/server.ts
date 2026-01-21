@@ -342,6 +342,7 @@ export class InspectorServer {
   exportJson(): string {
     const data = {
       version: '1.0',
+      traceFormatVersion: '1.1',
       timestamp: Date.now(),
       events: this.snapshot(),
       stats: {

@@ -363,6 +363,7 @@ describe('InspectorServer', () => {
       const data = JSON.parse(json)
 
       expect(data.version).toBe('1.0')
+      expect(data.traceFormatVersion).toBe('1.1')
       expect(data.events).toHaveLength(1)
       expect(data.stats.totalEvents).toBe(1)
       expect(data.stats.capacity).toBe(5)
