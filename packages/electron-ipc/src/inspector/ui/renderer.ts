@@ -1203,10 +1203,11 @@ function updateStatistics() {
  * Update statistics panel with channel breakdown
  */
 function updateStatsPanel() {
-  const metrics = computeMetrics(allEvents)
+  const filteredEvents = allEvents.filter(passesFilter)
+  const metrics = computeMetrics(filteredEvents)
   if (metrics.length === 0) {
     elements.statsContent.innerHTML =
-      '<p style="color: #888; text-align: center; padding: 20px">No data yet</p>'
+      '<p style="color: #888; text-align: center; padding: 20px">No data for current filters</p>'
     return
   }
 
