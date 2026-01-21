@@ -79,6 +79,38 @@ the exported helpers:
 import { traceEvent, traceInvoke, traceBroadcast } from '@number10/electron-ipc/inspector'
 ```
 
+## Manual Trace Propagation
+
+Generated APIs accept an optional `options.trace` context so you can manually connect
+related operations (for example, nested invokes or a chain of events).
+
+```typescript
+import { createTraceContext } from '@number10/electron-ipc/inspector'
+
+const root = createTraceContext()
+
+await window.api.invokeAddNumbers({ a: 1, b: 2 }, { trace: root })
+
+const child = createTraceContext(root)
+await window.api.invokeAppInfo({}, { trace: child })
+```
+
+For streams, pass the same trace context via `options.trace`:
+
+```typescript
+const trace = createTraceContext()
+
+const stop = window.api.invokeStreamGetLargeData(
+  { size: 1024 },
+  {
+    onData: (chunk) => console.log(chunk),
+    onEnd: () => console.log('done'),
+    onError: console.error,
+  },
+  { trace }
+)
+```
+
 ## Window Metadata
 
 The inspector displays any window metadata present on trace events (`windowId`, `windowRole`).
