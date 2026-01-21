@@ -103,7 +103,7 @@ function initializeEventHandler() {
               name: packageJson.name,
               version: packageJson.version,
             }
-          } catch (error) {
+          } catch {
             // Fallback to app methods if package.json can't be read
             return {
               name: app.getName(),
@@ -123,9 +123,7 @@ function initializeEventHandler() {
         app.quit()
       }),
       LogMessage: withEventValidation(logMessageValidator, (_event, v) => {
-        // eslint-disable-next-line no-console
         if (v.level === 'error') console.error(`[Renderer] ${v.message}`)
-        // eslint-disable-next-line no-console
         else if (v.level === 'warn') console.warn(`[Renderer] ${v.message}`)
         // eslint-disable-next-line no-console
         else console.log(`[Renderer] ${v.message}`)
@@ -183,7 +181,6 @@ function initializeEventHandler() {
 
           // Set up the error handler
           onError((err) => {
-            // eslint-disable-next-line no-console
             console.error('[Upload] Error:', err)
           })
         }
@@ -245,7 +242,6 @@ function initializeEventHandler() {
                 let buffer: Uint8Array[] = []
                 let bufferSize = 0
 
-                // eslint-disable-next-line no-constant-condition
                 while (true) {
                   const { done, value } = await reader.read()
 
@@ -292,7 +288,6 @@ function initializeEventHandler() {
                   }
                 }
               } catch (err) {
-                // eslint-disable-next-line no-console
                 console.error('[StreamVideo] Error:', err)
                 controller.error(err)
               }
