@@ -149,7 +149,7 @@ export function processApiConfig(
     }
 
     let currentDir = path.dirname(resolvedInputPath)
-    // eslint-disable-next-line no-constant-condition
+
     while (true) {
       const candidate = path.join(currentDir, 'tsconfig.json')
       if (fs.existsSync(candidate)) return candidate

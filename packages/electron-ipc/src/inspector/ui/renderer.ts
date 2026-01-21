@@ -20,7 +20,7 @@ declare global {
 // State
 let allEvents: TraceEvent[] = []
 let filteredEvents: TraceEvent[] = []
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 let selectedEvent: TraceEvent | null = null
 let isPaused = false
 let searchQuery = ''
@@ -931,7 +931,7 @@ async function pollServerStatus() {
       // Note: We don't show status.droppedCount from server
       // Only show gaps detected in UI (detectedGaps) via updateStats()
     }
-  } catch (error) {
+  } catch {
     // Ignore errors - server might not support getStatus yet
   }
 }

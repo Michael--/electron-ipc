@@ -203,7 +203,6 @@ function registerIpcHandlers(server: ReturnType<typeof getInspectorServer>): voi
         data: result,
       })
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('[Inspector] Command failed:', error)
 
       event.sender.send('INSPECTOR:COMMAND_RESPONSE', {
@@ -270,7 +269,7 @@ function registerShortcut(shortcut: string, _config: Required<InspectorOptions>)
   // Note: globalShortcut requires app to be ready
   app.whenReady().then(() => {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { globalShortcut } = require('electron') as typeof import('electron')
 
       globalShortcut.register(shortcut, () => {
@@ -281,7 +280,6 @@ function registerShortcut(shortcut: string, _config: Required<InspectorOptions>)
         }
       })
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('[Inspector] Failed to register shortcut:', error)
     }
   })

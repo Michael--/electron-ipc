@@ -8,7 +8,6 @@
  * 3. You should see type errors for each non-serializable type
  */
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { IInvokeContract } from './ipc-contracts'
 
 // ❌ THESE SHOULD FAIL AT COMPILE TIME - Uncomment to test:

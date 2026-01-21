@@ -17,7 +17,7 @@ type BroadcastPayload<T, K extends keyof T> = T[K] extends { payload: infer P } 
  */
 export function createBroadcastToAll<T>() {
   // Overload: with payload and options
-  // eslint-disable-next-line no-redeclare
+
   function broadcast<K extends keyof T>(
     channel: K,
     payload: BroadcastPayload<T, K>,
@@ -63,7 +63,7 @@ export function createBroadcastToAll<T>() {
  */
 export function createBroadcastToRole<T>(role: string) {
   // Overload: with payload
-  // eslint-disable-next-line no-redeclare
+
   function broadcast<K extends keyof T>(channel: K, payload: BroadcastPayload<T, K>): void
 
   // Overload: void payload
@@ -99,7 +99,7 @@ export function broadcastToApp<T>() {
   const broadcastAll = createBroadcastToAll<T>()
 
   // Wrap to automatically exclude inspector
-  // eslint-disable-next-line no-redeclare
+
   function broadcast<K extends keyof T>(channel: K, payload: BroadcastPayload<T, K>): void
   // eslint-disable-next-line no-redeclare
   function broadcast<K extends keyof T>(channel: K): void

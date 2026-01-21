@@ -43,7 +43,7 @@ export function ensureInspectorHandlers(): void {
   // Only run in main process
   try {
     // Import ipcMain dynamically - this will fail gracefully in renderer/preload
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { ipcMain } = require('electron')
 
     if (!ipcMain) {
@@ -74,7 +74,7 @@ export function ensureInspectorHandlers(): void {
     if (!statusListeners) {
       ipcMain.handle('INSPECTOR:GET_STATUS', () => statusHandler?.())
     }
-  } catch (error) {
+  } catch {
     // Silently ignore errors (e.g., when not in main process)
   }
 }
