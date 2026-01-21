@@ -39,6 +39,7 @@ function setupDom() {
       <input id="searchInput" />
       <select id="kindFilter"></select>
       <select id="statusFilter"></select>
+      <select id="traceRowFilter"></select>
       <button id="autoScrollBtn"></button>
       <div id="eventCount"></div>
       <div id="droppedCount"></div>

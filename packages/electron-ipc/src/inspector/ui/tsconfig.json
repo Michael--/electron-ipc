@@ -11,5 +11,5 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["renderer.ts", "preload.ts"]
+  "include": ["renderer.ts", "preload.ts", "trace-grouping.ts"]
 }

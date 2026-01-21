@@ -7,8 +7,10 @@
  * Main logic for the inspector UI
  */
 
-import type { InvokeTrace, TraceEvent, TraceStatus } from '../types'
+import type { TraceEvent } from '../types'
 import type { InspectorAPI } from './preload'
+import { buildRenderRows } from './trace-grouping'
+import type { RenderRow, SpanRow, TraceRow, TraceRowFilter } from './trace-grouping'
 
 // Extend Window interface for TypeScript
 declare global {
@@ -19,7 +21,6 @@ declare global {
 
 // State
 let allEvents: TraceEvent[] = []
-let filteredEvents: TraceEvent[] = []
 let renderRows: RenderRow[] = []
 
 let selectedRowKey: string | null = null
@@ -35,29 +36,7 @@ let renderTimeout: ReturnType<typeof setTimeout> | null = null
 const RENDER_DEBOUNCE_MS = 100
 let pendingRender = false
 let renderRowsDirty = true
-
-type TraceRow = {
-  type: 'trace'
-  traceId: string
-  tsStart: number
-  tsEnd?: number
-  durationMs?: number
-  status: TraceStatus
-  spanCount: number
-  errorCount: number
-  incompleteCount: number
-}
-
-type SpanRow = {
-  type: 'span'
-  event: TraceEvent
-  depth: number
-  isIncomplete: boolean
-  traceId: string
-  spanId: string
-}
-
-type RenderRow = TraceRow | SpanRow
+let traceRowFilter: TraceRowFilter = 'errors'
 
 // Virtual scrolling state
 const VIRTUAL_SCROLL_ITEM_HEIGHT = 32 // Height of one table row in pixels
@@ -78,6 +57,7 @@ let elements: {
   searchInput: HTMLInputElement
   kindFilter: HTMLSelectElement
   statusFilter: HTMLSelectElement
+  traceRowFilter: HTMLSelectElement
   autoScrollBtn: HTMLButtonElement
   eventCount: HTMLElement
   droppedCount: HTMLElement
@@ -152,6 +132,7 @@ function init() {
     searchInput: bodyNode.querySelector('#searchInput') as HTMLInputElement,
     kindFilter: bodyNode.querySelector('#kindFilter') as HTMLSelectElement,
     statusFilter: bodyNode.querySelector('#statusFilter') as HTMLSelectElement,
+    traceRowFilter: bodyNode.querySelector('#traceRowFilter') as HTMLSelectElement,
     autoScrollBtn: bodyNode.querySelector('#autoScrollBtn') as HTMLButtonElement,
     eventCount: bodyNode.querySelector('#eventCount') as HTMLElement,
     droppedCount: bodyNode.querySelector('#droppedCount') as HTMLElement,
@@ -177,6 +158,7 @@ function init() {
   // Set initial buffer size values
   elements.serverBufferInput.value = String(serverBufferSize)
   elements.uiBufferInput.value = String(uiMaxEvents)
+  traceRowFilter = elements.traceRowFilter.value as TraceRowFilter
 
   // Initialize virtual scrolling
   virtualScrollContainer = elements.main
@@ -328,6 +310,13 @@ function setupEventListeners() {
     applyFilters()
   })
 
+  // Trace row filter
+  elements.traceRowFilter.addEventListener('change', (e) => {
+    traceRowFilter = (e.target as HTMLSelectElement).value as TraceRowFilter
+    renderRowsDirty = true
+    scheduleRender()
+  })
+
   // Close detail panel
   elements.closeDetailBtn.addEventListener('click', () => {
     closeDetailPanel()
@@ -415,259 +404,10 @@ function passesFilter(event: TraceEvent): boolean {
   return true
 }
 
-type SpanAggregate = {
-  traceId: string
-  spanId: string
-  parentSpanId?: string
-  events: TraceEvent[]
-  tsStart: number
-  tsEnd?: number
-}
-
-type SpanNode = {
-  event: TraceEvent
-  traceId: string
-  spanId: string
-  parentSpanId?: string
-  tsStart: number
-  tsEnd?: number
-}
-
 function rebuildRenderRows() {
-  const spanSummaries = buildSpanSummaries(allEvents)
-  filteredEvents = spanSummaries.filter((event) => passesFilter(event))
-  renderRows = buildTraceRows(filteredEvents)
+  const result = buildRenderRows(allEvents, passesFilter, traceRowFilter)
+  renderRows = result.renderRows
   renderRowsDirty = false
-}
-
-function buildSpanSummaries(events: TraceEvent[]): TraceEvent[] {
-  const spanMap = new Map<string, SpanAggregate>()
-
-  for (const event of events) {
-    const traceId = event.trace?.traceId ?? event.id
-    const spanId = event.trace?.spanId ?? event.id
-    const parentSpanId = event.trace?.parentSpanId
-    const key = `${traceId}:${spanId}`
-
-    let span = spanMap.get(key)
-    if (!span) {
-      span = {
-        traceId,
-        spanId,
-        parentSpanId,
-        events: [],
-        tsStart: event.tsStart,
-      }
-      spanMap.set(key, span)
-    }
-
-    if (!span.parentSpanId && parentSpanId) {
-      span.parentSpanId = parentSpanId
-    }
-
-    span.events.push(event)
-    span.tsStart = Math.min(span.tsStart, event.tsStart)
-    if (event.tsEnd !== undefined) {
-      span.tsEnd = span.tsEnd === undefined ? event.tsEnd : Math.max(span.tsEnd, event.tsEnd)
-    }
-  }
-
-  const summaries: TraceEvent[] = []
-  for (const span of spanMap.values()) {
-    summaries.push(buildSpanSummary(span))
-  }
-
-  summaries.sort((a, b) => a.tsStart - b.tsStart)
-  return summaries
-}
-
-function buildSpanSummary(span: SpanAggregate): TraceEvent {
-  const ordered = [...span.events].sort((a, b) => a.tsStart - b.tsStart)
-  const base = ordered[0]
-  const status = getAggregateStatus(span.events)
-
-  const summary: TraceEvent = {
-    ...base,
-    id: span.spanId,
-    tsStart: span.tsStart,
-    tsEnd: span.tsEnd,
-    durationMs: span.tsEnd !== undefined ? span.tsEnd - span.tsStart : undefined,
-    status,
-    trace: buildTraceEnvelope(span, base.trace),
-  }
-
-  if (summary.kind === 'invoke') {
-    const invokeEvents = span.events.filter(
-      (event): event is InvokeTrace => event.kind === 'invoke'
-    )
-    const request = invokeEvents.find((event) => event.request)?.request
-    const response = invokeEvents.find((event) => event.response)?.response
-    const error = invokeEvents.find((event) => event.error)?.error
-
-    if (request) {
-      ;(summary as InvokeTrace).request = request
-    }
-    if (response) {
-      ;(summary as InvokeTrace).response = response
-    }
-    if (error) {
-      ;(summary as InvokeTrace).error = error
-      summary.status = 'error'
-    }
-  }
-
-  return summary
-}
-
-function buildTraceEnvelope(
-  span: SpanAggregate,
-  envelope?: TraceEvent['trace']
-): TraceEvent['trace'] {
-  if (envelope) {
-    const next: NonNullable<TraceEvent['trace']> = {
-      ...envelope,
-      tsStart: span.tsStart,
-      tsEnd: span.tsEnd,
-    }
-    if (span.tsEnd === undefined) {
-      delete next.tsEnd
-    }
-    return next
-  }
-
-  const next: NonNullable<TraceEvent['trace']> = {
-    traceId: span.traceId,
-    spanId: span.spanId,
-    parentSpanId: span.parentSpanId,
-    tsStart: span.tsStart,
-  }
-  if (span.tsEnd !== undefined) {
-    next.tsEnd = span.tsEnd
-  }
-  return next
-}
-
-function getAggregateStatus(events: TraceEvent[]): TraceStatus {
-  if (events.some((event) => event.status === 'error')) return 'error'
-  if (events.some((event) => event.status === 'timeout')) return 'timeout'
-  if (events.some((event) => event.status === 'cancelled')) return 'cancelled'
-  return 'ok'
-}
-
-function buildTraceRows(spans: TraceEvent[]): RenderRow[] {
-  const rows: RenderRow[] = []
-  const traces = new Map<string, SpanNode[]>()
-
-  for (const event of spans) {
-    const traceId = event.trace?.traceId ?? event.id
-    const spanId = event.trace?.spanId ?? event.id
-    const parentSpanId = event.trace?.parentSpanId
-
-    const node: SpanNode = {
-      event,
-      traceId,
-      spanId,
-      parentSpanId,
-      tsStart: event.tsStart,
-      tsEnd: event.tsEnd,
-    }
-
-    const list = traces.get(traceId)
-    if (list) {
-      list.push(node)
-    } else {
-      traces.set(traceId, [node])
-    }
-  }
-
-  const traceEntries = Array.from(traces.entries()).map(([traceId, nodes]) => {
-    const traceStart = Math.min(...nodes.map((node) => node.tsStart))
-    const traceEnd = nodes.reduce<number | undefined>((max, node) => {
-      if (node.tsEnd === undefined) return max
-      if (max === undefined) return node.tsEnd
-      return Math.max(max, node.tsEnd)
-    }, undefined)
-    const status = getAggregateStatus(nodes.map((node) => node.event))
-    const errorCount = nodes.filter((node) => node.event.status === 'error').length
-    const incompleteCount = nodes.filter((node) => node.tsEnd === undefined).length
-
-    return {
-      traceId,
-      nodes,
-      traceStart,
-      traceEnd,
-      status,
-      errorCount,
-      incompleteCount,
-    }
-  })
-
-  traceEntries.sort((a, b) => a.traceStart - b.traceStart)
-
-  for (const trace of traceEntries) {
-    rows.push({
-      type: 'trace',
-      traceId: trace.traceId,
-      tsStart: trace.traceStart,
-      tsEnd: trace.traceEnd,
-      durationMs: trace.traceEnd !== undefined ? trace.traceEnd - trace.traceStart : undefined,
-      status: trace.status,
-      spanCount: trace.nodes.length,
-      errorCount: trace.errorCount,
-      incompleteCount: trace.incompleteCount,
-    })
-
-    const nodeMap = new Map<string, SpanNode>()
-    for (const node of trace.nodes) {
-      nodeMap.set(node.spanId, node)
-    }
-
-    const children = new Map<string, SpanNode[]>()
-    const roots: SpanNode[] = []
-    for (const node of trace.nodes) {
-      if (node.parentSpanId && nodeMap.has(node.parentSpanId)) {
-        const list = children.get(node.parentSpanId)
-        if (list) {
-          list.push(node)
-        } else {
-          children.set(node.parentSpanId, [node])
-        }
-      } else {
-        roots.push(node)
-      }
-    }
-
-    roots.sort((a, b) => a.tsStart - b.tsStart)
-    for (const node of roots) {
-      appendSpanRows(rows, node, children, 0)
-    }
-  }
-
-  return rows
-}
-
-function appendSpanRows(
-  rows: RenderRow[],
-  node: SpanNode,
-  children: Map<string, SpanNode[]>,
-  depth: number
-) {
-  rows.push({
-    type: 'span',
-    event: node.event,
-    depth,
-    isIncomplete: node.tsEnd === undefined,
-    traceId: node.traceId,
-    spanId: node.spanId,
-  })
-
-  const childNodes = children.get(node.spanId)
-  if (!childNodes) return
-
-  childNodes.sort((a, b) => a.tsStart - b.tsStart)
-  for (const child of childNodes) {
-    appendSpanRows(rows, child, children, depth + 1)
-  }
 }
 
 function trimToUiLimit(): boolean {
