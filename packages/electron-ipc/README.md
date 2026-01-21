@@ -21,7 +21,27 @@ Docs: **[Full Documentation](https://michael--.github.io/electron-ipc/)** | [npm
 - Keep large data flows safe with stream contracts.
 - Add runtime validation only when you want it (Zod/Valibot).
 
-## Quickstart (60 seconds)
+## 🚀 Quick Start
+
+### New Project (Recommended)
+
+Scaffold a complete Electron app with IPC contracts pre-configured:
+
+```bash
+npm create @number10/electron-ipc
+```
+
+This gives you:
+
+- ✅ Electron + Vite + React + TypeScript
+- ✅ IPC contracts ready to use
+- ✅ ESLint + Prettier configured
+- ✅ Optional IPC Inspector
+- ✅ Optional validation (Zod/Valibot)
+
+### Existing Project
+
+## Manual Setup (60 seconds)
 
 ```bash
 npm install @number10/electron-ipc

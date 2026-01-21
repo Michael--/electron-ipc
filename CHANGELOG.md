@@ -1,3 +1,24 @@
+## [2.3.0] - 2026-01-21
+
+### Added
+
+- **@number10/create-electron-ipc** (v0.1.0): New scaffolding CLI for creating Electron apps
+  - Interactive setup wizard with validation
+  - Electron 35 + Vite 5 + React 19 template
+  - TypeScript strict mode with comprehensive tsconfig
+  - ESLint 9 (flat config) + Prettier pre-configured
+  - Optional IPC Inspector integration
+  - Optional validation with Zod or Valibot
+  - VS Code workspace settings and debug config
+  - Support for npm and pnpm package managers
+  - Comprehensive README with troubleshooting
+  - Works on Windows, macOS, and Linux
+
+### Changed
+
+- Updated main README with create-electron-ipc quick start section
+- Updated documentation to highlight scaffolding tool
+
 ## [2.2.1] - 2026-01-20
 
 ### Fixed

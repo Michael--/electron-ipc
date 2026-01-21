@@ -14,7 +14,7 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 
 ## 📦 Packages
 
-### `packages/electron-ipc` (v2.1.0)
+### `packages/electron-ipc` (v2.3.0)
 
 The main library - a TypeScript code generator that creates type-safe IPC communication code for Electron applications.
 
@@ -32,6 +32,31 @@ The main library - a TypeScript code generator that creates type-safe IPC commun
 - ✅ Full Windows/macOS/Linux support
 
 **Status:** Production ready
+
+### `packages/create-electron-ipc` (v0.1.0)
+
+Scaffold new Electron apps with type-safe IPC contracts pre-configured.
+
+**Quick Start:**
+
+```bash
+npm create @number10/electron-ipc
+# or
+npx @number10/create-electron-ipc
+```
+
+**Features:**
+
+- ✅ Interactive CLI setup
+- ✅ Electron + Vite + React template
+- ✅ TypeScript configured with strict mode
+- ✅ ESLint + Prettier setup
+- ✅ Optional IPC Inspector
+- ✅ Optional validation (Zod/Valibot)
+- ✅ VS Code workspace settings
+- ✅ Works with npm and pnpm
+
+**Status:** Beta - ready for testing
 
 ### `apps/test-app`
 
