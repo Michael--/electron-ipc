@@ -19,6 +19,9 @@ import { contextBridge, ipcRenderer } from "electron"
 // Inline Trace Helpers (for Inspector)
 // ============================================================================
 
+type TraceContext = { traceId: string, spanId: string, parentSpanId?: string }
+type TraceOptions = { trace?: TraceContext }
+
 /** Checks if tracing should be enabled for this channel */
 function shouldTraceChannel(channel: string): boolean {
   // Never trace Inspector IPC (prevent circular tracing)
@@ -37,7 +40,7 @@ function generateSpanId(): string {
 }
 
 /** Creates a trace context for correlation */
-function createTraceContext(parent?: { traceId: string, spanId: string }): { traceId: string, spanId: string, parentSpanId?: string } {
+function createTraceContext(parent?: TraceContext): TraceContext {
   if (parent) {
     return { traceId: parent.traceId, spanId: generateSpanId(), parentSpanId: parent.spanId }
   }
@@ -48,7 +51,7 @@ function createTraceContext(parent?: { traceId: string, spanId: string }): { tra
 
 /** Creates a trace envelope with timestamps */
 function createTraceEnvelope(
-  context: { traceId: string, spanId: string, parentSpanId?: string },
+  context: TraceContext,
   tsStart: number,
   tsEnd?: number
 ): { traceId: string, spanId: string, parentSpanId?: string, tsStart: number, tsEnd?: number } {
@@ -112,13 +115,14 @@ ipcRenderer.on('INSPECTOR:PAYLOAD_MODE_CHANGED', (_event: any, mode: 'none' | 'r
 async function traceInvoke<TRequest, TResponse>(
   channel: string,
   request: TRequest,
-  invoke: (channel: string, request: TRequest) => Promise<TResponse>
+  invoke: (channel: string, request: TRequest) => Promise<TResponse>,
+  parentTrace?: TraceContext
 ): Promise<TResponse> {
   if (!shouldTraceChannel(channel)) {
     return invoke(channel, request)
   }
 
-  const traceContext = createTraceContext()
+  const traceContext = createTraceContext(parentTrace)
   const tsStart = Date.now()
 
   try {
@@ -186,10 +190,14 @@ async function traceInvoke<TRequest, TResponse>(
 }
 
 /** Traces an event IPC call */
-function traceEvent<TPayload>(channel: string, payload: TPayload): void {
+function traceEvent<TPayload>(
+  channel: string,
+  payload: TPayload,
+  parentTrace?: TraceContext
+): void {
   if (!shouldTraceChannel(channel)) return
 
-  const traceContext = createTraceContext()
+  const traceContext = createTraceContext(parentTrace)
   const tsStart = Date.now()
 
   try {
@@ -208,10 +216,14 @@ function traceEvent<TPayload>(channel: string, payload: TPayload): void {
 }
 
 /** Traces a broadcast IPC event */
-function traceBroadcast<TPayload>(channel: string, payload: TPayload): void {
+function traceBroadcast<TPayload>(
+  channel: string,
+  payload: TPayload,
+  parentTrace?: TraceContext
+): void {
   if (!shouldTraceChannel(channel)) return
 
-  const traceContext = createTraceContext()
+  const traceContext = createTraceContext(parentTrace)
   const tsStart = Date.now()
 
   try {
@@ -230,10 +242,14 @@ function traceBroadcast<TPayload>(channel: string, payload: TPayload): void {
 }
 
 /** Traces a stream invoke IPC call */
-function traceStreamInvoke(channel: string, request: any): string {
+function traceStreamInvoke(
+  channel: string,
+  request: any,
+  parentTrace?: TraceContext
+): string {
   if (!shouldTraceChannel(channel)) return ''
 
-  const traceContext = createTraceContext()
+  const traceContext = createTraceContext(parentTrace)
   const traceId = traceContext.spanId
   const tsStart = Date.now()
 
@@ -328,10 +344,14 @@ function traceStreamInvokeError(traceId: string, channel: string, tsStart: numbe
 }
 
 /** Traces a stream upload start */
-function traceStreamUploadStart(channel: string, request: any): string {
+function traceStreamUploadStart(
+  channel: string,
+  request: any,
+  parentTrace?: TraceContext
+): string {
   if (!shouldTraceChannel(channel)) return ''
 
-  const traceContext = createTraceContext()
+  const traceContext = createTraceContext(parentTrace)
   const traceId = traceContext.spanId
   const tsStart = Date.now()
 
@@ -396,10 +416,14 @@ function traceStreamUploadEnd(traceId: string, channel: string): void {
 }
 
 /** Traces a stream download */
-function traceStreamDownload(channel: string, chunk: any): void {
+function traceStreamDownload(
+  channel: string,
+  chunk: any,
+  parentTrace?: TraceContext
+): void {
   if (!shouldTraceChannel(channel)) return
 
-  const traceContext = createTraceContext()
+  const traceContext = createTraceContext(parentTrace)
   const tsStart = Date.now()
 
   try {
@@ -450,11 +474,16 @@ export const invokeContracts = (contract: string, importPath: string) => `
 import { ${contract} } from "${importPath}"
 
 // This function takes the channel and request, infers the types, and calls ipcRenderer.invoke with the correct types enforced.
-const invoke${contract} = <K extends keyof ${contract}>(channel: K, request: ${contract}[K]["request"]): Promise<${contract}[K]["response"]> => {
+const invoke${contract} = <K extends keyof ${contract}>(
+  channel: K,
+  request: ${contract}[K]["request"],
+  options?: TraceOptions
+): Promise<${contract}[K]["response"]> => {
    return traceInvoke(
      channel as string,
      request,
-     (ch, req) => ipcRenderer.invoke(ch, req) as Promise<${contract}[K]["response"]>
+     (ch, req) => ipcRenderer.invoke(ch, req) as Promise<${contract}[K]["response"]>,
+     options?.trace
    )
 }
 `
@@ -469,8 +498,12 @@ export const eventContracts = (contract: string, importPath: string) => `
 import { ${contract} } from "${importPath}"
 
 // This function takes the channel and request, infers the types, and calls ipcRenderer.send with the correct types enforced.
-const send${contract} = <K extends keyof ${contract}>(channel: K, request: ${contract}[K]["request"]): void => {
-   traceEvent(channel as string, request)
+const send${contract} = <K extends keyof ${contract}>(
+  channel: K,
+  request: ${contract}[K]["request"],
+  options?: TraceOptions
+): void => {
+   traceEvent(channel as string, request, options?.trace)
    ipcRenderer.send(channel as string, request)
 }
 `
@@ -485,9 +518,13 @@ export const sendContracts = (contract: string, importPath: string) => `
 import { ${contract} } from "${importPath}"
 
 // This function takes the channel and request, infers the types, and calls ipcRenderer.on with the correct types enforced.
-const on${contract} = <K extends keyof ${contract}>(channel: K, callback: (payload: ${contract}[K]["payload"]) => void): (() => void) => {
+const on${contract} = <K extends keyof ${contract}>(
+  channel: K,
+  callback: (payload: ${contract}[K]["payload"]) => void,
+  options?: TraceOptions
+): (() => void) => {
    const handler = (event: any, data: any) => {
-     traceBroadcast(channel as string, data)
+     traceBroadcast(channel as string, data, options?.trace)
      callback(data)
    }
    ipcRenderer.on(channel as string, handler)
@@ -522,9 +559,9 @@ const invokeStream${contract} = <K extends keyof ${contract}>(
   channel: K,
   request: ${contract}[K]["request"],
   callbacks: StreamCallbacks<${contract}[K]["stream"]>,
-  options?: { signal?: AbortSignal }
+  options?: { signal?: AbortSignal } & TraceOptions
 ): (() => void) => {
-   const traceId = traceStreamInvoke(channel as string, request)
+   const traceId = traceStreamInvoke(channel as string, request, options?.trace)
    const tsStart = Date.now()
 
    const dataChannel = \`\${channel as string}-data\`
@@ -603,9 +640,10 @@ type StreamWriter<T> = {
 // This function creates a stream writer for uploading data to the main process.
 const upload${contract} = <K extends keyof ${contract}>(
   channel: K,
-  request: ${contract}[K]["request"]
+  request: ${contract}[K]["request"],
+  options?: TraceOptions
 ): StreamWriter<${contract}[K]["data"]> => {
-   const traceId = traceStreamUploadStart(channel as string, request)
+   const traceId = traceStreamUploadStart(channel as string, request, options?.trace)
    ipcRenderer.send(\`\${channel as string}-start\`, request)
    return {
      write: async (chunk: ${contract}[K]["data"]) => {
@@ -639,14 +677,14 @@ const download${contract} = <K extends keyof ${contract}>(
   callback: (data: ${contract}[K]["data"]) => void,
   onEnd?: () => void,
   onError?: (err: any) => void,
-  options?: { signal?: AbortSignal }
+  options?: { signal?: AbortSignal } & TraceOptions
 ): (() => void) => {
    const dataChannel = \`\${channel as string}-data\`
    const endChannel = \`\${channel as string}-end\`
    const errorChannel = \`\${channel as string}-error\`
 
    const dataHandler = (_event: any, data: ${contract}[K]["data"]) => {
-     traceStreamDownload(channel as string, data)
+     traceStreamDownload(channel as string, data, options?.trace)
      callback(data)
    }
    const endHandler = () => {
@@ -714,38 +752,38 @@ export const createApiMethod = (
   const typeAnnotation = `${contract}["${propName}"]["${paramType}"]`
 
   if (returnType === 'void') {
-    return `${prefix}${propName}: (${param}: ${typeAnnotation}) => {
-   return ${prefix}${contract}("${propName}", ${param})
+    return `${prefix}${propName}: (${param}: ${typeAnnotation}, options?: TraceOptions) => {
+   return ${prefix}${contract}("${propName}", ${param}, options)
 },`
   }
 
   if (returnType === 'invoke') {
-    return `${prefix}${propName}: (${param}: ${typeAnnotation}): Promise<${contract}["${propName}"]["response"]> => {
-   return ${prefix}${contract}("${propName}", ${param})
+    return `${prefix}${propName}: (${param}: ${typeAnnotation}, options?: TraceOptions): Promise<${contract}["${propName}"]["response"]> => {
+   return ${prefix}${contract}("${propName}", ${param}, options)
 },`
   }
 
   if (returnType === 'stream') {
-    return `${prefix}${propName}: (${param}: ${typeAnnotation}, callbacks: StreamCallbacks<${contract}["${propName}"]["stream"]>, options?: { signal?: AbortSignal }): (() => void) => {
+    return `${prefix}${propName}: (${param}: ${typeAnnotation}, callbacks: StreamCallbacks<${contract}["${propName}"]["stream"]>, options?: { signal?: AbortSignal } & TraceOptions): (() => void) => {
    return ${prefix}${contract}("${propName}", ${param}, callbacks, options)
 },`
   }
 
   if (returnType === 'upload') {
-    return `${prefix}${propName}: (${param}: ${typeAnnotation}): StreamWriter<${contract}["${propName}"]["data"]> => {
-   return ${prefix}${contract}("${propName}", ${param})
+    return `${prefix}${propName}: (${param}: ${typeAnnotation}, options?: TraceOptions): StreamWriter<${contract}["${propName}"]["data"]> => {
+   return ${prefix}${contract}("${propName}", ${param}, options)
 },`
   }
 
   if (returnType === 'download') {
-    return `${prefix}${propName}: (${param}: ${typeAnnotation}, callback: (data: ${contract}["${propName}"]["data"]) => void, onEnd?: () => void, onError?: (err: any) => void, options?: { signal?: AbortSignal }): (() => void) => {
+    return `${prefix}${propName}: (${param}: ${typeAnnotation}, callback: (data: ${contract}["${propName}"]["data"]) => void, onEnd?: () => void, onError?: (err: any) => void, options?: { signal?: AbortSignal } & TraceOptions): (() => void) => {
    return ${prefix}${contract}("${propName}", ${param}, callback, onEnd, onError, options)
 },`
   }
 
   const callbackType = `(${param}: ${typeAnnotation}) => void`
-  return `${prefix}${propName}: (callback: ${callbackType}) => {
-   return ${prefix}${contract}("${propName}", callback)
+  return `${prefix}${propName}: (callback: ${callbackType}, options?: TraceOptions) => {
+   return ${prefix}${contract}("${propName}", callback, options)
 },`
 } /**
  * Generates the final API export combining all contract APIs

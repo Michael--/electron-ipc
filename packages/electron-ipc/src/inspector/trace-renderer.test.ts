@@ -1,6 +1,6 @@
 import { ipcRenderer } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { setTraceSink } from './trace'
+import { createTraceContext, setTraceSink } from './trace'
 import { traceBroadcast, traceEvent, traceInvoke } from './trace-renderer'
 
 vi.mock('electron', () => ({
@@ -42,6 +42,17 @@ describe('trace-renderer', () => {
       expect(endCall[1].response).toBeDefined()
       expect(endCall[1].trace?.tsEnd).toBeDefined()
       expect(endCall[1].trace?.traceId).toBe(startCall[1].trace?.traceId)
+    })
+
+    it('propagates parent trace context', async () => {
+      const parent = createTraceContext()
+      const invoke = vi.fn(async () => ({ ok: true }))
+
+      await traceInvoke('Ping', { ok: true }, invoke, parent)
+
+      const [startCall] = vi.mocked(ipcRenderer.send).mock.calls
+      expect(startCall[1].trace?.traceId).toBe(parent.traceId)
+      expect(startCall[1].trace?.parentSpanId).toBe(parent.spanId)
     })
 
     it('sends error trace when invoke throws', async () => {
