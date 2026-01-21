@@ -7,7 +7,7 @@
  * Main logic for the inspector UI
  */
 
-import type { TraceEvent } from '../types'
+import type { InvokeTrace, TraceEvent, TraceStatus } from '../types'
 import type { InspectorAPI } from './preload'
 
 // Extend Window interface for TypeScript
@@ -20,8 +20,9 @@ declare global {
 // State
 let allEvents: TraceEvent[] = []
 let filteredEvents: TraceEvent[] = []
+let renderRows: RenderRow[] = []
 
-let selectedEvent: TraceEvent | null = null
+let selectedRowKey: string | null = null
 let isPaused = false
 let searchQuery = ''
 let kindFilter = ''
@@ -33,6 +34,30 @@ let autoScrollEnabled = true
 let renderTimeout: ReturnType<typeof setTimeout> | null = null
 const RENDER_DEBOUNCE_MS = 100
 let pendingRender = false
+let renderRowsDirty = true
+
+type TraceRow = {
+  type: 'trace'
+  traceId: string
+  tsStart: number
+  tsEnd?: number
+  durationMs?: number
+  status: TraceStatus
+  spanCount: number
+  errorCount: number
+  incompleteCount: number
+}
+
+type SpanRow = {
+  type: 'span'
+  event: TraceEvent
+  depth: number
+  isIncomplete: boolean
+  traceId: string
+  spanId: string
+}
+
+type RenderRow = TraceRow | SpanRow
 
 // Virtual scrolling state
 const VIRTUAL_SCROLL_ITEM_HEIGHT = 32 // Height of one table row in pixels
@@ -367,8 +392,7 @@ function setupEventListeners() {
  * Apply filters to events
  */
 function applyFilters() {
-  filteredEvents = allEvents.filter((event) => passesFilter(event))
-
+  renderRowsDirty = true
   scheduleRender()
 }
 
@@ -391,14 +415,269 @@ function passesFilter(event: TraceEvent): boolean {
   return true
 }
 
+type SpanAggregate = {
+  traceId: string
+  spanId: string
+  parentSpanId?: string
+  events: TraceEvent[]
+  tsStart: number
+  tsEnd?: number
+}
+
+type SpanNode = {
+  event: TraceEvent
+  traceId: string
+  spanId: string
+  parentSpanId?: string
+  tsStart: number
+  tsEnd?: number
+}
+
+function rebuildRenderRows() {
+  const spanSummaries = buildSpanSummaries(allEvents)
+  filteredEvents = spanSummaries.filter((event) => passesFilter(event))
+  renderRows = buildTraceRows(filteredEvents)
+  renderRowsDirty = false
+}
+
+function buildSpanSummaries(events: TraceEvent[]): TraceEvent[] {
+  const spanMap = new Map<string, SpanAggregate>()
+
+  for (const event of events) {
+    const traceId = event.trace?.traceId ?? event.id
+    const spanId = event.trace?.spanId ?? event.id
+    const parentSpanId = event.trace?.parentSpanId
+    const key = `${traceId}:${spanId}`
+
+    let span = spanMap.get(key)
+    if (!span) {
+      span = {
+        traceId,
+        spanId,
+        parentSpanId,
+        events: [],
+        tsStart: event.tsStart,
+      }
+      spanMap.set(key, span)
+    }
+
+    if (!span.parentSpanId && parentSpanId) {
+      span.parentSpanId = parentSpanId
+    }
+
+    span.events.push(event)
+    span.tsStart = Math.min(span.tsStart, event.tsStart)
+    if (event.tsEnd !== undefined) {
+      span.tsEnd = span.tsEnd === undefined ? event.tsEnd : Math.max(span.tsEnd, event.tsEnd)
+    }
+  }
+
+  const summaries: TraceEvent[] = []
+  for (const span of spanMap.values()) {
+    summaries.push(buildSpanSummary(span))
+  }
+
+  summaries.sort((a, b) => a.tsStart - b.tsStart)
+  return summaries
+}
+
+function buildSpanSummary(span: SpanAggregate): TraceEvent {
+  const ordered = [...span.events].sort((a, b) => a.tsStart - b.tsStart)
+  const base = ordered[0]
+  const status = getAggregateStatus(span.events)
+
+  const summary: TraceEvent = {
+    ...base,
+    id: span.spanId,
+    tsStart: span.tsStart,
+    tsEnd: span.tsEnd,
+    durationMs: span.tsEnd !== undefined ? span.tsEnd - span.tsStart : undefined,
+    status,
+    trace: buildTraceEnvelope(span, base.trace),
+  }
+
+  if (summary.kind === 'invoke') {
+    const invokeEvents = span.events.filter(
+      (event): event is InvokeTrace => event.kind === 'invoke'
+    )
+    const request = invokeEvents.find((event) => event.request)?.request
+    const response = invokeEvents.find((event) => event.response)?.response
+    const error = invokeEvents.find((event) => event.error)?.error
+
+    if (request) {
+      ;(summary as InvokeTrace).request = request
+    }
+    if (response) {
+      ;(summary as InvokeTrace).response = response
+    }
+    if (error) {
+      ;(summary as InvokeTrace).error = error
+      summary.status = 'error'
+    }
+  }
+
+  return summary
+}
+
+function buildTraceEnvelope(
+  span: SpanAggregate,
+  envelope?: TraceEvent['trace']
+): TraceEvent['trace'] {
+  if (envelope) {
+    const next: NonNullable<TraceEvent['trace']> = {
+      ...envelope,
+      tsStart: span.tsStart,
+      tsEnd: span.tsEnd,
+    }
+    if (span.tsEnd === undefined) {
+      delete next.tsEnd
+    }
+    return next
+  }
+
+  const next: NonNullable<TraceEvent['trace']> = {
+    traceId: span.traceId,
+    spanId: span.spanId,
+    parentSpanId: span.parentSpanId,
+    tsStart: span.tsStart,
+  }
+  if (span.tsEnd !== undefined) {
+    next.tsEnd = span.tsEnd
+  }
+  return next
+}
+
+function getAggregateStatus(events: TraceEvent[]): TraceStatus {
+  if (events.some((event) => event.status === 'error')) return 'error'
+  if (events.some((event) => event.status === 'timeout')) return 'timeout'
+  if (events.some((event) => event.status === 'cancelled')) return 'cancelled'
+  return 'ok'
+}
+
+function buildTraceRows(spans: TraceEvent[]): RenderRow[] {
+  const rows: RenderRow[] = []
+  const traces = new Map<string, SpanNode[]>()
+
+  for (const event of spans) {
+    const traceId = event.trace?.traceId ?? event.id
+    const spanId = event.trace?.spanId ?? event.id
+    const parentSpanId = event.trace?.parentSpanId
+
+    const node: SpanNode = {
+      event,
+      traceId,
+      spanId,
+      parentSpanId,
+      tsStart: event.tsStart,
+      tsEnd: event.tsEnd,
+    }
+
+    const list = traces.get(traceId)
+    if (list) {
+      list.push(node)
+    } else {
+      traces.set(traceId, [node])
+    }
+  }
+
+  const traceEntries = Array.from(traces.entries()).map(([traceId, nodes]) => {
+    const traceStart = Math.min(...nodes.map((node) => node.tsStart))
+    const traceEnd = nodes.reduce<number | undefined>((max, node) => {
+      if (node.tsEnd === undefined) return max
+      if (max === undefined) return node.tsEnd
+      return Math.max(max, node.tsEnd)
+    }, undefined)
+    const status = getAggregateStatus(nodes.map((node) => node.event))
+    const errorCount = nodes.filter((node) => node.event.status === 'error').length
+    const incompleteCount = nodes.filter((node) => node.tsEnd === undefined).length
+
+    return {
+      traceId,
+      nodes,
+      traceStart,
+      traceEnd,
+      status,
+      errorCount,
+      incompleteCount,
+    }
+  })
+
+  traceEntries.sort((a, b) => a.traceStart - b.traceStart)
+
+  for (const trace of traceEntries) {
+    rows.push({
+      type: 'trace',
+      traceId: trace.traceId,
+      tsStart: trace.traceStart,
+      tsEnd: trace.traceEnd,
+      durationMs: trace.traceEnd !== undefined ? trace.traceEnd - trace.traceStart : undefined,
+      status: trace.status,
+      spanCount: trace.nodes.length,
+      errorCount: trace.errorCount,
+      incompleteCount: trace.incompleteCount,
+    })
+
+    const nodeMap = new Map<string, SpanNode>()
+    for (const node of trace.nodes) {
+      nodeMap.set(node.spanId, node)
+    }
+
+    const children = new Map<string, SpanNode[]>()
+    const roots: SpanNode[] = []
+    for (const node of trace.nodes) {
+      if (node.parentSpanId && nodeMap.has(node.parentSpanId)) {
+        const list = children.get(node.parentSpanId)
+        if (list) {
+          list.push(node)
+        } else {
+          children.set(node.parentSpanId, [node])
+        }
+      } else {
+        roots.push(node)
+      }
+    }
+
+    roots.sort((a, b) => a.tsStart - b.tsStart)
+    for (const node of roots) {
+      appendSpanRows(rows, node, children, 0)
+    }
+  }
+
+  return rows
+}
+
+function appendSpanRows(
+  rows: RenderRow[],
+  node: SpanNode,
+  children: Map<string, SpanNode[]>,
+  depth: number
+) {
+  rows.push({
+    type: 'span',
+    event: node.event,
+    depth,
+    isIncomplete: node.tsEnd === undefined,
+    traceId: node.traceId,
+    spanId: node.spanId,
+  })
+
+  const childNodes = children.get(node.spanId)
+  if (!childNodes) return
+
+  childNodes.sort((a, b) => a.tsStart - b.tsStart)
+  for (const child of childNodes) {
+    appendSpanRows(rows, child, children, depth + 1)
+  }
+}
+
 function trimToUiLimit(): boolean {
   let changed = false
   while (allEvents.length > uiMaxEvents) {
-    const dropped = allEvents.shift()
-    if (dropped && filteredEvents[0] === dropped) {
-      filteredEvents.shift()
-      changed = true
-    }
+    allEvents.shift()
+    changed = true
+  }
+  if (changed) {
+    renderRowsDirty = true
   }
   return changed
 }
@@ -407,18 +686,10 @@ function appendEvent(event: TraceEvent): boolean {
   if (event.seq) detectGap(event.seq)
   trackChannelStats(event)
   allEvents.push(event)
+  renderRowsDirty = true
 
-  let changed = false
-  if (passesFilter(event)) {
-    filteredEvents.push(event)
-    changed = true
-  }
-
-  if (trimToUiLimit()) {
-    changed = true
-  }
-
-  return changed
+  trimToUiLimit()
+  return true
 }
 
 function appendEventBatch(events: TraceEvent[]): boolean {
@@ -427,10 +698,11 @@ function appendEventBatch(events: TraceEvent[]): boolean {
     if (event.seq) detectGap(event.seq)
     trackChannelStats(event)
     allEvents.push(event)
-    if (passesFilter(event)) {
-      filteredEvents.push(event)
-      changed = true
-    }
+    changed = true
+  }
+
+  if (changed) {
+    renderRowsDirty = true
   }
 
   if (trimToUiLimit()) {
@@ -477,9 +749,13 @@ function renderNow() {
  * Render events table
  */
 function renderEvents() {
+  if (renderRowsDirty) {
+    rebuildRenderRows()
+  }
+
   const shouldStick = autoScrollEnabled && elements.main && isNearBottom(elements.main, 24)
 
-  if (filteredEvents.length === 0) {
+  if (renderRows.length === 0) {
     elements.emptyState.style.display = 'flex'
     elements.eventsTable.style.display = 'none'
     return
@@ -504,21 +780,19 @@ function renderEvents() {
 
   // Render only visible events (oldest first)
   for (let i = visibleRange.start; i < visibleRange.end; i++) {
-    const event = filteredEvents[i]
-    if (!event) continue
-    const row = createEventRow(event, i)
-    if (selectedEvent && event.id === selectedEvent.id) {
+    const rowData = renderRows[i]
+    if (!rowData) continue
+    const row = createRenderRow(rowData, i)
+    if (selectedRowKey && getRowKey(rowData) === selectedRowKey) {
       row.classList.add('selected')
     }
     elements.eventsBody.appendChild(row)
   }
 
   // Create virtual spacer at the bottom
-  if (visibleRange.end < filteredEvents.length) {
+  if (visibleRange.end < renderRows.length) {
     const spacer = document.createElement('tr')
-    spacer.style.height = `${
-      (filteredEvents.length - visibleRange.end) * VIRTUAL_SCROLL_ITEM_HEIGHT
-    }px`
+    spacer.style.height = `${(renderRows.length - visibleRange.end) * VIRTUAL_SCROLL_ITEM_HEIGHT}px`
     spacer.className = 'virtual-spacer'
     elements.eventsBody.appendChild(spacer)
   }
@@ -533,7 +807,7 @@ function renderEvents() {
  */
 function calculateVisibleRange(): { start: number; end: number } {
   if (!virtualScrollContainer) {
-    return { start: 0, end: filteredEvents.length }
+    return { start: 0, end: renderRows.length }
   }
 
   const scrollTop = virtualScrollContainer.scrollTop
@@ -544,7 +818,7 @@ function calculateVisibleRange(): { start: number; end: number } {
     Math.floor(scrollTop / VIRTUAL_SCROLL_ITEM_HEIGHT) - VIRTUAL_SCROLL_OVERSCAN
   )
   const visibleCount = Math.ceil(containerHeight / VIRTUAL_SCROLL_ITEM_HEIGHT)
-  const end = Math.min(filteredEvents.length, start + visibleCount + VIRTUAL_SCROLL_OVERSCAN * 2)
+  const end = Math.min(renderRows.length, start + visibleCount + VIRTUAL_SCROLL_OVERSCAN * 2)
 
   return { start, end }
 }
@@ -565,12 +839,124 @@ function handleScroll() {
   }
 }
 
+function getRowKey(row: RenderRow): string {
+  return row.type === 'trace' ? `trace:${row.traceId}` : `span:${row.spanId}`
+}
+
+function createRenderRow(row: RenderRow, index: number): HTMLTableRowElement {
+  return row.type === 'trace' ? createTraceRow(row, index) : createEventRow(row, index)
+}
+
 /**
- * Create a table row for an event
+ * Create a table row for a trace group
  */
-function createEventRow(event: TraceEvent, index: number): HTMLTableRowElement {
+function createTraceRow(rowData: TraceRow, index: number): HTMLTableRowElement {
   const row = document.createElement('tr')
   row.dataset.index = String(index)
+  row.classList.add('trace-row')
+  if (rowData.incompleteCount > 0) {
+    row.classList.add('row-incomplete')
+  }
+
+  // Sequence number
+  const seqCell = document.createElement('td')
+  seqCell.textContent = '-'
+  seqCell.style.fontFamily = 'monospace'
+  seqCell.style.fontSize = '11px'
+  seqCell.style.color = '#858585'
+  row.appendChild(seqCell)
+
+  // Time (trace start)
+  const timeCell = document.createElement('td')
+  timeCell.textContent = formatTime(rowData.tsStart)
+  row.appendChild(timeCell)
+
+  // Type
+  const typeCell = document.createElement('td')
+  const kindBadge = document.createElement('span')
+  kindBadge.className = 'kind-badge kind-trace'
+  kindBadge.textContent = 'Trace'
+  typeCell.appendChild(kindBadge)
+  row.appendChild(typeCell)
+
+  // Channel (trace id + meta)
+  const channelCell = document.createElement('td')
+  const traceIdLabel = document.createElement('span')
+  traceIdLabel.className = 'trace-id'
+  traceIdLabel.textContent = rowData.traceId
+  channelCell.appendChild(traceIdLabel)
+
+  const metaParts = [`${rowData.spanCount} spans`]
+  if (rowData.errorCount > 0) {
+    metaParts.push(`${rowData.errorCount} errors`)
+  }
+  if (rowData.incompleteCount > 0) {
+    metaParts.push(`${rowData.incompleteCount} open`)
+  }
+  const traceMeta = document.createElement('span')
+  traceMeta.className = 'trace-meta'
+  traceMeta.textContent = ` ${metaParts.join(' | ')}`
+  channelCell.appendChild(traceMeta)
+  channelCell.classList.add('cell-truncate')
+  row.appendChild(channelCell)
+
+  // Direction
+  const directionCell = document.createElement('td')
+  directionCell.textContent = '-'
+  row.appendChild(directionCell)
+
+  // Role
+  const roleCell = document.createElement('td')
+  roleCell.textContent = '-'
+  row.appendChild(roleCell)
+
+  // Duration
+  const durationCell = document.createElement('td')
+  if (rowData.durationMs !== undefined) {
+    durationCell.textContent = `${rowData.durationMs.toFixed(2)}ms`
+  } else {
+    durationCell.textContent = '-'
+  }
+  row.appendChild(durationCell)
+
+  // Size
+  const sizeCell = document.createElement('td')
+  sizeCell.textContent = '-'
+  row.appendChild(sizeCell)
+
+  // Status
+  const statusCell = document.createElement('td')
+  statusCell.className = `status-badge-cell status-${rowData.status}`
+  statusCell.textContent = rowData.status.toUpperCase()
+  row.appendChild(statusCell)
+
+  // Click handler
+  row.addEventListener('click', () => {
+    const rowKey = getRowKey(rowData)
+    if (isDetailPinned && selectedRowKey && selectedRowKey !== rowKey) {
+      return
+    }
+    selectedRowKey = rowKey
+    showTraceDetailPanel(rowData)
+    document.querySelectorAll('tr.selected').forEach((r) => r.classList.remove('selected'))
+    row.classList.add('selected')
+  })
+
+  return row
+}
+
+/**
+ * Create a table row for a span
+ */
+function createEventRow(rowData: SpanRow, index: number): HTMLTableRowElement {
+  const row = document.createElement('tr')
+  row.dataset.index = String(index)
+  row.classList.add('span-row')
+  if (rowData.isIncomplete) {
+    row.classList.add('row-incomplete')
+  }
+
+  const event = rowData.event
 
   // Sequence number
   const seqCell = document.createElement('td')
@@ -599,6 +985,8 @@ function createEventRow(event: TraceEvent, index: number): HTMLTableRowElement {
   channelCell.textContent = event.channel
   channelCell.title = event.channel
   channelCell.classList.add('cell-truncate')
+  const basePadding = 12
+  channelCell.style.paddingLeft = `${basePadding + rowData.depth * 12}px`
   row.appendChild(channelCell)
 
   // Direction
@@ -638,12 +1026,12 @@ function createEventRow(event: TraceEvent, index: number): HTMLTableRowElement {
 
   // Click handler
   row.addEventListener('click', () => {
-    if (isDetailPinned && selectedEvent && selectedEvent.id !== event.id) {
+    const rowKey = getRowKey(rowData)
+    if (isDetailPinned && selectedRowKey && selectedRowKey !== rowKey) {
       return
     }
-    selectedEvent = event
+    selectedRowKey = rowKey
     showDetailPanel(event)
-    // Highlight selected row
     document.querySelectorAll('tr.selected').forEach((r) => r.classList.remove('selected'))
     row.classList.add('selected')
   })
@@ -687,6 +1075,37 @@ function showDetailPanel(event: TraceEvent) {
         <div class="detail-value status-${event.status}">${safeStatus}</div>
       </div>
     </div>
+  `
+
+  if (event.trace) {
+    const safeTraceId = escapeHtml(event.trace.traceId)
+    const safeSpanId = escapeHtml(event.trace.spanId)
+    const safeParentSpanId = event.trace.parentSpanId ? escapeHtml(event.trace.parentSpanId) : null
+
+    html += `
+      <div class="detail-section">
+        <h3>Trace</h3>
+        <div class="detail-row">
+          <div class="detail-label">Trace ID:</div>
+          <div class="detail-value">${safeTraceId}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Span ID:</div>
+          <div class="detail-value">${safeSpanId}</div>
+        </div>
+        ${
+          safeParentSpanId
+            ? `<div class="detail-row">
+          <div class="detail-label">Parent Span:</div>
+          <div class="detail-value">${safeParentSpanId}</div>
+        </div>`
+            : ''
+        }
+      </div>
+    `
+  }
+
+  html += `
 
     <div class="detail-section">
       <h3>Timing</h3>
@@ -753,6 +1172,65 @@ function showDetailPanel(event: TraceEvent) {
   elements.detailContent.innerHTML = html
 }
 
+/**
+ * Show detail panel for a trace group
+ */
+function showTraceDetailPanel(traceRow: TraceRow) {
+  openDetailPanel()
+
+  const safeTraceId = escapeHtml(traceRow.traceId)
+  const safeStatus = escapeHtml(traceRow.status.toUpperCase())
+  const duration = traceRow.durationMs !== undefined ? `${traceRow.durationMs.toFixed(2)}ms` : '-'
+
+  let html = `
+    <div class="detail-section">
+      <h3>Trace</h3>
+      <div class="detail-row">
+        <div class="detail-label">Trace ID:</div>
+        <div class="detail-value">${safeTraceId}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Status:</div>
+        <div class="detail-value status-${traceRow.status}">${safeStatus}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Spans:</div>
+        <div class="detail-value">${traceRow.spanCount}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Errors:</div>
+        <div class="detail-value">${traceRow.errorCount}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Open spans:</div>
+        <div class="detail-value">${traceRow.incompleteCount}</div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h3>Timing</h3>
+      <div class="detail-row">
+        <div class="detail-label">Started:</div>
+        <div class="detail-value">${new Date(traceRow.tsStart).toLocaleTimeString()}.${String(traceRow.tsStart % 1000).padStart(3, '0')}</div>
+      </div>
+      ${
+        traceRow.tsEnd
+          ? `<div class="detail-row">
+        <div class="detail-label">Ended:</div>
+        <div class="detail-value">${new Date(traceRow.tsEnd).toLocaleTimeString()}.${String(traceRow.tsEnd % 1000).padStart(3, '0')}</div>
+      </div>`
+          : ''
+      }
+      <div class="detail-row">
+        <div class="detail-label">End-to-end:</div>
+        <div class="detail-value">${duration}</div>
+      </div>
+    </div>
+  `
+
+  elements.detailContent.innerHTML = html
+}
+
 function openDetailPanel() {
   elements.detailPanel.classList.add('visible')
   elements.body.classList.add('detail-open')
@@ -761,7 +1239,7 @@ function openDetailPanel() {
 function closeDetailPanel() {
   elements.detailPanel.classList.remove('visible')
   elements.body.classList.remove('detail-open')
-  selectedEvent = null
+  selectedRowKey = null
   isDetailPinned = false
   updatePinButton()
   // Remove selection highlight
@@ -910,8 +1388,8 @@ function getDisplayDirection(event: TraceEvent): string {
     return event.direction
   }
 
-  const isResponse = Boolean(event.tsEnd || event.response || event.status === 'error')
-  return isResponse ? 'main→renderer' : 'renderer→main'
+  const isComplete = Boolean(event.tsEnd || event.response || event.status === 'error')
+  return isComplete ? 'renderer→main→renderer' : 'renderer→main'
 }
 
 function updatePinButton() {
