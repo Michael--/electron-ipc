@@ -116,6 +116,61 @@ importers:
         specifier: ^7.3.1
         version: 7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.46.0)(yaml@2.8.2)
 
+  apps/inspector-lab:
+    dependencies:
+      '@number10/electron-ipc':
+        specifier: workspace:*
+        version: link:../../packages/electron-ipc
+      react:
+        specifier: ^19.2.3
+        version: 19.2.3
+      react-dom:
+        specifier: ^19.2.3
+        version: 19.2.3(react@19.2.3)
+    devDependencies:
+      '@types/node':
+        specifier: ^25.0.9
+        version: 25.0.9
+      '@types/react':
+        specifier: ^19.2.9
+        version: 19.2.9
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.9)
+      '@vitejs/plugin-react':
+        specifier: ^5.1.2
+        version: 5.1.2(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.46.0)(yaml@2.8.2))
+      '@vitest/ui':
+        specifier: ^4.0.17
+        version: 4.0.17(vitest@4.0.17)
+      electron:
+        specifier: ^40.0.0
+        version: 40.0.0
+      electron-builder:
+        specifier: ^26.4.0
+        version: 26.4.0(electron-builder-squirrel-windows@26.4.0)
+      electron-builder-squirrel-windows:
+        specifier: ^26.4.0
+        version: 26.4.0(dmg-builder@26.4.0)
+      electron-vite:
+        specifier: ^5.0.0
+        version: 5.0.0(@swc/core@1.15.8(@swc/helpers@0.5.18))(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.46.0)(yaml@2.8.2))
+      mkdirp:
+        specifier: ^3.0.1
+        version: 3.0.1
+      rimraf:
+        specifier: ^6.1.2
+        version: 6.1.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.3.1
+        version: 7.3.1(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.46.0)(yaml@2.8.2)
+      vitest:
+        specifier: ^4.0.17
+        version: 4.0.17(@types/node@25.0.9)(@vitest/ui@4.0.17)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(terser@5.46.0)(yaml@2.8.2)
+
   apps/multi-window:
     dependencies:
       '@number10/electron-ipc':
