@@ -19,7 +19,7 @@ Docs: **[Full Documentation](https://michael--.github.io/electron-ipc/)** | [npm
 - Define contracts once and generate main/preload/renderer APIs (plus React hooks).
 - Change a signature and TypeScript flags every mismatch immediately.
 - Keep large data flows safe with stream contracts.
-- Add runtime validation only when you want it (Zod/Valibot).
+- Add runtime validation with modern adapters (Zod 4.x/Valibot).
 
 ## 🚀 Quick Start
 
@@ -141,9 +141,12 @@ This library provides a code generation approach to create type-safe IPC communi
 - ✅ **Four Communication Patterns**: Invoke, Event, Broadcast, and Streaming
 - ✅ **Streaming Support**: Handle large data transfers efficiently using Web Streams API
 - ✅ **React Hooks**: Automatic generation of React hooks for all contract types
-- ✅ **Runtime Validation (Optional)**: Validator helpers for Zod/Valibot and stream chunk checks
+- ✅ **Modern Validation Adapters**: First-class support for Zod 4.x and Valibot
+- ✅ **Runtime Validation (Optional)**: Standardized error handling for all validation scenarios
 - ✅ **YAML Configuration**: Clean, maintainable configuration for multiple APIs
 - ✅ **Generator Workflows**: `--watch` and `--check` modes for dev and CI
+- ✅ **Window Manager**: Multi-window broadcast helpers and registry
+- ✅ **IPC Inspector**: Visual tracing and debugging tool (dev-only)
 - ✅ **Cross-Platform**: Full support for Windows, macOS, and Linux
 - ✅ **Zero Runtime Overhead (Default)**: Type safety at compile time unless validation is enabled
 
@@ -423,22 +426,18 @@ class RegisterStreamDownload extends AbstractRegisterStreamDownload {
 }
 ```
 
-**Optional: runtime validation helpers**
+**Optional: Runtime validation with modern adapters**
 
-If you want runtime checks (Zod/Valibot/etc.), wrap handlers with validators. This keeps your contracts unchanged, but fails fast when payloads do not match. The helpers are validator-agnostic; any function that returns `{ success, data }` works.
+If you want runtime checks, wrap handlers with validators using the modern adapters for Zod 4.x or Valibot. This keeps your contracts unchanged but validates at runtime.
 
 ```typescript
 import { z } from 'zod'
-import {
-  defineInvokeHandlers,
-  validatorFromSafeParse,
-  withInvokeValidation,
-} from '@number10/electron-ipc'
+import { zodAdapter, withInvokeValidation } from '@number10/electron-ipc/validation'
+import { defineInvokeHandlers } from '@number10/electron-ipc'
 
-const requestValidator = validatorFromSafeParse(
-  z.object({ a: z.number(), b: z.number() }).safeParse
-)
-const responseValidator = validatorFromSafeParse(z.number().safeParse)
+// Create validators using modern adapter
+const requestValidator = zodAdapter.zodValidator(z.object({ a: z.number(), b: z.number() }))
+const responseValidator = zodAdapter.zodValidator(z.number())
 
 const invokeHandlers = defineInvokeHandlers<InvokeContracts>({
   AddNumbers: withInvokeValidation(
@@ -450,10 +449,14 @@ const invokeHandlers = defineInvokeHandlers<InvokeContracts>({
 
 ```typescript
 import { defineStreamUploadHandlers, withStreamUploadValidation } from '@number10/electron-ipc'
+import { zodAdapter } from '@number10/electron-ipc/validation'
 
 const uploadHandlers = defineStreamUploadHandlers<StreamUploadContracts>({
   UploadFile: withStreamUploadValidation(
-    { request: requestValidator, data: validatorFromSafeParse(z.instanceof(Uint8Array).safeParse) },
+    {
+      request: requestValidator,
+      data: zodAdapter.zodValidator(z.instanceof(Uint8Array)),
+    },
     (_request, onData, onEnd, onError) => {
       onError((err) => console.error(err))
       onData((chunk) => {
@@ -465,6 +468,19 @@ const uploadHandlers = defineStreamUploadHandlers<StreamUploadContracts>({
     }
   ),
 })
+```
+
+**With Valibot:**
+
+```typescript
+import { number, object, safeParse } from 'valibot'
+import { valibotAdapter, withInvokeValidation } from '@number10/electron-ipc/validation'
+
+const requestValidator = valibotAdapter.valibotValidator(
+  object({ a: number(), b: number() }),
+  safeParse
+)
+const responseValidator = valibotAdapter.valibotValidator(number(), safeParse)
 ```
 
 **Note:** For stream invoke/download handlers, pass `{ data: validator }` to validate each stream chunk.
@@ -656,6 +672,11 @@ import { InvokeContracts } from './generated-api'
 
 - ✅ **Streaming Contracts**: Handle large files and real-time data
 - ✅ **Automatic React Hooks**: Generate hooks for all contract types
+- ✅ **Modern Validation Adapters**: First-class Zod 4.x and Valibot support
+- ✅ **Standardized Error Handling**: IPCValidationError and IPCHandlerError types
+- ✅ **Window Manager**: Multi-window broadcast helpers and registry
+- ✅ **IPC Inspector**: Visual debugging and tracing tool
+- ✅ **YAML Configuration**: Clean, maintainable project setup
 - ✅ **Windows Support**: Full cross-platform compatibility
 - ✅ **Multiple APIs**: Define multiple API configurations in one YAML file
 

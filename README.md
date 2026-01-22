@@ -23,7 +23,8 @@ The main library - a TypeScript code generator that creates type-safe IPC commun
 - ✅ Type-safe invoke/event/broadcast patterns
 - ✅ Stream support for large data transfers
 - ✅ Automatic React hooks generation
-- ✅ Optional runtime validation helpers (Zod/Valibot)
+- ✅ Modern validation adapters (Zod 4.x/Valibot)
+- ✅ Runtime validation helpers with standardized error handling
 - ✅ Generator watch/check workflow for CI
 - ✅ Templates + integration examples (electron-vite/forge)
 - ✅ YAML-based configuration
