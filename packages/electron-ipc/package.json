@@ -42,6 +42,21 @@
       "import": "./dist/inspector/index.mjs",
       "require": "./dist/inspector/index.cjs"
     },
+    "./validation": {
+      "types": "./dist/validation/index.d.ts",
+      "import": "./dist/validation/index.mjs",
+      "require": "./dist/validation/index.cjs"
+    },
+    "./validation/adapters/zod": {
+      "types": "./dist/validation/adapters/zod.d.ts",
+      "import": "./dist/validation/adapters/zod.mjs",
+      "require": "./dist/validation/adapters/zod.cjs"
+    },
+    "./validation/adapters/valibot": {
+      "types": "./dist/validation/adapters/valibot.d.ts",
+      "import": "./dist/validation/adapters/valibot.mjs",
+      "require": "./dist/validation/adapters/valibot.cjs"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -70,6 +85,10 @@
     "typesafe",
     "type-safe",
     "typescript",
+    "validation",
+    "runtime-validation",
+    "zod",
+    "valibot",
     "stream",
     "streams"
   ],
@@ -104,6 +123,12 @@
   },
   "peerDependenciesMeta": {
     "electron": {
+      "optional": true
+    },
+    "zod": {
+      "optional": true
+    },
+    "valibot": {
       "optional": true
     }
   },

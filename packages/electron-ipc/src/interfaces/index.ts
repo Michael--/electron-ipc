@@ -13,6 +13,8 @@ export * from './broadcast-contracts'
 export * from './event-contracts'
 export * from './invoke-contracts'
 export * from './stream-contracts'
+
+// Keep validation for backward compatibility (deprecated, use @number10/electron-ipc/validation)
 export * from './validation'
 
 // Export combined IPC contracts (for backwards compatibility)
