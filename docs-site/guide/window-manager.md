@@ -18,39 +18,29 @@ The Window Management module provides a centralized registry for BrowserWindows 
 ### Architecture Overview
 
 ```mermaid
-flowchart TB
-    WR["📋 Window Registry
-    Central Tracker
-    Role-based Management"]
+sequenceDiagram
+    participant WR as 📋 Window Registry
+    participant MW as Main Window
+    participant S1 as Secondary 1
+    participant S2 as Secondary 2
+    participant INS as Inspector
 
-    MW["Main Window
-    role: main"]
+    MW->>WR: register()
+    S1->>WR: register()
+    S2->>WR: register()
+    INS->>WR: register()
 
-    S1["Secondary 1
-    role: secondary"]
+    WR-->>MW: broadcastToAll()
+    WR-->>S1: broadcastToAll()
+    WR-->>S2: broadcastToAll()
+    WR-->>INS: broadcastToAll()
 
-    S2["Secondary 2
-    role: secondary"]
+    WR-->>S1: broadcastToRole('secondary')
+    WR-->>S2: broadcastToRole('secondary')
 
-    INS["Inspector
-    role: inspector"]
-
-    MW -.->|register| WR
-    S1 -.->|register| WR
-    S2 -.->|register| WR
-    INS -.->|register| WR
-
-    WR ==>|broadcastToAll| MW & S1 & S2 & INS
-    WR -->|"broadcastToRole
-    ('secondary')"| S1 & S2
-    WR -.->|"excludeRoles
-    (['inspector'])"| MW & S1 & S2
-
-    style WR fill:#c678dd,stroke:#a855f7,stroke-width:4px,color:#000
-    style MW fill:#61afef,stroke:#528bff,stroke-width:3px,color:#000
-    style S1 fill:#98c379,stroke:#10b981,stroke-width:3px,color:#000
-    style S2 fill:#98c379,stroke:#10b981,stroke-width:3px,color:#000
-    style INS fill:#e5c07b,stroke:#f59e0b,stroke-width:3px,color:#000
+    WR-->>MW: excludeRoles(['inspector'])
+    WR-->>S1: excludeRoles(['inspector'])
+    WR-->>S2: excludeRoles(['inspector'])
 ```
 
 The window-manager module is included in `@number10/electron-ipc`:

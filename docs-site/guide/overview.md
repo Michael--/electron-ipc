@@ -15,7 +15,7 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 The following diagram shows how the four IPC contract types work together in an Electron application:
 
 ```mermaid
-flowchart TB
+flowchart
     R["🖥️ Renderer Process
     React/Vue UI
     window.api.*"]
