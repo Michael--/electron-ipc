@@ -25,6 +25,10 @@ type ActivityItem = {
 type UploadWriter = ReturnType<typeof window.labStreamApi.uploadChunks>
 
 const createId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+const createTraceContext = () => {
+  const traceId = createId()
+  return { traceId, spanId: traceId }
+}
 
 const formatTime = (ts: number) => new Date(ts).toLocaleTimeString()
 
@@ -70,6 +74,10 @@ export function App() {
   const [ticksActive, setTicksActive] = useState(false)
   const [ticksError, setTicksError] = useState<string | null>(null)
   const ticksStopRef = useRef<(() => void) | null>(null)
+  const [pairedActive, setPairedActive] = useState(false)
+  const [pairedReceived, setPairedReceived] = useState(0)
+  const [pairedError, setPairedError] = useState<string | null>(null)
+  const pairedStopsRef = useRef<Array<(() => void) | null>>([])
 
   const [downloadCount, setDownloadCount] = useState(5)
   const [downloadDelay, setDownloadDelay] = useState(180)
@@ -119,6 +127,8 @@ export function App() {
       unsubscribe?.()
       ticksStopRef.current?.()
       downloadStopRef.current?.()
+      pairedStopsRef.current.forEach((stop) => stop?.())
+      pairedStopsRef.current = []
       if (uploadWriterRef.current) {
         void uploadWriterRef.current.abort()
         uploadWriterRef.current = null
@@ -127,8 +137,8 @@ export function App() {
   }, [pushActivity])
 
   const activeStreams = useMemo(
-    () => [ticksActive, downloadActive, uploadActive].filter(Boolean).length,
-    [downloadActive, ticksActive, uploadActive]
+    () => [ticksActive, downloadActive, uploadActive, pairedActive].filter(Boolean).length,
+    [downloadActive, ticksActive, uploadActive, pairedActive]
   )
 
   const logTone = logLevel === 'error' ? 'error' : logLevel === 'warn' ? 'warning' : 'info'
@@ -255,6 +265,69 @@ export function App() {
     ticksStopRef.current = null
     setTicksActive(false)
     pushActivity('Ticks cancelled', 'cancel requested', 'warning')
+  }
+
+  const handleStopPairedTicks = () => {
+    if (!pairedStopsRef.current.length) return
+    pairedStopsRef.current.forEach((stop) => stop?.())
+    pairedStopsRef.current = []
+    setPairedActive(false)
+    pushActivity('Shared trace cancelled', 'paired ticks', 'warning')
+  }
+
+  const handleStartPairedTicks = () => {
+    handleStopPairedTicks()
+    setPairedActive(true)
+    setPairedReceived(0)
+    setPairedError(null)
+
+    const sharedTrace = createTraceContext()
+    let completed = 0
+
+    const markComplete = () => {
+      completed += 1
+      if (completed >= 2) {
+        pairedStopsRef.current = []
+        setPairedActive(false)
+        pushActivity('Shared trace complete', 'paired ticks done', 'success')
+      }
+    }
+
+    const handleError = (err: Error) => {
+      setPairedError(err.message)
+      setErrorCount((count) => count + 1)
+      pairedStopsRef.current.forEach((stop) => stop?.())
+      pairedStopsRef.current = []
+      setPairedActive(false)
+      pushActivity('Shared trace error', err.message, 'error')
+    }
+
+    const startStream = () =>
+      window.labStreamApi.invokeStreamTicks(
+        {
+          count: ticksCount,
+          delayMs: ticksDelay,
+          payloadSize: ticksPayloadSize || undefined,
+          failAt: ticksFailAt || undefined,
+        },
+        {
+          onData: () => {
+            setPairedReceived((count) => count + 1)
+          },
+          onEnd: () => {
+            markComplete()
+          },
+          onError: (err) => {
+            handleError(err)
+          },
+        },
+        { trace: sharedTrace }
+      )
+
+    const stopA = startStream()
+    const stopB = startStream()
+    pairedStopsRef.current = [stopA, stopB]
+    pushActivity('Shared trace started', '2 ticks streams', 'info')
   }
 
   const handleStartDownload = () => {
@@ -657,6 +730,25 @@ export function App() {
                 </button>
                 <span className="badge">
                   {ticksError ? `error: ${ticksError}` : `${ticksReceived} chunks`}
+                </span>
+              </div>
+              <div className="row">
+                <button
+                  className="btn ghost small"
+                  onClick={handleStartPairedTicks}
+                  disabled={pairedActive}
+                >
+                  Start shared trace
+                </button>
+                <button
+                  className="btn ghost small"
+                  onClick={handleStopPairedTicks}
+                  disabled={!pairedActive}
+                >
+                  Cancel shared trace
+                </button>
+                <span className="badge">
+                  {pairedError ? `error: ${pairedError}` : `${pairedReceived} chunks`}
                 </span>
               </div>
             </div>

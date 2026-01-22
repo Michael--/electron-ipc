@@ -306,15 +306,18 @@ function traceStreamInvoke(
 }
 
 /** Updates stream invoke trace with chunk data */
-function traceStreamInvokeChunk(traceId: string, channel: string, chunk: any): void {
-  if (!traceId || !shouldTraceChannel(channel)) return
+function traceStreamInvokeChunk(
+  traceContext: TraceContext | null,
+  channel: string,
+  chunk: any
+): void {
+  if (!traceContext || !shouldTraceChannel(channel)) return
 
   const tsStart = Date.now()
-  const traceContext = { traceId, spanId: traceId }
 
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
-      id: traceId,
+      id: traceContext.spanId,
       kind: 'streamInvoke',
       channel,
       direction: 'renderer→main',
@@ -328,38 +331,57 @@ function traceStreamInvokeChunk(traceId: string, channel: string, chunk: any): v
 }
 
 /** Completes stream invoke trace */
-function traceStreamInvokeEnd(traceId: string, channel: string, tsStart: number): void {
-  if (!traceId || !shouldTraceChannel(channel)) return
+function traceStreamInvokeEnd(
+  traceContext: TraceContext | null,
+  channel: string,
+  tsStart: number,
+  status: 'ok' | 'cancelled' | 'error' = 'ok',
+  error?: any
+): void {
+  if (!traceContext || !shouldTraceChannel(channel)) return
 
   const tsEnd = Date.now()
-  const traceContext = { traceId, spanId: traceId }
 
   try {
-    ipcRenderer.send('INSPECTOR:TRACE', {
-      id: traceId,
+    const event: any = {
+      id: traceContext.spanId,
       kind: 'streamInvoke',
       channel,
       direction: 'renderer→main',
-      status: 'ok',
+      status,
       tsStart,
       tsEnd,
       durationMs: tsEnd - tsStart,
       trace: createTraceEnvelope(traceContext, tsStart, tsEnd),
       source: { webContentsId: -1 }
-    })
+    }
+
+    if (status === 'error' && error) {
+      event.error = {
+        name: error instanceof Error ? error.name : 'Error',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    }
+
+    ipcRenderer.send('INSPECTOR:TRACE', event)
   } catch {}
 }
 
 /** Marks stream invoke as errored */
-function traceStreamInvokeError(traceId: string, channel: string, tsStart: number, error: any): void {
-  if (!traceId || !shouldTraceChannel(channel)) return
+function traceStreamInvokeError(
+  traceContext: TraceContext | null,
+  channel: string,
+  tsStart: number,
+  error: any
+): void {
+  if (!traceContext || !shouldTraceChannel(channel)) return
 
   const tsEnd = Date.now()
-  const traceContext = { traceId, spanId: traceId }
 
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
-      id: traceId,
+      id: traceContext.spanId,
       kind: 'streamInvoke',
       channel,
       direction: 'renderer→main',
@@ -407,15 +429,18 @@ function traceStreamUploadStart(
 }
 
 /** Traces a stream upload data chunk */
-function traceStreamUploadData(traceId: string, channel: string, chunk: any): void {
-  if (!traceId || !shouldTraceChannel(channel)) return
+function traceStreamUploadData(
+  traceContext: TraceContext | null,
+  channel: string,
+  chunk: any
+): void {
+  if (!traceContext || !shouldTraceChannel(channel)) return
 
   const tsStart = Date.now()
-  const traceContext = { traceId, spanId: traceId }
 
   try {
     ipcRenderer.send('INSPECTOR:TRACE', {
-      id: traceId,
+      id: traceContext.spanId,
       kind: 'streamUpload',
       channel,
       direction: 'renderer→main',
@@ -429,23 +454,41 @@ function traceStreamUploadData(traceId: string, channel: string, chunk: any): vo
 }
 
 /** Traces stream upload completion */
-function traceStreamUploadEnd(traceId: string, channel: string): void {
-  if (!traceId || !shouldTraceChannel(channel)) return
+function traceStreamUploadEnd(
+  traceContext: TraceContext | null,
+  channel: string,
+  status: 'ok' | 'cancelled' | 'error' = 'ok',
+  error?: any,
+  tsStart?: number
+): void {
+  if (!traceContext || !shouldTraceChannel(channel)) return
 
-  const tsStart = Date.now()
-  const traceContext = { traceId, spanId: traceId }
+  const tsEnd = Date.now()
+  const resolvedStart = tsStart ?? tsEnd
 
   try {
-    ipcRenderer.send('INSPECTOR:TRACE', {
-      id: traceId,
+    const event: any = {
+      id: traceContext.spanId,
       kind: 'streamUpload',
       channel,
       direction: 'renderer→main',
-      status: 'ok',
-      tsStart,
-      trace: createTraceEnvelope(traceContext, tsStart),
+      status,
+      tsStart: resolvedStart,
+      tsEnd,
+      durationMs: tsEnd - resolvedStart,
+      trace: createTraceEnvelope(traceContext, resolvedStart, tsEnd),
       source: { webContentsId: -1 }
-    })
+    }
+
+    if (status === 'error' && error) {
+      event.error = {
+        name: error instanceof Error ? error.name : 'Error',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    }
+
+    ipcRenderer.send('INSPECTOR:TRACE', event)
   } catch {}
 }
 
@@ -457,7 +500,7 @@ function traceStreamDownload(
 ): void {
   if (!shouldTraceChannel(channel)) return
 
-  const traceContext = createTraceContext(parentTrace)
+  const traceContext = parentTrace ?? createTraceContext()
   const tsStart = Date.now()
 
   try {
@@ -466,12 +509,50 @@ function traceStreamDownload(
       kind: 'streamDownload',
       channel,
       direction: 'main→renderer',
-      status: 'ok',
+      status: 'streaming',
       tsStart,
       trace: createTraceEnvelope(traceContext, tsStart),
       target: { webContentsId: -1 },
       data: createPayloadPreview(chunk)
     })
+  } catch {}
+}
+
+/** Completes stream download trace */
+function traceStreamDownloadEnd(
+  traceContext: TraceContext | null,
+  channel: string,
+  tsStart: number,
+  status: 'ok' | 'cancelled' | 'error' = 'ok',
+  error?: any
+): void {
+  if (!traceContext || !shouldTraceChannel(channel)) return
+
+  const tsEnd = Date.now()
+
+  try {
+    const event: any = {
+      id: traceContext.spanId,
+      kind: 'streamDownload',
+      channel,
+      direction: 'main→renderer',
+      status,
+      tsStart,
+      tsEnd,
+      durationMs: tsEnd - tsStart,
+      trace: createTraceEnvelope(traceContext, tsStart, tsEnd),
+      target: { webContentsId: -1 }
+    }
+
+    if (status === 'error' && error) {
+      event.error = {
+        name: error instanceof Error ? error.name : 'Error',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    }
+
+    ipcRenderer.send('INSPECTOR:TRACE', event)
   } catch {}
 }
 
@@ -606,17 +687,17 @@ const invokeStream${contract} = <K extends keyof ${contract}>(
 
    const dataHandler = (_event: any, chunk: ${contract}[K]["stream"]) => {
      const { payload } = unwrapTracePayload(chunk)
-     traceStreamInvokeChunk(traceId, channel as string, payload)
+     traceStreamInvokeChunk(traceContext, channel as string, payload)
      callbacks.onData(payload)
    }
    const endHandler = (_event: any, _endPayload: any) => {
-     traceStreamInvokeEnd(traceId, channel as string, tsStart)
+     traceStreamInvokeEnd(traceContext, channel as string, tsStart)
      callbacks.onEnd()
      cleanup()
    }
    const errorHandler = (_event: any, err: any) => {
      const { payload } = unwrapTracePayload(err)
-     traceStreamInvokeError(traceId, channel as string, tsStart, payload)
+     traceStreamInvokeError(traceContext, channel as string, tsStart, payload)
      callbacks.onError(payload instanceof Error ? payload : new Error(String(payload)))
      cleanup()
    }
@@ -633,6 +714,7 @@ const invokeStream${contract} = <K extends keyof ${contract}>(
    }
 
    const stop = () => {
+     traceStreamInvokeEnd(traceContext, channel as string, tsStart, 'cancelled')
      ipcRenderer.send(\`\${channel as string}-cancel\`)
      cleanup()
    }
@@ -682,27 +764,29 @@ const upload${contract} = <K extends keyof ${contract}>(
   options?: TraceOptions
 ): StreamWriter<${contract}[K]["data"]> => {
    const traceContext = traceStreamUploadStart(channel as string, request, options?.trace)
-   const traceId = traceContext?.spanId ?? ''
+   const tsStart = Date.now()
    ipcRenderer.send(
      \`\${channel as string}-start\`,
      wrapTracePayload(request, traceContext ?? undefined)
    )
    return {
      write: async (chunk: ${contract}[K]["data"]) => {
-       traceStreamUploadData(traceId, channel as string, chunk)
+       traceStreamUploadData(traceContext, channel as string, chunk)
        ipcRenderer.send(
          \`\${channel as string}-data\`,
          wrapTracePayload(chunk, traceContext ?? undefined)
        )
      },
      close: async () => {
-       traceStreamUploadEnd(traceId, channel as string)
+       traceStreamUploadEnd(traceContext, channel as string, 'ok', undefined, tsStart)
        ipcRenderer.send(
          \`\${channel as string}-end\`,
          wrapTracePayload(undefined, traceContext ?? undefined)
        )
      },
      abort: async (reason?: any) => {
+       const status = reason instanceof Error ? 'error' : 'cancelled'
+       traceStreamUploadEnd(traceContext, channel as string, status, reason, tsStart)
        ipcRenderer.send(
          \`\${channel as string}-error\`,
          wrapTracePayload(reason, traceContext ?? undefined)
@@ -733,18 +817,24 @@ const download${contract} = <K extends keyof ${contract}>(
    const dataChannel = \`\${channel as string}-data\`
    const endChannel = \`\${channel as string}-end\`
    const errorChannel = \`\${channel as string}-error\`
+   const traceContext = shouldTraceChannel(channel as string)
+     ? createTraceContext(options?.trace)
+     : null
+   const tsStart = Date.now()
 
    const dataHandler = (_event: any, data: ${contract}[K]["data"]) => {
      const { payload, trace } = unwrapTracePayload(data)
-     traceStreamDownload(channel as string, payload, trace ?? options?.trace)
+     traceStreamDownload(channel as string, payload, trace ?? traceContext ?? options?.trace)
      callback(payload)
    }
    const endHandler = () => {
+     traceStreamDownloadEnd(traceContext, channel as string, tsStart)
      onEnd?.()
      cleanup()
    }
    const errorHandler = (_event: any, err: any) => {
      const { payload } = unwrapTracePayload(err)
+     traceStreamDownloadEnd(traceContext, channel as string, tsStart, 'error', payload)
      onError?.(payload)
      cleanup()
    }
@@ -761,6 +851,7 @@ const download${contract} = <K extends keyof ${contract}>(
    }
 
    const stop = () => {
+     traceStreamDownloadEnd(traceContext, channel as string, tsStart, 'cancelled')
      ipcRenderer.send(\`\${channel as string}-cancel\`)
      cleanup()
    }
@@ -780,7 +871,10 @@ const download${contract} = <K extends keyof ${contract}>(
    ipcRenderer.on(dataChannel, dataHandler)
    ipcRenderer.on(endChannel, endHandler)
    ipcRenderer.on(errorChannel, errorHandler)
-   ipcRenderer.invoke(channel as string, request) // Trigger the download with request
+   ipcRenderer.invoke(
+     channel as string,
+     wrapTracePayload(request, traceContext ?? undefined)
+   ) // Trigger the download with request
    return stop
 }
 `
