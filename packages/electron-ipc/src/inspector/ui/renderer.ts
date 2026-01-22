@@ -258,19 +258,17 @@ function setupEventListeners() {
 
   // Clear button
   elements.clearBtn.addEventListener('click', () => {
-    if (confirm('Clear all events?')) {
-      window.inspectorAPI.sendCommand({ type: 'clear' })
-      allEvents = []
-      statsEventCount = 0
-      statsStartTime = Date.now()
-      lastSeqNumber = 0
-      detectedGaps = 0
-      elements.gapCount.style.display = 'none'
-      elements.gapCount.textContent = ''
-      applyFilters()
-      renderNow() // Immediate render after clear
-      updateStats(0)
-    }
+    window.inspectorAPI.sendCommand({ type: 'clear' })
+    allEvents = []
+    statsEventCount = 0
+    statsStartTime = Date.now()
+    lastSeqNumber = 0
+    detectedGaps = 0
+    elements.gapCount.style.display = 'none'
+    elements.gapCount.textContent = ''
+    applyFilters()
+    renderNow() // Immediate render after clear
+    updateStats(0)
   })
 
   // Export button

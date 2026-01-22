@@ -223,6 +223,7 @@
 
       main {
         flex: 1;
+        min-height: 0;
         overflow: auto;
         position: relative;
         transition: margin-right 0.2s ease;
@@ -230,6 +231,18 @@
 
       body.detail-open main {
         margin-right: 400px;
+      }
+
+      body.detail-open .stats-panel {
+        margin-right: 400px;
+      }
+
+      .workspace {
+        flex: 1;
+        min-height: 0;
+        position: relative;
+        display: flex;
+        flex-direction: column;
       }
 
       table {
@@ -375,7 +388,7 @@
       }
 
       .detail-panel {
-        position: fixed;
+        position: absolute;
         right: 0;
         top: 0;
         width: 400px;
@@ -384,7 +397,7 @@
         border-left: 1px solid #3e3e42;
         display: none;
         flex-direction: column;
-        z-index: 100;
+        z-index: 20;
         box-shadow: -8px 0 24px rgba(0, 0, 0, 0.35);
       }
 
@@ -463,17 +476,13 @@
 
       /* Statistics Panel */
       .stats-panel {
-        position: fixed;
-        top: 60px;
-        right: 16px;
-        width: 400px;
-        max-height: calc(100vh - 80px);
+        display: none;
+        flex: 0 0 38%;
+        min-height: 220px;
+        max-height: 50%;
         background: #252526;
-        border: 1px solid #3e3e42;
-        border-radius: 6px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-        z-index: 100;
-        display: flex;
+        border-top: 1px solid #3e3e42;
+        box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.35);
         flex-direction: column;
       }
 
@@ -500,13 +509,16 @@
       .stats-content {
         flex: 1;
         overflow-y: auto;
-        padding: 16px;
+        min-height: 0;
+        overflow-x: auto;
       }
 
       .metrics-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 11px;
+        font-size: 12px;
+        table-layout: auto;
+        min-width: 720px;
       }
 
       .metrics-table th,
@@ -560,8 +572,8 @@
         }
 
         .stats-panel {
-          width: calc(100% - 32px);
-          max-height: 50vh;
+          flex-basis: 45%;
+          max-height: none;
         }
       }
     </style>
@@ -656,54 +668,56 @@
       </div>
     </div>
 
-    <!-- Statistics Panel -->
-    <div id="statsPanel" class="stats-panel" style="display: none">
-      <div class="stats-panel-header">
-        <h3>Metrics by Channel</h3>
-        <button id="closeStatsBtn" title="Close statistics">×</button>
-      </div>
-      <div id="statsContent" class="stats-content">
-        <p style="color: #888; text-align: center; padding: 20px">No data yet</p>
-      </div>
-    </div>
+    <div class="workspace">
+      <main>
+        <div id="emptyState" class="empty-state">
+          <div class="empty-state-icon">📡</div>
+          <h2>No IPC Events Yet</h2>
+          <p>
+            Waiting for IPC communication to be traced...<br />Make sure tracing is enabled in
+            your application.
+          </p>
+        </div>
 
-    <main>
-      <div id="emptyState" class="empty-state">
-        <div class="empty-state-icon">📡</div>
-        <h2>No IPC Events Yet</h2>
-        <p>
-          Waiting for IPC communication to be traced...<br />Make sure tracing is enabled in your
-          application.
-        </p>
-      </div>
+        <table id="eventsTable" style="display: none">
+          <thead>
+            <tr>
+              <th style="width: 60px">#</th>
+              <th style="width: 140px">Time</th>
+              <th style="width: 100px">Type</th>
+              <th style="width: 200px">Channel</th>
+              <th style="width: 150px">Direction</th>
+              <th style="width: 120px">Role</th>
+              <th style="width: 80px">Duration</th>
+              <th style="width: 80px">Size</th>
+              <th style="width: 80px">Status</th>
+            </tr>
+          </thead>
+          <tbody id="eventsBody"></tbody>
+        </table>
+      </main>
 
-      <table id="eventsTable" style="display: none">
-        <thead>
-          <tr>
-            <th style="width: 60px">#</th>
-            <th style="width: 140px">Time</th>
-            <th style="width: 100px">Type</th>
-            <th style="width: 200px">Channel</th>
-            <th style="width: 150px">Direction</th>
-            <th style="width: 120px">Role</th>
-            <th style="width: 80px">Duration</th>
-            <th style="width: 80px">Size</th>
-            <th style="width: 80px">Status</th>
-          </tr>
-        </thead>
-        <tbody id="eventsBody"></tbody>
-      </table>
-    </main>
-
-    <div id="detailPanel" class="detail-panel">
-      <div class="detail-header">
-        <h2>Event Details</h2>
-        <div class="detail-actions">
-          <button id="pinDetailBtn" title="Pin details">Pin</button>
-          <button id="closeDetailBtn">✕</button>
+      <!-- Statistics Panel -->
+      <div id="statsPanel" class="stats-panel" style="display: none">
+        <div class="stats-panel-header">
+          <h3>Metrics by Channel</h3>
+          <button id="closeStatsBtn" title="Close statistics">×</button>
+        </div>
+        <div id="statsContent" class="stats-content">
+          <p style="color: #888; text-align: center; padding: 20px">No data yet</p>
         </div>
       </div>
-      <div class="detail-content" id="detailContent"></div>
+
+      <div id="detailPanel" class="detail-panel">
+        <div class="detail-header">
+          <h2>Event Details</h2>
+          <div class="detail-actions">
+            <button id="pinDetailBtn" title="Pin details">Pin</button>
+            <button id="closeDetailBtn">✕</button>
+          </div>
+        </div>
+        <div class="detail-content" id="detailContent"></div>
+      </div>
     </div>
 
     <script src="./renderer.js"></script>
