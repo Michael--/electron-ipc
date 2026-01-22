@@ -62,6 +62,10 @@ const user = await window.api.invokeGetUser(123)
 3. **Generate Code** - Create type-safe wrapper functions
 4. **Write Output** - Save generated code to preload directory
 
+Interactive view of the pipeline:
+
+<GeneratorPipeline />
+
 ### Generated Code Structure
 
 For each contract type, the generator creates:
@@ -133,9 +137,6 @@ The generator ensures **compile-time type safety** through:
 
 Example:
 
-````typescript
-Example:
-
 ```typescript
 // Contract definition
 export type InvokeContracts = GenericInvokeContract<{
@@ -158,20 +159,8 @@ RegisterHandler.register()
 const user = await window.api.GetUser(123)
 // TypeScript knows 'user' is User type
 // Passing wrong type → immediate compile error
-await window.api.invokeGetUser("123") // ❌ Error: Argument of type 'string' is not assignable to parameter of type 'number'
-````
-
-This compile-time validation extends to:
-
-- Parameter types and order
-- Return types (including Promise wrapping)
-- Optional vs required parameters
-- Broadcast payloads
-- Event callback signatures
-
-### AST Transformation
-
-````
+await window.api.invokeGetUser('123') // ❌ Error: Argument of type 'string' is not assignable to parameter of type 'number'
+```
 
 This compile-time validation extends to:
 
@@ -238,6 +227,10 @@ Tip: Use `options.trace` to propagate a trace across multiple calls. Each call c
 new span under the same `traceId`, so you can see a grouped transaction without forcing
 all operations to start at the same time.
 
+### Tracing Sequence Diagram
+
+<TraceSequence />
+
 ## Electron Process Architecture
 
 ### Main Process
@@ -285,6 +278,7 @@ all operations to start at the same time.
 **Other Bundler Examples:**
 
 The repository includes minimal examples with alternative bundlers:
+
 - `apps/esbuild-minimal` - esbuild bundler with custom build script
 - `apps/webpack-minimal` - webpack with separate configs for main/preload/renderer
 - `apps/parcel-minimal` - Parcel 2.x with zero-config setup
@@ -309,7 +303,7 @@ mainInvoke.handle('saveFile', (path, content) => {
   }
   // Process request
 })
-````
+```
 
 ### CSP (Content Security Policy)
 
