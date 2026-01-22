@@ -15,6 +15,10 @@ The Window Management module provides a centralized registry for BrowserWindows 
 - **Enhanced Broadcasts**: Send messages to all windows or filtered by role
 - **Helper Functions**: Convenient helpers for common tasks
 
+### Architecture Overview
+
+<WindowRegistryDiagram />
+
 ## Installation
 
 The window-manager module is included in `@number10/electron-ipc`:

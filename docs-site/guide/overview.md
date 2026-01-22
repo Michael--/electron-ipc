@@ -10,6 +10,12 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 
 ## Architecture
 
+### Communication Flow
+
+The following diagram shows how the four IPC contract types work together in an Electron application:
+
+<IpcFlowDiagram />
+
 ### Packages
 
 - **`packages/electron-ipc`** - Main library with code generator and runtime helpers

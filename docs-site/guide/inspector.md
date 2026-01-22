@@ -14,6 +14,10 @@ The IPC Inspector provides visibility into IPC traffic:
 - Optional window metadata when your traces provide it
 - Disabled automatically in production builds
 
+### Architecture
+
+<InspectorArchitecture />
+
 ## Installation
 
 The inspector module is included in `@number10/electron-ipc`:
