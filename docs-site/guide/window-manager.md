@@ -17,9 +17,41 @@ The Window Management module provides a centralized registry for BrowserWindows 
 
 ### Architecture Overview
 
-<WindowRegistryDiagram />
+```mermaid
+flowchart TB
+    WR["📋 Window Registry
+    Central Tracker
+    Role-based Management"]
 
-## Installation
+    MW["Main Window
+    role: main"]
+
+    S1["Secondary 1
+    role: secondary"]
+
+    S2["Secondary 2
+    role: secondary"]
+
+    INS["Inspector
+    role: inspector"]
+
+    MW -.->|register| WR
+    S1 -.->|register| WR
+    S2 -.->|register| WR
+    INS -.->|register| WR
+
+    WR ==>|broadcastToAll| MW & S1 & S2 & INS
+    WR -->|"broadcastToRole
+    ('secondary')"| S1 & S2
+    WR -.->|"excludeRoles
+    (['inspector'])"| MW & S1 & S2
+
+    style WR fill:#c678dd,stroke:#a855f7,stroke-width:4px,color:#000
+    style MW fill:#61afef,stroke:#528bff,stroke-width:3px,color:#000
+    style S1 fill:#98c379,stroke:#10b981,stroke-width:3px,color:#000
+    style S2 fill:#98c379,stroke:#10b981,stroke-width:3px,color:#000
+    style INS fill:#e5c07b,stroke:#f59e0b,stroke-width:3px,color:#000
+```
 
 The window-manager module is included in `@number10/electron-ipc`:
 

@@ -16,9 +16,37 @@ The IPC Inspector provides visibility into IPC traffic:
 
 ### Architecture
 
-<InspectorArchitecture />
+```mermaid
+flowchart TB
+    R["🖥️ Renderer Process
+    App Window
+    window.api.* calls"]
 
-## Installation
+    S["🔍 Inspector Server
+    Event Router
+    Main Process"]
+
+    B["💾 Ring Buffer
+    5000 Events
+    FIFO Queue"]
+
+    UI["📊 Inspector UI
+    Dedicated Window
+    Live Viewer"]
+
+    R -->|"1. Send Trace
+    INSPECTOR:TRACE"| S
+    S -->|"2. Store"| B
+    S -->|"3. Broadcast
+    (batched)"| UI
+    B -.->|"4. Export
+    (JSON)"| UI
+
+    style R fill:#61afef,stroke:#528bff,stroke-width:4px,color:#000
+    style S fill:#c678dd,stroke:#a855f7,stroke-width:4px,color:#000
+    style B fill:#e5c07b,stroke:#f59e0b,stroke-width:4px,color:#000
+    style UI fill:#98c379,stroke:#10b981,stroke-width:4px,color:#000
+```
 
 The inspector module is included in `@number10/electron-ipc`:
 

@@ -14,9 +14,46 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 
 The following diagram shows how the four IPC contract types work together in an Electron application:
 
-<IpcFlowDiagram />
+```mermaid
+flowchart TB
+    R["🖥️ Renderer Process
+    React/Vue UI
+    window.api.*"]
 
-### Packages
+    P["🔒 Preload Script
+    Context Bridge
+    Generated API"]
+
+    M["⚙️ Main Process
+    IPC Handlers
+    Node.js Backend"]
+
+    G["📝 Generated Code
+    Type-Safe Layer
+    ts-morph AST"]
+
+    R -->|"1. invoke()
+    Request/Response"| P
+    P --> M
+    M -.->|response| R
+
+    R ==>|"2. send()
+    Fire & Forget"| M
+
+    M -->|"3. broadcast()
+    Main → Renderer"| R
+
+    R <-.->|"4. stream()
+    Large Data/Bidirectional"| M
+
+    G -.->|"generates"| P
+    G -.->|"generates"| M
+
+    style R fill:#61afef,stroke:#528bff,stroke-width:3px,color:#000
+    style P fill:#c678dd,stroke:#a855f7,stroke-width:3px,color:#000
+    style M fill:#98c379,stroke:#10b981,stroke-width:3px,color:#000
+    style G fill:#e5c07b,stroke:#f59e0b,stroke-width:3px,color:#000
+```
 
 - **`packages/electron-ipc`** - Main library with code generator and runtime helpers
 - **`packages/template-basic`** - Self-generating template demonstrating best practices
@@ -43,9 +80,9 @@ The repository includes multiple example apps demonstrating different bundlers a
 
 The generator ships with optional runtime modules:
 
-- **Window Management**: Central registry + multi-window broadcast helpers.  
+- **Window Management**: Central registry + multi-window broadcast helpers.
   See [Window Management](./window-manager).
-- **IPC Inspector**: Dev-only IPC tracing UI with payload previews and export.  
+- **IPC Inspector**: Dev-only IPC tracing UI with payload previews and export.
   See [IPC Inspector](./inspector).
 
 ## IPC Contract Types

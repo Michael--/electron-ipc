@@ -62,11 +62,35 @@ const user = await window.api.invokeGetUser(123)
 3. **Generate Code** - Create type-safe wrapper functions
 4. **Write Output** - Save generated code to preload directory
 
-Interactive view of the pipeline:
+View of the code generation pipeline:
 
-<GeneratorPipeline />
+```mermaid
+flowchart TB
+    A["📄 IPC Contracts
+    ipc-api.ts
+    TypeScript Interfaces"]
 
-### Generated Code Structure
+    B["⚙️ Code Generator
+    ts-morph AST Parser
+    Analyze & Transform"]
+
+    C["🔒 Preload API
+    ipc-api.generated.ts
+    Renderer Wrappers"]
+
+    D["🖥️ Main Handlers
+    AbstractRegisterHandler
+    Type-Safe Backend"]
+
+    A -->|"Parse Contracts"| B
+    B -->|"Generate"| C
+    B -->|"Generate"| D
+
+    style A fill:#e5c07b,stroke:#f59e0b,stroke-width:4px,color:#000
+    style B fill:#c678dd,stroke:#a855f7,stroke-width:4px,color:#000
+    style C fill:#61afef,stroke:#528bff,stroke-width:4px,color:#000
+    style D fill:#98c379,stroke:#10b981,stroke-width:4px,color:#000
+```
 
 For each contract type, the generator creates:
 
@@ -229,7 +253,34 @@ all operations to start at the same time.
 
 ### Tracing Sequence Diagram
 
-<TraceSequence />
+```mermaid
+sequenceDiagram
+    autonumber
+    participant R as 🖥️ Renderer
+    participant M as ⚙️ Main
+    participant I as 🔍 Inspector Server
+    participant UI as 📊 Inspector UI
+
+    Note over R,UI: Invoke Request Flow with Tracing
+
+    rect rgb(97, 175, 239, 0.1)
+        Note right of R: Start Trace
+        R->>M: invoke(channel, payload)
+        R->>I: INSPECTOR:TRACE start
+        I->>UI: broadcast start event
+    end
+
+    rect rgb(152, 195, 121, 0.1)
+        Note right of M: Process Request
+        M->>R: response payload
+    end
+
+    rect rgb(229, 192, 123, 0.1)
+        Note right of R: End Trace
+        R->>I: INSPECTOR:TRACE end
+        I->>UI: broadcast end event
+    end
+```
 
 ## Electron Process Architecture
 
