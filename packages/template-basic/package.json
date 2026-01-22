@@ -5,6 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "pnpm generate",
     "generate": "electron-ipc-generate --config=ipc-config.yaml",
     "clean": "shx rm -f *.generated.ts ipc-api-main-broadcast.ts",
     "typecheck": "tsc --noEmit"
