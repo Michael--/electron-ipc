@@ -16,12 +16,27 @@ export default defineConfig({
     sidebar: {
       '/guide/': [
         {
-          text: 'Guide',
+          text: 'Getting Started',
           items: [
             { text: 'Overview', link: '/guide/overview' },
             { text: 'Architecture', link: '/guide/architecture' },
+          ],
+        },
+        {
+          text: 'Core Features',
+          items: [
+            { text: 'Validation', link: '/guide/validation' },
             { text: 'Window Manager', link: '/guide/window-manager' },
             { text: 'Inspector', link: '/guide/inspector' },
+          ],
+        },
+        {
+          text: 'Advanced Topics',
+          items: [
+            { text: 'Multi-Window Patterns', link: '/guide/multi-window' },
+            { text: 'Performance Tuning', link: '/guide/performance' },
+            { text: 'Security & Best Practices', link: '/guide/security' },
+            { text: 'Production Deployment', link: '/guide/production' },
           ],
         },
       ],
