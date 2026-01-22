@@ -368,23 +368,34 @@ The test app includes CSP headers to prevent XSS attacks:
 
 ### Open Items
 
-- P1 (High): Transaction-level tracing follow-ups
-  Detail: Model per-chunk spans, add end-to-end correlation tests, normalize cross-process clocks, and measure overhead for high-volume streams.
-- P3 (Medium): Versioned export schema (anonymized export)
-  Detail: Optional anonymized export to support reproducible bug reports.
-- P4 (Medium): Automatic multi-window metadata
-  Detail: Enrich traces with windowRole/windowId from the Window Manager without manual user hooks.
-- P5 (Low): Automatic error handling
-  Detail: Standardize error payloads for invokes and streams; align with logging and validation output.
-- P6 (Low): IPC middleware system
-  Detail: Pre/post hooks for logging, validation, auth, and metrics without custom boilerplate.
-- P7 (Low): Bi-directional invoke
-  Detail: Renderer-to-renderer invocation routed via main with clear targeting and failure behavior.
-- P1 (High): Plugin system for transformations
-  Detail: Hookable pipeline stages (parse/transform/emit) to adjust AST, naming, and output shape without forking.
-- P2 (High): Custom type validators
-  Detail: Adapter layer for Zod/io-ts/Valibot with consistent error payloads across invoke/event/stream.
-- P3 (Medium): Custom code generators
-  Detail: Support alternative output targets (framework-specific APIs) on top of a stable intermediate model.
-- P4 (Low): Alternative transport layers
-  Detail: Swap Electron IPC for MessagePort/WebSocket while keeping contracts and types consistent.
+**Production Readiness (P1 - Critical):**
+
+- Runtime validation integration (Zod/Valibot adapter with consistent error payloads)
+- Standardized error handling (consistent error structure across invoke/event/stream)
+- Security audit & best practices guide (CSP, context isolation, input validation)
+
+**Developer Experience (P2 - High):**
+
+- Documentation: Best practices guide (multi-window, streaming, performance tuning)
+- Documentation: Production deployment checklist
+- Testing: Generator output snapshot tests
+- Testing: E2E multi-window scenarios
+
+**Extensibility (P2 - High):**
+
+- Plugin system for transformations (AST hooks without forking)
+- IPC middleware system (pre/post hooks for auth, logging, metrics)
+
+**Advanced Features (P3 - Medium):**
+
+- Transaction-level tracing enhancements (per-chunk spans, overhead measurement)
+- Versioned export schema (anonymized bug reports)
+- Automatic multi-window metadata enrichment
+- Custom code generators (framework-specific outputs)
+
+**Future Enhancements (P4 - Low):**
+
+- Bi-directional invoke (renderer-to-renderer via main)
+- Alternative transport layers (MessagePort, WebSocket)
+- VS Code extension (contract navigation, auto-completion)
+- Generator watch mode
