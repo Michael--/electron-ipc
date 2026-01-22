@@ -31,6 +31,7 @@ let kindFilter = ''
 let statusFilter = ''
 let isDetailPinned = false
 let autoScrollEnabled = true
+let traceEnabled = true
 
 // Render debouncing
 let renderTimeout: ReturnType<typeof setTimeout> | null = null
@@ -51,6 +52,7 @@ let elements: {
   main: HTMLElement
   statusBadge: HTMLElement
   statusText: HTMLElement
+  traceToggleBtn: HTMLButtonElement
   pauseBtn: HTMLButtonElement
   clearBtn: HTMLButtonElement
   exportBtn: HTMLButtonElement
@@ -118,6 +120,7 @@ function init() {
     main: bodyNode.querySelector('main') as HTMLElement,
     statusBadge: bodyNode.querySelector('#statusBadge') as HTMLElement,
     statusText: bodyNode.querySelector('#statusText') as HTMLElement,
+    traceToggleBtn: bodyNode.querySelector('#traceToggleBtn') as HTMLButtonElement,
     pauseBtn: bodyNode.querySelector('#pauseBtn') as HTMLButtonElement,
     clearBtn: bodyNode.querySelector('#clearBtn') as HTMLButtonElement,
     exportBtn: bodyNode.querySelector('#exportBtn') as HTMLButtonElement,
@@ -181,6 +184,7 @@ function init() {
   setupEventListeners()
   updatePinButton()
   updateAutoScrollButton()
+  updateTraceToggleButton()
 
   // Listen for init message
   window.inspectorAPI.onInit((payload) => {
@@ -219,7 +223,13 @@ function init() {
 
   // Listen for status updates
   window.inspectorAPI.onStatus((payload) => {
-    updateStatus(payload.isTracing, payload.eventCount, payload.droppedCount, payload.payloadMode)
+    updateStatus(
+      payload.isTracing,
+      payload.eventCount,
+      payload.droppedCount,
+      payload.payloadMode,
+      payload.traceEnabled
+    )
   })
 
   // Listen for command responses
@@ -238,6 +248,14 @@ function init() {
  * Setup DOM event listeners
  */
 function setupEventListeners() {
+  // Trace enabled toggle
+  elements.traceToggleBtn.addEventListener('click', () => {
+    const nextEnabled = !traceEnabled
+    traceEnabled = nextEnabled
+    updateTraceToggleButton()
+    window.inspectorAPI.sendCommand({ type: 'setTracingEnabled', enabled: nextEnabled })
+  })
+
   // Pause/Resume button
   elements.pauseBtn.addEventListener('click', () => {
     isPaused = !isPaused
@@ -1056,20 +1074,35 @@ function updateStatus(
   isTracing: boolean,
   _eventCount: number,
   _droppedCount?: number,
-  payloadMode?: 'none' | 'redacted' | 'full'
+  payloadMode?: 'none' | 'redacted' | 'full',
+  traceEnabledFromServer?: boolean
 ) {
-  if (!isTracing && !isPaused) {
-    elements.statusBadge.classList.remove('active')
-    elements.statusBadge.classList.add('paused')
-    elements.statusText.textContent = 'Paused'
-    elements.pauseBtn.textContent = 'Resume'
-    isPaused = true
-  } else if (isTracing && isPaused) {
-    elements.statusBadge.classList.remove('paused')
-    elements.statusBadge.classList.add('active')
-    elements.statusText.textContent = 'Active'
-    elements.pauseBtn.textContent = 'Pause'
-    isPaused = false
+  if (typeof traceEnabledFromServer === 'boolean') {
+    traceEnabled = traceEnabledFromServer
+    updateTraceToggleButton()
+  }
+
+  elements.pauseBtn.disabled = !traceEnabled
+
+  if (!traceEnabled) {
+    elements.statusBadge.classList.remove('active', 'paused')
+    elements.statusBadge.classList.add('disabled')
+    elements.statusText.textContent = 'Trace Off'
+  } else {
+    elements.statusBadge.classList.remove('disabled')
+    if (isTracing) {
+      elements.statusBadge.classList.remove('paused')
+      elements.statusBadge.classList.add('active')
+      elements.statusText.textContent = 'Active'
+      elements.pauseBtn.textContent = 'Pause'
+      isPaused = false
+    } else {
+      elements.statusBadge.classList.remove('active')
+      elements.statusBadge.classList.add('paused')
+      elements.statusText.textContent = 'Paused'
+      elements.pauseBtn.textContent = 'Resume'
+      isPaused = true
+    }
   }
 
   // Note: We ignore droppedCount from server - only show UI gaps
@@ -1130,6 +1163,11 @@ function updateAutoScrollButton() {
   elements.autoScrollBtn.classList.toggle('toggle-active', autoScrollEnabled)
 }
 
+function updateTraceToggleButton() {
+  elements.traceToggleBtn.textContent = traceEnabled ? 'Tracing: On' : 'Tracing: Off'
+  elements.traceToggleBtn.classList.toggle('toggle-active', traceEnabled)
+}
+
 /**
  * Poll server status (buffer size, event count)
  */
@@ -1137,6 +1175,14 @@ async function pollServerStatus() {
   try {
     const status = await window.inspectorAPI.getStatus()
     if (status) {
+      updateStatus(
+        status.isTracing,
+        status.eventCount,
+        status.droppedCount,
+        status.payloadMode,
+        status.traceEnabled
+      )
+
       // Update server buffer size if changed
       if (typeof status.bufferCapacity === 'number' && status.bufferCapacity !== serverBufferSize) {
         serverBufferSize = status.bufferCapacity

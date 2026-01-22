@@ -15,6 +15,7 @@ let payloadModeHandler: (() => string) | null = null
 let statusHandler:
   | (() => {
       isTracing: boolean
+      traceEnabled: boolean
       eventCount: number
       bufferCapacity: number
       droppedCount: number
@@ -55,6 +56,7 @@ export function ensureInspectorHandlers(): void {
 
     statusHandler = () => ({
       isTracing: false,
+      traceEnabled: false,
       eventCount: 0,
       bufferCapacity: 0,
       droppedCount: 0,
@@ -87,6 +89,7 @@ export function replaceInspectorHandlers(
   newPayloadModeHandler: () => string,
   newStatusHandler: () => {
     isTracing: boolean
+    traceEnabled: boolean
     eventCount: number
     bufferCapacity: number
     droppedCount: number

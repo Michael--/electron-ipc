@@ -100,6 +100,25 @@ describe('InspectorServer', () => {
       expect(server.snapshot()).toHaveLength(0)
     })
 
+    it('should not store events when tracing is disabled', () => {
+      server.setTracingEnabled(false)
+
+      const event: InvokeTrace = {
+        id: '1',
+        kind: 'invoke',
+        channel: 'test',
+        direction: 'renderer→main',
+        status: 'ok',
+        tsStart: Date.now(),
+        source: { webContentsId: 1 },
+      }
+
+      server.push(event)
+
+      expect(server.snapshot()).toHaveLength(0)
+      expect(server.getStatus().traceEnabled).toBe(false)
+    })
+
     it('should track dropped events when buffer is full', () => {
       // Push 6 events (capacity is 5)
       for (let i = 0; i < 6; i++) {

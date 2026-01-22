@@ -211,6 +211,33 @@ In the Inspector UI:
 - **Open** = spans missing an end timestamp.
 - **Trace duration** = wall‑clock time from first span start to last span end (not a sum).
 
+### Tracing Lifecycle and Controls
+
+Tracing is optional. The Inspector window is a dev‑time tool, while tracing is an opt‑in
+instrumentation layer that can be enabled or disabled at runtime.
+
+Key controls:
+
+- **Tracing On/Off** (Inspector UI): disables trace emission in renderer processes.
+- **Payload mode**: `none` / `redacted` / `full` controls how much data is captured.
+- **Ring buffer size**: limits retained history without affecting live tracing.
+
+When to enable tracing:
+
+- Debugging cross‑window flows (invoke + stream interactions).
+- Investigating latency, timeouts, or cancellation paths.
+- Validating retry logic or correlated multi‑step transactions.
+
+When to keep it off:
+
+- High‑volume traffic where overhead matters.
+- Sensitive payloads (keep tracing off or use `redacted` / `none`).
+- Benchmarks or perf testing where instrumentation skews results.
+
+Tip: Use `options.trace` to propagate a trace across multiple calls. Each call creates a
+new span under the same `traceId`, so you can see a grouped transaction without forcing
+all operations to start at the same time.
+
 ## Electron Process Architecture
 
 ### Main Process

@@ -248,6 +248,9 @@ export interface InspectorOptions {
   /** Enable inspector (default: dev mode only) */
   enabled?: boolean
 
+  /** Enable trace emission from renderer processes */
+  traceEnabled?: boolean
+
   /** Open inspector window on app start */
   openOnStart?: boolean
 
@@ -279,6 +282,7 @@ export interface InspectorOptions {
  */
 export const DEFAULT_INSPECTOR_OPTIONS: Required<InspectorOptions> = {
   enabled: process.env.NODE_ENV !== 'production',
+  traceEnabled: true,
   openOnStart: false,
   maxEvents: 5000,
   payloadMode: 'redacted',

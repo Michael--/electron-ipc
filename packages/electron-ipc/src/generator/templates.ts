@@ -55,8 +55,11 @@ function unwrapTracePayload<T>(
   return { payload: input as T }
 }
 
+let tracingEnabled = true
+
 /** Checks if tracing should be enabled for this channel */
 function shouldTraceChannel(channel: string): boolean {
+  if (!tracingEnabled) return false
   // Never trace Inspector IPC (prevent circular tracing)
   if (channel.startsWith('INSPECTOR:')) return false
   return true
@@ -112,6 +115,17 @@ ipcRenderer.invoke('INSPECTOR:GET_PAYLOAD_MODE')
     // Inspector not enabled - silently ignore
   })
 
+// Silently try to get initial tracing state from main process
+ipcRenderer.invoke('INSPECTOR:GET_STATUS')
+  .then((status) => {
+    if (status && typeof status.traceEnabled === 'boolean') {
+      tracingEnabled = status.traceEnabled
+    }
+  })
+  .catch(() => {
+    // Inspector not enabled - silently ignore
+  })
+
 /** Creates a payload preview based on current mode */
 function createPayloadPreview(data: any): { mode: 'none' | 'redacted' | 'full', bytes?: number, summary?: string, data?: any } {
   const bytes = calculateBytes(data)
@@ -142,6 +156,11 @@ function createPayloadPreview(data: any): { mode: 'none' | 'redacted' | 'full', 
 /** Updates cached payload mode from main process */
 ipcRenderer.on('INSPECTOR:PAYLOAD_MODE_CHANGED', (_event: any, mode: 'none' | 'redacted' | 'full') => {
   cachedPayloadMode = mode
+})
+
+/** Updates cached tracing state from main process */
+ipcRenderer.on('INSPECTOR:TRACE_ENABLED_CHANGED', (_event: any, enabled: boolean) => {
+  tracingEnabled = Boolean(enabled)
 })
 
 /** Traces an invoke IPC call */

@@ -19,7 +19,7 @@ describe('inspector ui preload', () => {
 
   it('exposes inspector API and wires IPC calls', async () => {
     vi.resetModules()
-    vi.mocked(ipcRenderer.invoke).mockResolvedValue({ isTracing: true })
+    vi.mocked(ipcRenderer.invoke).mockResolvedValue({ isTracing: true, traceEnabled: true })
 
     await import('./preload')
 
@@ -40,7 +40,7 @@ describe('inspector ui preload', () => {
       command: { type: 'clear' },
     })
 
-    await expect(api.getStatus()).resolves.toEqual({ isTracing: true })
+    await expect(api.getStatus()).resolves.toEqual({ isTracing: true, traceEnabled: true })
 
     const initCallback = vi.fn()
     api.onInit(initCallback)

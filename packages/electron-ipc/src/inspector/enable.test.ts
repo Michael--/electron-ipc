@@ -95,6 +95,7 @@ const createMockServer = () => ({
   clear: vi.fn(),
   pause: vi.fn(),
   resume: vi.fn(),
+  setTracingEnabled: vi.fn(),
   setPayloadMode: vi.fn(),
   setBufferSize: vi.fn(),
   exportJson: vi.fn(() => ({ events: [] })),

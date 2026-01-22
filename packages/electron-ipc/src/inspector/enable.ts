@@ -237,6 +237,10 @@ function handleCommand(
       server.resume()
       return { resumed: true }
 
+    case 'setTracingEnabled':
+      server.setTracingEnabled(command.enabled)
+      return { traceEnabled: command.enabled }
+
     case 'setPayloadMode':
       server.setPayloadMode(command.mode)
       return { mode: command.mode }

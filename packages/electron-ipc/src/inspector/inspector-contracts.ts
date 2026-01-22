@@ -74,6 +74,7 @@ export type InspectorCommand =
   | { type: 'clear' }
   | { type: 'pause' }
   | { type: 'resume' }
+  | { type: 'setTracingEnabled'; enabled: boolean }
   | { type: 'export'; format: 'json' | 'csv' }
   | { type: 'setPayloadMode'; mode: 'none' | 'redacted' | 'full' }
   | { type: 'setBufferSize'; size: number }
@@ -102,6 +103,9 @@ export interface InspectorCommandResponsePayload {
 export interface InspectorStatusPayload {
   /** Whether tracing is active */
   isTracing: boolean
+
+  /** Whether tracing emission is enabled */
+  traceEnabled: boolean
 
   /** Number of events in buffer */
   eventCount: number

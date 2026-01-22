@@ -9,7 +9,16 @@ const callbacks: Record<string, (payload: any) => void> = {}
 const inspectorAPI = {
   hello: vi.fn(),
   sendCommand: vi.fn(),
-  getStatus: vi.fn(() => Promise.resolve({ bufferCapacity: 5000 })),
+  getStatus: vi.fn(() =>
+    Promise.resolve({
+      bufferCapacity: 5000,
+      isTracing: true,
+      traceEnabled: true,
+      eventCount: 0,
+      droppedCount: 0,
+      payloadMode: 'redacted',
+    })
+  ),
   onInit: vi.fn((cb: (payload: any) => void) => {
     callbacks.onInit = cb
   }),
@@ -32,6 +41,7 @@ function setupDom() {
     <main>
       <div id="statusBadge"></div>
       <div id="statusText"></div>
+      <button id="traceToggleBtn"></button>
       <button id="pauseBtn"></button>
       <button id="clearBtn"></button>
       <button id="exportBtn"></button>

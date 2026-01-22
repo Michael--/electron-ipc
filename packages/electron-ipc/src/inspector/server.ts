@@ -21,6 +21,7 @@ export class InspectorServer {
   private buffer: RingBuffer<TraceEvent>
   private subscribers = new Map<number, InspectorSubscriber>()
   private isPaused = false
+  private tracingEnabled = true
   private droppedCount = 0
   private options: Required<InspectorOptions>
   private batcher: EventBatcher | null = null
@@ -40,6 +41,7 @@ export class InspectorServer {
         ...(options.batching || {}),
       },
     }
+    this.tracingEnabled = this.options.traceEnabled
     this.buffer = new RingBuffer<TraceEvent>(this.options.maxEvents)
 
     // Initialize batcher if enabled
@@ -65,7 +67,7 @@ export class InspectorServer {
    * @param event - Trace event to add
    */
   push(event: TraceEvent): void {
-    if (this.isPaused) {
+    if (this.isPaused || !this.tracingEnabled) {
       return
     }
 
@@ -187,11 +189,45 @@ export class InspectorServer {
   }
 
   /**
+   * Sets whether tracing is enabled for renderer emission
+   *
+   * @param enabled - New tracing enabled state
+   */
+  setTracingEnabled(enabled: boolean): void {
+    this.tracingEnabled = enabled
+
+    // Broadcast status update to inspector windows
+    this.broadcast({
+      channel: 'INSPECTOR:STATUS',
+      payload: this.getStatus(),
+    })
+
+    // Broadcast tracing enabled to ALL app windows (not just inspector)
+    void import('../window-manager/registry')
+      .then(({ getWindowRegistry }) => {
+        const registry = getWindowRegistry()
+        const allWindows = registry.getAll()
+
+        allWindows.forEach((meta) => {
+          if (!meta.window.isDestroyed() && !meta.window.webContents.isDestroyed()) {
+            try {
+              meta.window.webContents.send('INSPECTOR:TRACE_ENABLED_CHANGED', enabled)
+            } catch {
+              // Send failed, window may have been destroyed
+            }
+          }
+        })
+      })
+      .catch(() => undefined)
+  }
+
+  /**
    * Gets current status
    */
   getStatus() {
     return {
-      isTracing: !this.isPaused,
+      isTracing: this.tracingEnabled && !this.isPaused,
+      traceEnabled: this.tracingEnabled,
       eventCount: this.buffer.getSize(),
       bufferCapacity: this.options.maxEvents,
       droppedCount: this.droppedCount,

@@ -66,6 +66,11 @@
         color: #d1d185;
       }
 
+      .status-badge.disabled {
+        background: #3e3e42;
+        color: #c8c8c8;
+      }
+
       .status-indicator {
         width: 6px;
         height: 6px;
@@ -593,6 +598,9 @@
           <option value="full">Full Payloads</option>
           <option value="none">No Payloads</option>
         </select>
+        <button id="traceToggleBtn" class="toggle-active" title="Toggle trace emission">
+          Tracing: On
+        </button>
         <button id="pauseBtn">Pause</button>
         <button id="clearBtn" class="danger">Clear</button>
         <button id="exportBtn">Export JSON</button>
