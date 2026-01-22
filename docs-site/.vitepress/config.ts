@@ -12,6 +12,14 @@ export default withMermaid(
       mermaid: true,
       math: false,
     },
+    mermaid: {
+      flowchart: { htmlLabels: true },
+      themeVariables: {
+        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Arial',
+        fontSize: '16px',
+      },
+    },
+
     themeConfig: {
       nav: [
         { text: 'Guide', link: '/guide/overview' },
