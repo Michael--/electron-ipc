@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { BroadcastContracts, EventContracts, InvokeContracts } from '@gen/lab-api'
 import {
   StreamDownloadContracts,
@@ -22,7 +23,14 @@ import {
   emitTrace,
   enableIpcInspector,
 } from '@number10/electron-ipc/inspector'
-import type { TraceKind, TraceStatus } from '@number10/electron-ipc/inspector'
+import type {
+  BroadcastTrace,
+  EventTrace,
+  InvokeTrace,
+  StreamTrace,
+  TraceKind,
+  TraceStatus,
+} from '@number10/electron-ipc/inspector'
 import { createBroadcastToAll, getWindowRegistry } from '@number10/electron-ipc/window-manager'
 import { app, BrowserWindow } from 'electron'
 import path from 'path'
@@ -44,16 +52,10 @@ function emitSyntheticTrace(
   const traceContext = createTraceContext()
   const tsStart = Date.now()
   const tsEnd = payload.durationMs ? tsStart + payload.durationMs : undefined
-  const direction =
-    payload.kind === 'broadcast' || payload.kind === 'streamDownload'
-      ? 'main→renderer'
-      : 'renderer→main'
 
   const base = {
     id: traceContext.spanId,
-    kind: payload.kind,
     channel: payload.channel,
-    direction,
     status: payload.status,
     tsStart,
     tsEnd,
@@ -62,21 +64,25 @@ function emitSyntheticTrace(
   }
 
   if (payload.kind === 'broadcast') {
-    emitTrace({
+    const event: BroadcastTrace = {
       ...base,
+      kind: 'broadcast',
+      direction: 'main→renderer',
       target: { webContentsId: sourceId },
-    })
+    }
+    emitTrace(event)
     return
   }
 
-  const isStreamKind =
+  if (
     payload.kind === 'streamDownload' ||
     payload.kind === 'streamInvoke' ||
     payload.kind === 'streamUpload'
-
-  if (isStreamKind) {
-    emitTrace({
+  ) {
+    const event: StreamTrace = {
       ...base,
+      kind: payload.kind,
+      direction: payload.kind === 'streamDownload' ? 'main→renderer' : 'renderer→main',
       streamId: traceContext.spanId,
       streamType:
         payload.kind === 'streamDownload'
@@ -87,14 +93,29 @@ function emitSyntheticTrace(
       chunkCount: 0,
       totalBytes: 0,
       source: { webContentsId: sourceId },
-    })
+    }
+    emitTrace(event)
     return
   }
 
-  emitTrace({
+  if (payload.kind === 'event') {
+    const event: EventTrace = {
+      ...base,
+      kind: 'event',
+      direction: 'renderer→main',
+      source: { webContentsId: sourceId },
+    }
+    emitTrace(event)
+    return
+  }
+
+  const event: InvokeTrace = {
     ...base,
+    kind: 'invoke',
+    direction: 'renderer→main',
     source: { webContentsId: sourceId },
-  })
+  }
+  emitTrace(event)
 }
 
 class RegisterInvokeHandlers extends AbstractRegisterHandler {
