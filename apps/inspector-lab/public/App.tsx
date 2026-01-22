@@ -363,9 +363,6 @@ export function App() {
             <button className="btn primary" onClick={handleScenario} disabled={scenarioRunning}>
               {scenarioRunning ? 'Scenario running...' : 'Run mixed scenario'}
             </button>
-            <button className="btn ghost" onClick={() => setActivity([])}>
-              Clear activity
-            </button>
           </div>
         </div>
         <div className="stat-grid">
@@ -392,362 +389,381 @@ export function App() {
         </div>
       </header>
 
-      <main className="panel-grid">
-        <section className="panel">
-          <div className="panel-header">
-            <h2>Quick actions</h2>
-            <p>Trigger common invoke, event, and broadcast patterns.</p>
-          </div>
+      <main className="layout">
+        <div className="panel-stack">
+          <section className="panel">
+            <div className="panel-header">
+              <h2>Quick actions</h2>
+              <p>Trigger common invoke, event, and broadcast patterns.</p>
+            </div>
 
-          <div className="panel-block">
-            <h3>Invoke AddNumbers</h3>
-            <div className="field-grid">
-              <label>
-                A
-                <input
-                  type="number"
-                  value={addA}
-                  onChange={(event) => setAddA(Number(event.target.value))}
-                />
-              </label>
-              <label>
-                B
-                <input
-                  type="number"
-                  value={addB}
-                  onChange={(event) => setAddB(Number(event.target.value))}
-                />
-              </label>
+            <div className="panel-block">
+              <h3>Invoke AddNumbers</h3>
+              <div className="field-grid">
+                <label>
+                  A
+                  <input
+                    type="number"
+                    value={addA}
+                    onChange={(event) => setAddA(Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  B
+                  <input
+                    type="number"
+                    value={addB}
+                    onChange={(event) => setAddB(Number(event.target.value))}
+                  />
+                </label>
+              </div>
+              <div className="row">
+                <button className="btn primary" onClick={handleAddNumbers}>
+                  Add numbers
+                </button>
+                <span className="badge">
+                  {addResult === null ? 'no result' : `sum ${addResult}`}
+                </span>
+              </div>
             </div>
-            <div className="row">
-              <button className="btn primary" onClick={handleAddNumbers}>
-                Add numbers
-              </button>
-              <span className="badge">{addResult === null ? 'no result' : `sum ${addResult}`}</span>
-            </div>
-          </div>
 
-          <div className="panel-block">
-            <h3>Invoke Slow</h3>
-            <div className="field-grid">
-              <label>
-                Delay (ms)
-                <input
-                  type="number"
-                  value={slowDelay}
-                  onChange={(event) => setSlowDelay(Number(event.target.value))}
-                />
-              </label>
-              <label>
-                Payload size
-                <input
-                  type="number"
-                  value={slowPayloadSize}
-                  onChange={(event) => setSlowPayloadSize(Number(event.target.value))}
-                />
-              </label>
+            <div className="panel-block">
+              <h3>Invoke Slow</h3>
+              <div className="field-grid">
+                <label>
+                  Delay (ms)
+                  <input
+                    type="number"
+                    value={slowDelay}
+                    onChange={(event) => setSlowDelay(Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  Payload size
+                  <input
+                    type="number"
+                    value={slowPayloadSize}
+                    onChange={(event) => setSlowPayloadSize(Number(event.target.value))}
+                  />
+                </label>
+              </div>
+              <div className="row">
+                <button className="btn secondary" onClick={handleSlow}>
+                  Run slow invoke
+                </button>
+                <span className="badge">
+                  {slowResult
+                    ? `waited ${slowResult.waitedMs}ms, ${slowResult.payloadSize} bytes`
+                    : 'idle'}
+                </span>
+              </div>
             </div>
-            <div className="row">
-              <button className="btn secondary" onClick={handleSlow}>
-                Run slow invoke
-              </button>
-              <span className="badge">
-                {slowResult
-                  ? `waited ${slowResult.waitedMs}ms, ${slowResult.payloadSize} bytes`
-                  : 'idle'}
-              </span>
-            </div>
-          </div>
 
-          <div className="panel-block">
-            <h3>Invoke Fail</h3>
-            <div className="row">
-              <button className="btn danger" onClick={handleFail}>
-                Trigger error
-              </button>
-              <span className="badge tone-error">throws on purpose</span>
+            <div className="panel-block">
+              <h3>Invoke Fail</h3>
+              <div className="row">
+                <button className="btn danger" onClick={handleFail}>
+                  Trigger error
+                </button>
+                <span className="badge tone-error">throws on purpose</span>
+              </div>
             </div>
-          </div>
 
-          <div className="panel-block">
-            <h3>Event Log</h3>
-            <div className="field-grid">
-              <label>
-                Level
-                <select
-                  value={logLevel}
-                  onChange={(event) => setLogLevel(event.target.value as typeof logLevel)}
+            <div className="panel-block">
+              <h3>Event Log</h3>
+              <div className="field-grid">
+                <label>
+                  Level
+                  <select
+                    value={logLevel}
+                    onChange={(event) => setLogLevel(event.target.value as typeof logLevel)}
+                  >
+                    <option value="info">info</option>
+                    <option value="warn">warn</option>
+                    <option value="error">error</option>
+                  </select>
+                </label>
+                <label>
+                  Message
+                  <input
+                    value={logMessage}
+                    onChange={(event) => setLogMessage(event.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="row">
+                <button className="btn ghost" onClick={handleLog}>
+                  Send event
+                </button>
+                <span className={`badge tone-${logTone}`}>renderer to main</span>
+              </div>
+            </div>
+
+            <div className="panel-block">
+              <h3>Broadcast Pulse</h3>
+              <div className="field-grid">
+                <label>
+                  Count
+                  <input
+                    type="number"
+                    value={broadcastCount}
+                    onChange={(event) => setBroadcastCount(Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  Delay (ms)
+                  <input
+                    type="number"
+                    value={broadcastDelay}
+                    onChange={(event) => setBroadcastDelay(Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  Payload size
+                  <input
+                    type="number"
+                    value={broadcastPayloadSize}
+                    onChange={(event) => setBroadcastPayloadSize(Number(event.target.value))}
+                  />
+                </label>
+              </div>
+              <div className="row">
+                <button className="btn accent" onClick={handleBroadcast}>
+                  Trigger broadcast
+                </button>
+                <span className="badge">{lastPulse ?? 'waiting for pulses'}</span>
+              </div>
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-header">
+              <h2>Trace simulator</h2>
+              <p>Emit synthetic statuses for timeout and cancellation coverage.</p>
+            </div>
+
+            <div className="panel-block">
+              <div className="field-grid">
+                <label>
+                  Kind
+                  <select
+                    value={traceKind}
+                    onChange={(event) => setTraceKind(event.target.value as TraceKind)}
+                  >
+                    {TRACE_KINDS.map((kind) => (
+                      <option key={kind} value={kind}>
+                        {kind}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Status
+                  <select
+                    value={traceStatus}
+                    onChange={(event) => setTraceStatus(event.target.value as TraceStatus)}
+                  >
+                    {TRACE_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Channel
+                  <input
+                    value={traceChannel}
+                    onChange={(event) => setTraceChannel(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Duration (ms)
+                  <input
+                    type="number"
+                    value={traceDuration}
+                    onChange={(event) => setTraceDuration(Number(event.target.value))}
+                  />
+                </label>
+              </div>
+              <div className="row">
+                <button className="btn primary" onClick={handleEmitTrace}>
+                  Emit trace status
+                </button>
+                <span
+                  className={`badge tone-${traceStatus === 'error' ? 'error' : traceStatus === 'timeout' ? 'warning' : 'info'}`}
                 >
-                  <option value="info">info</option>
-                  <option value="warn">warn</option>
-                  <option value="error">error</option>
-                </select>
-              </label>
-              <label>
-                Message
-                <input value={logMessage} onChange={(event) => setLogMessage(event.target.value)} />
-              </label>
+                  {traceStatus}
+                </span>
+              </div>
             </div>
-            <div className="row">
-              <button className="btn ghost" onClick={handleLog}>
-                Send event
-              </button>
-              <span className={`badge tone-${logTone}`}>renderer to main</span>
-            </div>
-          </div>
 
-          <div className="panel-block">
-            <h3>Broadcast Pulse</h3>
-            <div className="field-grid">
-              <label>
-                Count
-                <input
-                  type="number"
-                  value={broadcastCount}
-                  onChange={(event) => setBroadcastCount(Number(event.target.value))}
-                />
-              </label>
-              <label>
-                Delay (ms)
-                <input
-                  type="number"
-                  value={broadcastDelay}
-                  onChange={(event) => setBroadcastDelay(Number(event.target.value))}
-                />
-              </label>
-              <label>
-                Payload size
-                <input
-                  type="number"
-                  value={broadcastPayloadSize}
-                  onChange={(event) => setBroadcastPayloadSize(Number(event.target.value))}
-                />
-              </label>
+            <div className="panel-block note">
+              <p>
+                Tip: combine this with the Inspector metrics view to validate timeout and cancelled
+                aggregation.
+              </p>
             </div>
-            <div className="row">
-              <button className="btn accent" onClick={handleBroadcast}>
-                Trigger broadcast
-              </button>
-              <span className="badge">{lastPulse ?? 'waiting for pulses'}</span>
+          </section>
+
+          <section className="panel">
+            <div className="panel-header">
+              <h2>Streams lab</h2>
+              <p>Exercise invoke, upload, and download streams with live counters.</p>
             </div>
-          </div>
-        </section>
 
-        <section className="panel">
-          <div className="panel-header">
-            <h2>Trace simulator</h2>
-            <p>Emit synthetic statuses for timeout and cancellation coverage.</p>
-          </div>
+            <div className="panel-block">
+              <h3>Stream Invoke - Ticks</h3>
+              <div className="field-grid">
+                <label>
+                  Count
+                  <input
+                    type="number"
+                    value={ticksCount}
+                    onChange={(event) => setTicksCount(Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  Delay (ms)
+                  <input
+                    type="number"
+                    value={ticksDelay}
+                    onChange={(event) => setTicksDelay(Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  Payload size
+                  <input
+                    type="number"
+                    value={ticksPayloadSize}
+                    onChange={(event) => setTicksPayloadSize(Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  Fail at
+                  <input
+                    type="number"
+                    value={ticksFailAt}
+                    onChange={(event) => setTicksFailAt(Number(event.target.value))}
+                  />
+                </label>
+              </div>
+              <div className="row">
+                <button className="btn secondary" onClick={handleStartTicks} disabled={ticksActive}>
+                  Start ticks
+                </button>
+                <button className="btn ghost" onClick={handleStopTicks} disabled={!ticksActive}>
+                  Cancel stream
+                </button>
+                <span className="badge">
+                  {ticksError ? `error: ${ticksError}` : `${ticksReceived} chunks`}
+                </span>
+              </div>
+            </div>
 
-          <div className="panel-block">
-            <div className="field-grid">
-              <label>
-                Kind
-                <select
-                  value={traceKind}
-                  onChange={(event) => setTraceKind(event.target.value as TraceKind)}
+            <div className="panel-block">
+              <h3>Stream Download - Snapshots</h3>
+              <div className="field-grid">
+                <label>
+                  Count
+                  <input
+                    type="number"
+                    value={downloadCount}
+                    onChange={(event) => setDownloadCount(Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  Delay (ms)
+                  <input
+                    type="number"
+                    value={downloadDelay}
+                    onChange={(event) => setDownloadDelay(Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  Payload size
+                  <input
+                    type="number"
+                    value={downloadPayloadSize}
+                    onChange={(event) => setDownloadPayloadSize(Number(event.target.value))}
+                  />
+                </label>
+              </div>
+              <div className="row">
+                <button
+                  className="btn secondary"
+                  onClick={handleStartDownload}
+                  disabled={downloadActive}
                 >
-                  {TRACE_KINDS.map((kind) => (
-                    <option key={kind} value={kind}>
-                      {kind}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Status
-                <select
-                  value={traceStatus}
-                  onChange={(event) => setTraceStatus(event.target.value as TraceStatus)}
+                  Start download
+                </button>
+                <button
+                  className="btn ghost"
+                  onClick={handleStopDownload}
+                  disabled={!downloadActive}
                 >
-                  {TRACE_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Channel
-                <input
-                  value={traceChannel}
-                  onChange={(event) => setTraceChannel(event.target.value)}
-                />
-              </label>
-              <label>
-                Duration (ms)
-                <input
-                  type="number"
-                  value={traceDuration}
-                  onChange={(event) => setTraceDuration(Number(event.target.value))}
-                />
-              </label>
+                  Cancel download
+                </button>
+                <span className="badge">
+                  {downloadError ? `error: ${downloadError}` : `${downloadReceived} frames`}
+                </span>
+              </div>
             </div>
-            <div className="row">
-              <button className="btn primary" onClick={handleEmitTrace}>
-                Emit trace status
-              </button>
-              <span
-                className={`badge tone-${traceStatus === 'error' ? 'error' : traceStatus === 'timeout' ? 'warning' : 'info'}`}
-              >
-                {traceStatus}
-              </span>
-            </div>
-          </div>
 
-          <div className="panel-block note">
-            <p>
-              Tip: combine this with the Inspector metrics view to validate timeout and cancelled
-              aggregation.
-            </p>
-          </div>
-        </section>
-
-        <section className="panel">
-          <div className="panel-header">
-            <h2>Streams lab</h2>
-            <p>Exercise invoke, upload, and download streams with live counters.</p>
-          </div>
-
-          <div className="panel-block">
-            <h3>Stream Invoke - Ticks</h3>
-            <div className="field-grid">
-              <label>
-                Count
-                <input
-                  type="number"
-                  value={ticksCount}
-                  onChange={(event) => setTicksCount(Number(event.target.value))}
-                />
-              </label>
-              <label>
-                Delay (ms)
-                <input
-                  type="number"
-                  value={ticksDelay}
-                  onChange={(event) => setTicksDelay(Number(event.target.value))}
-                />
-              </label>
-              <label>
-                Payload size
-                <input
-                  type="number"
-                  value={ticksPayloadSize}
-                  onChange={(event) => setTicksPayloadSize(Number(event.target.value))}
-                />
-              </label>
-              <label>
-                Fail at
-                <input
-                  type="number"
-                  value={ticksFailAt}
-                  onChange={(event) => setTicksFailAt(Number(event.target.value))}
-                />
-              </label>
+            <div className="panel-block">
+              <h3>Stream Upload - Chunks</h3>
+              <div className="field-grid">
+                <label>
+                  Label
+                  <input
+                    value={uploadLabel}
+                    onChange={(event) => setUploadLabel(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Payload size
+                  <input
+                    type="number"
+                    value={uploadPayloadSize}
+                    onChange={(event) => setUploadPayloadSize(Number(event.target.value))}
+                  />
+                </label>
+              </div>
+              <div className="row">
+                <button
+                  className="btn secondary"
+                  onClick={handleStartUpload}
+                  disabled={uploadActive}
+                >
+                  Start upload
+                </button>
+                <button className="btn ghost" onClick={handleSendUpload} disabled={!uploadActive}>
+                  Send chunk
+                </button>
+                <button
+                  className="btn primary"
+                  onClick={handleCompleteUpload}
+                  disabled={!uploadActive}
+                >
+                  Complete
+                </button>
+                <button className="btn danger" onClick={handleAbortUpload} disabled={!uploadActive}>
+                  Abort
+                </button>
+                <span className="badge">{uploadSent} chunks sent</span>
+              </div>
             </div>
-            <div className="row">
-              <button className="btn secondary" onClick={handleStartTicks} disabled={ticksActive}>
-                Start ticks
-              </button>
-              <button className="btn ghost" onClick={handleStopTicks} disabled={!ticksActive}>
-                Cancel stream
-              </button>
-              <span className="badge">
-                {ticksError ? `error: ${ticksError}` : `${ticksReceived} chunks`}
-              </span>
+          </section>
+        </div>
+        <aside className="panel activity">
+          <div className="panel-header activity-header">
+            <div className="panel-header-copy">
+              <h2>Activity stream</h2>
+              <p>Recent actions captured from this dashboard.</p>
             </div>
-          </div>
-
-          <div className="panel-block">
-            <h3>Stream Download - Snapshots</h3>
-            <div className="field-grid">
-              <label>
-                Count
-                <input
-                  type="number"
-                  value={downloadCount}
-                  onChange={(event) => setDownloadCount(Number(event.target.value))}
-                />
-              </label>
-              <label>
-                Delay (ms)
-                <input
-                  type="number"
-                  value={downloadDelay}
-                  onChange={(event) => setDownloadDelay(Number(event.target.value))}
-                />
-              </label>
-              <label>
-                Payload size
-                <input
-                  type="number"
-                  value={downloadPayloadSize}
-                  onChange={(event) => setDownloadPayloadSize(Number(event.target.value))}
-                />
-              </label>
-            </div>
-            <div className="row">
-              <button
-                className="btn secondary"
-                onClick={handleStartDownload}
-                disabled={downloadActive}
-              >
-                Start download
-              </button>
-              <button className="btn ghost" onClick={handleStopDownload} disabled={!downloadActive}>
-                Cancel download
-              </button>
-              <span className="badge">
-                {downloadError ? `error: ${downloadError}` : `${downloadReceived} frames`}
-              </span>
-            </div>
-          </div>
-
-          <div className="panel-block">
-            <h3>Stream Upload - Chunks</h3>
-            <div className="field-grid">
-              <label>
-                Label
-                <input
-                  value={uploadLabel}
-                  onChange={(event) => setUploadLabel(event.target.value)}
-                />
-              </label>
-              <label>
-                Payload size
-                <input
-                  type="number"
-                  value={uploadPayloadSize}
-                  onChange={(event) => setUploadPayloadSize(Number(event.target.value))}
-                />
-              </label>
-            </div>
-            <div className="row">
-              <button className="btn secondary" onClick={handleStartUpload} disabled={uploadActive}>
-                Start upload
-              </button>
-              <button className="btn ghost" onClick={handleSendUpload} disabled={!uploadActive}>
-                Send chunk
-              </button>
-              <button
-                className="btn primary"
-                onClick={handleCompleteUpload}
-                disabled={!uploadActive}
-              >
-                Complete
-              </button>
-              <button className="btn danger" onClick={handleAbortUpload} disabled={!uploadActive}>
-                Abort
-              </button>
-              <span className="badge">{uploadSent} chunks sent</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="panel activity">
-          <div className="panel-header">
-            <h2>Activity stream</h2>
-            <p>Recent actions captured from this dashboard.</p>
+            <button className="btn ghost small" onClick={() => setActivity([])}>
+              Clear activity
+            </button>
           </div>
           <ul className="activity-list">
             {activity.length === 0 ? (
@@ -764,7 +780,7 @@ export function App() {
               ))
             )}
           </ul>
-        </section>
+        </aside>
       </main>
     </div>
   )

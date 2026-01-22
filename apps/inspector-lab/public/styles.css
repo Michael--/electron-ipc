@@ -32,7 +32,7 @@ body {
 body::before {
   content: "";
   position: fixed;
-  inset: -30% -20% auto auto;
+  inset: -10% -10% auto auto;
   width: 520px;
   height: 520px;
   background: radial-gradient(circle, rgba(242, 106, 75, 0.25), transparent 60%);
@@ -46,17 +46,17 @@ body::before {
 }
 
 .app {
-  max-width: 1240px;
+  max-width: 1480px;
   margin: 0 auto;
-  padding: 40px 24px 72px;
+  padding: 20px 12px 24px;
 }
 
 .hero {
   display: grid;
   grid-template-columns: minmax(260px, 1.1fr) minmax(260px, 0.9fr);
-  gap: 28px;
+  gap: 10px;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 10px;
 }
 
 .eyebrow {
@@ -76,27 +76,27 @@ h1 {
 .hero-copy {
   font-size: 1rem;
   color: var(--muted);
-  margin: 0 0 20px;
+  margin: 0 0 10px;
   max-width: 480px;
 }
 
 .hero-actions {
   display: flex;
-  gap: 12px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 6px;
 }
 
 .stat-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px 18px;
+  padding: 6px 8px;
   box-shadow: var(--shadow);
   animation: float-in 600ms ease-out both;
 }
@@ -121,17 +121,23 @@ h1 {
   color: var(--muted);
 }
 
-.panel-grid {
+.layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 12px;
+  align-items: start;
+}
+
+.panel-stack {
+  display: grid;
+  gap: 10px;
 }
 
 .panel {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 22px 22px 10px;
+  padding: 12px 12px 10px;
   box-shadow: var(--shadow);
   animation: float-in 700ms ease-out both;
 }
@@ -148,19 +154,45 @@ h1 {
   animation-delay: 200ms;
 }
 
+.activity {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 220px);
+  position: sticky;
+  top: 16px;
+}
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.panel-header-copy h2 {
+  margin: 0 0 6px;
+  font-size: 1.3rem;
+}
+
+.panel-header-copy p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
 .panel-header h2 {
   margin: 0 0 6px;
   font-size: 1.3rem;
 }
 
 .panel-header p {
-  margin: 0 0 16px;
+  margin: 0 0 10px;
   color: var(--muted);
   font-size: 0.95rem;
 }
 
 .panel-block {
-  padding: 16px;
+  padding: 10px;
   background: var(--card-strong);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -180,14 +212,15 @@ h1 {
 
 .field-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  margin-bottom: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 label {
   display: grid;
   gap: 6px;
+  min-width: 0;
   font-size: 0.85rem;
   color: var(--muted);
 }
@@ -197,6 +230,10 @@ select {
   border-radius: 10px;
   border: 1px solid var(--border);
   padding: 10px 12px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   font-size: 0.95rem;
   font-family: inherit;
   background: #fdfdfd;
@@ -219,11 +256,17 @@ select:focus {
 .btn {
   border: none;
   border-radius: 999px;
-  padding: 10px 18px;
+  padding: 10px 10px;
   font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
   transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+}
+
+.btn.small {
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  white-space: nowrap;
 }
 
 .btn:disabled {
@@ -305,6 +348,9 @@ select:focus {
   margin: 0;
   display: grid;
   gap: 10px;
+  overflow-y: auto;
+  padding-right: 4px;
+  flex: 1;
 }
 
 .activity-item {
@@ -362,14 +408,23 @@ select:focus {
   .hero-actions {
     justify-content: flex-start;
   }
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .activity {
+    position: static;
+    max-height: none;
+  }
 }
 
 @media (max-width: 720px) {
   .app {
-    padding: 28px 16px 48px;
+    padding: 14px 10px 16px;
   }
 
   .panel {
-    padding: 18px;
+    padding: 10px;
   }
 }
