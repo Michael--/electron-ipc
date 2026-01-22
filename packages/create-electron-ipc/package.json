@@ -1,6 +1,6 @@
 {
   "name": "@number10/create-electron-ipc",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Scaffold a new Electron IPC app powered by @number10/electron-ipc",
   "type": "commonjs",
   "bin": {

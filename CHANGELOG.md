@@ -1,3 +1,88 @@
+## [2.4.0] - 2026-01-22
+
+### Added
+
+- **Modern Validation System** with adapter-based architecture
+  - `zodAdapter.zodValidator()` for Zod 4.x schemas (cleaner API)
+  - `valibotAdapter.valibotValidator()` for Valibot integration
+  - Standardized error handling with `IPCValidationError` and `IPCHandlerError`
+  - Import from `@number10/electron-ipc/validation` for better tree-shaking
+  - Zod 4.x type compatibility (supports symbol in ZodIssue path)
+- **Trace Context Propagation**
+  - Automatic trace context propagation in generated handlers
+  - Trace context metadata for request/response correlation
+  - Helper functions for manual trace propagation
+  - Generator support for trace context in contracts
+- **Inspector Enhancements**
+  - Trace grouping in UI (group related invoke/events by trace ID)
+  - Trace row filtering (hide/show specific trace types)
+  - Metrics aggregation system with dashboard view
+  - Metrics panel showing events/s, buffer usage, and statistics
+  - Trace enable toggle for performance control
+  - Versioned trace export format
+  - Stream span lifecycle tracking (close spans on cancel)
+  - Refined error filtering in trace rows
+  - Shortened trace/span IDs for better readability
+- **Inspector Lab App** (`apps/inspector-lab`)
+  - New test application for Inspector development
+  - Dashboard with slow invoke grouping by trace
+  - Activity panel with pinned layout
+  - Comprehensive README with feature checklist
+- **Documentation**
+  - Interactive diagrams in architecture documentation
+  - Comprehensive production deployment guide
+  - Trace context usage documentation
+  - Inspector tracing documentation
+  - Architecture status tracking
+- **@number10/create-electron-ipc** (v0.2.0)
+  - Automated test suite (quick tests + integration tests with full build)
+  - Tests verify file generation, validation options, and build pipeline
+  - Modern validation adapter templates (zodValidator, valibotValidator)
+  - Updated to Zod 4.3.5
+
+### Changed
+
+- **Breaking (Soft)**: `validatorFromSafeParse` deprecated in favor of modern adapters
+  - Old code still works but should migrate to `zodAdapter.zodValidator()`
+  - Import from `@number10/electron-ipc/validation` instead of main package
+- **Toolchain Upgrades**
+  - Minimum Node.js version: >=20.19.0 (was >=18.0.0)
+  - Upgraded to Vite 7 and Vitest 4
+  - Modernized all package toolchains
+  - Cleaned up Husky pre-commit/commit-msg shims
+  - Updated all dependencies to latest versions
+- Updated all examples and test-app to use modern validation adapters
+- Enhanced package.json keywords (zod-4, react-hooks, multi-window, inspector, context-bridge)
+- Improved documentation with modern adapter examples in READMEs
+- Inspector UI panel reflow for better layout
+- Show invoke response direction as main→renderer in Inspector
+
+### Fixed
+
+- **Critical**: Validation modules not built (missing vite.config.ts entries)
+  - Added `validation/index`, `validation/adapters/zod`, `validation/adapters/valibot` to build
+  - Fixes "Cannot find module" error when importing validation
+- Zod 4.x type compatibility in zodValidator (symbol in path array)
+- Race condition in parallel app builds
+- Deprecated import paths in validation system
+- ESLint errors in create-electron-ipc test files (Node.js globals)
+- Build configuration to restore tests and dts generation
+- Lint warnings across codebase
+
+### Tests
+
+- Comprehensive test coverage improvements
+  - Stream contracts coverage enhanced
+  - Inspector UI trace grouping tests
+  - create-electron-ipc CLI tests (file generation and full builds)
+
+## [2.3.1] - 2026-01-21
+
+### Fixed
+
+- Minor documentation updates
+- Package metadata improvements
+
 ## [2.3.0] - 2026-01-21
 
 ### Added
