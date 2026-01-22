@@ -7,7 +7,7 @@ import type { Validator } from '../types'
  */
 type ZodIssue = {
   code: string
-  path: (string | number)[]
+  path: (string | number | symbol)[]
   message: string
   received?: unknown
 }
@@ -25,7 +25,7 @@ type ZodType<T> = {
  */
 function zodIssuesToValidationIssues(issues: ZodIssue[]): ValidationIssue[] {
   return issues.map((issue) => ({
-    path: issue.path,
+    path: issue.path.filter((p): p is string | number => typeof p !== 'symbol'),
     message: issue.message,
     expected: 'code' in issue ? String(issue.code) : undefined,
     received: 'received' in issue ? String(issue.received) : undefined,
