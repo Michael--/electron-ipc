@@ -23,8 +23,10 @@ type ActivityItem = {
 }
 
 type UploadWriter = ReturnType<typeof window.labStreamApi.uploadChunks>
+type TraceContext = { traceId: string; spanId: string; parentSpanId?: string }
 
 const createId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+const SLOW_TRACE_IDLE_MS = 2000
 const createTraceContext = () => {
   const traceId = createId()
   return { traceId, spanId: traceId }
@@ -53,6 +55,10 @@ export function App() {
   const [slowResult, setSlowResult] = useState<{ waitedMs: number; payloadSize: number } | null>(
     null
   )
+  const [slowTrace, setSlowTrace] = useState<TraceContext | null>(null)
+  const [slowTracePending, setSlowTracePending] = useState(0)
+  const [slowTraceIdle, setSlowTraceIdle] = useState(false)
+  const slowTraceResetRef = useRef<number | null>(null)
 
   const [logLevel, setLogLevel] = useState<'info' | 'warn' | 'error'>('info')
   const [logMessage, setLogMessage] = useState('Inspector lab log entry')
@@ -74,10 +80,6 @@ export function App() {
   const [ticksActive, setTicksActive] = useState(false)
   const [ticksError, setTicksError] = useState<string | null>(null)
   const ticksStopRef = useRef<(() => void) | null>(null)
-  const [pairedActive, setPairedActive] = useState(false)
-  const [pairedReceived, setPairedReceived] = useState(0)
-  const [pairedError, setPairedError] = useState<string | null>(null)
-  const pairedStopsRef = useRef<Array<(() => void) | null>>([])
 
   const [downloadCount, setDownloadCount] = useState(5)
   const [downloadDelay, setDownloadDelay] = useState(180)
@@ -127,8 +129,10 @@ export function App() {
       unsubscribe?.()
       ticksStopRef.current?.()
       downloadStopRef.current?.()
-      pairedStopsRef.current.forEach((stop) => stop?.())
-      pairedStopsRef.current = []
+      if (slowTraceResetRef.current) {
+        window.clearTimeout(slowTraceResetRef.current)
+        slowTraceResetRef.current = null
+      }
       if (uploadWriterRef.current) {
         void uploadWriterRef.current.abort()
         uploadWriterRef.current = null
@@ -137,8 +141,8 @@ export function App() {
   }, [pushActivity])
 
   const activeStreams = useMemo(
-    () => [ticksActive, downloadActive, uploadActive, pairedActive].filter(Boolean).length,
-    [downloadActive, ticksActive, uploadActive, pairedActive]
+    () => [ticksActive, downloadActive, uploadActive].filter(Boolean).length,
+    [downloadActive, ticksActive, uploadActive]
   )
 
   const logTone = logLevel === 'error' ? 'error' : logLevel === 'warn' ? 'warning' : 'info'
@@ -156,20 +160,62 @@ export function App() {
     }
   }
 
+  const clearSlowTraceReset = () => {
+    if (slowTraceResetRef.current) {
+      window.clearTimeout(slowTraceResetRef.current)
+      slowTraceResetRef.current = null
+    }
+    setSlowTraceIdle(false)
+  }
+
+  const scheduleSlowTraceReset = () => {
+    clearSlowTraceReset()
+    setSlowTraceIdle(true)
+    slowTraceResetRef.current = window.setTimeout(() => {
+      setSlowTrace(null)
+      setSlowTraceIdle(false)
+      slowTraceResetRef.current = null
+    }, SLOW_TRACE_IDLE_MS)
+  }
+
+  const ensureSlowTrace = () => {
+    clearSlowTraceReset()
+    if (slowTrace) return slowTrace
+    const next = createTraceContext()
+    setSlowTrace(next)
+    return next
+  }
+
+  const resetSlowTrace = () => {
+    clearSlowTraceReset()
+    setSlowTrace(null)
+  }
+
   const handleSlow = async () => {
     setSlowResult(null)
+    const traceContext = ensureSlowTrace()
+    setSlowTracePending((count) => count + 1)
     setInvokeCount((count) => count + 1)
     try {
-      const result = await window.labApi.invokeSlow({
-        delayMs: slowDelay,
-        payloadSize: slowPayloadSize || undefined,
-      })
+      const result = await window.labApi.invokeSlow(
+        {
+          delayMs: slowDelay,
+          payloadSize: slowPayloadSize || undefined,
+        },
+        { trace: traceContext }
+      )
       const payloadSize = result.payload ? result.payload.length : 0
       setSlowResult({ waitedMs: result.waitedMs, payloadSize })
       pushActivity('Invoke Slow', `waited ${result.waitedMs}ms`, 'success')
     } catch (err) {
       setErrorCount((count) => count + 1)
       pushActivity('Slow failed', (err as Error).message, 'error')
+    } finally {
+      setSlowTracePending((count) => {
+        const next = Math.max(0, count - 1)
+        if (next === 0) scheduleSlowTraceReset()
+        return next
+      })
     }
   }
 
@@ -265,69 +311,6 @@ export function App() {
     ticksStopRef.current = null
     setTicksActive(false)
     pushActivity('Ticks cancelled', 'cancel requested', 'warning')
-  }
-
-  const handleStopPairedTicks = () => {
-    if (!pairedStopsRef.current.length) return
-    pairedStopsRef.current.forEach((stop) => stop?.())
-    pairedStopsRef.current = []
-    setPairedActive(false)
-    pushActivity('Shared trace cancelled', 'paired ticks', 'warning')
-  }
-
-  const handleStartPairedTicks = () => {
-    handleStopPairedTicks()
-    setPairedActive(true)
-    setPairedReceived(0)
-    setPairedError(null)
-
-    const sharedTrace = createTraceContext()
-    let completed = 0
-
-    const markComplete = () => {
-      completed += 1
-      if (completed >= 2) {
-        pairedStopsRef.current = []
-        setPairedActive(false)
-        pushActivity('Shared trace complete', 'paired ticks done', 'success')
-      }
-    }
-
-    const handleError = (err: Error) => {
-      setPairedError(err.message)
-      setErrorCount((count) => count + 1)
-      pairedStopsRef.current.forEach((stop) => stop?.())
-      pairedStopsRef.current = []
-      setPairedActive(false)
-      pushActivity('Shared trace error', err.message, 'error')
-    }
-
-    const startStream = () =>
-      window.labStreamApi.invokeStreamTicks(
-        {
-          count: ticksCount,
-          delayMs: ticksDelay,
-          payloadSize: ticksPayloadSize || undefined,
-          failAt: ticksFailAt || undefined,
-        },
-        {
-          onData: () => {
-            setPairedReceived((count) => count + 1)
-          },
-          onEnd: () => {
-            markComplete()
-          },
-          onError: (err) => {
-            handleError(err)
-          },
-        },
-        { trace: sharedTrace }
-      )
-
-    const stopA = startStream()
-    const stopB = startStream()
-    pairedStopsRef.current = [stopA, stopB]
-    pushActivity('Shared trace started', '2 ticks streams', 'info')
   }
 
   const handleStartDownload = () => {
@@ -530,6 +513,23 @@ export function App() {
                     : 'idle'}
                 </span>
               </div>
+              <div className="row">
+                <span className="badge">
+                  {slowTrace ? `trace ${slowTrace.traceId}` : 'trace idle'}
+                </span>
+                {slowTracePending > 0 ? (
+                  <span className="badge">{slowTracePending} open</span>
+                ) : slowTraceIdle ? (
+                  <span className="badge tone-warning">closing soon</span>
+                ) : null}
+                <button
+                  className="btn ghost small"
+                  onClick={resetSlowTrace}
+                  disabled={!slowTrace || slowTracePending > 0}
+                >
+                  Reset trace
+                </button>
+              </div>
             </div>
 
             <div className="panel-block">
@@ -730,25 +730,6 @@ export function App() {
                 </button>
                 <span className="badge">
                   {ticksError ? `error: ${ticksError}` : `${ticksReceived} chunks`}
-                </span>
-              </div>
-              <div className="row">
-                <button
-                  className="btn ghost small"
-                  onClick={handleStartPairedTicks}
-                  disabled={pairedActive}
-                >
-                  Start shared trace
-                </button>
-                <button
-                  className="btn ghost small"
-                  onClick={handleStopPairedTicks}
-                  disabled={!pairedActive}
-                >
-                  Cancel shared trace
-                </button>
-                <span className="badge">
-                  {pairedError ? `error: ${pairedError}` : `${pairedReceived} chunks`}
                 </span>
               </div>
             </div>

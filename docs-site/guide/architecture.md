@@ -191,6 +191,26 @@ The generator uses ts-morph to:
 - Generate corresponding IPC handlers
 - Preserve JSDoc comments
 
+### Trace Correlation (traceId vs spanId)
+
+The Inspector uses two identifiers to correlate work:
+
+- **traceId**: Groups related operations (a trace). Think "session" or "transaction".
+- **spanId**: Identifies a single operation inside that trace (one invoke, stream, or event).
+- **parentSpanId**: Links spans into a tree (child span belongs to a parent span).
+
+Rules of thumb:
+
+- **Do reuse traceId** to group related work.
+- **Do not reuse spanId** across multiple operations.
+- Pass `options.trace` from renderer to propagate the trace; each call creates a new span with the same traceId.
+
+In the Inspector UI:
+
+- **Spans** = number of spans sharing the same traceId.
+- **Open** = spans missing an end timestamp.
+- **Trace duration** = wall‑clock time from first span start to last span end (not a sum).
+
 ## Electron Process Architecture
 
 ### Main Process
