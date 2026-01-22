@@ -15,7 +15,6 @@ import {
   defineStreamDownloadHandlers,
   defineStreamInvokeHandlers,
   defineStreamUploadHandlers,
-  validatorFromSafeParse,
   withEventValidation,
   withInvokeValidation,
   withStreamDownloadValidation,
@@ -27,6 +26,7 @@ import {
   enableIpcInspector,
   getInspectorWindow,
 } from '@number10/electron-ipc/inspector'
+import { validatorFromSafeParse } from '@number10/electron-ipc/validation'
 import { createBroadcastToAll, getWindowRegistry } from '@number10/electron-ipc/window-manager'
 import { app, BrowserWindow, Menu } from 'electron'
 import * as fs from 'fs'
