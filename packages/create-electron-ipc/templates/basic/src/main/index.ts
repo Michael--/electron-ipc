@@ -4,8 +4,10 @@ import {
   AbstractRegisterHandler,
   defineEventHandlers,
   defineInvokeHandlers,
-__VALIDATION_HELPER_IMPORTS__
 } from '@number10/electron-ipc'
+import {
+__VALIDATION_HELPER_IMPORTS__
+} from '@number10/electron-ipc/validation'
 import {
   enableIpcInspector,
   getInspectorWindow,

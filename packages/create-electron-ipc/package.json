@@ -11,6 +11,10 @@
     "templates",
     "README.md"
   ],
+  "scripts": {
+    "test": "node --test test/quick.test.js",
+    "test:integration": "node --test test/integration.test.js"
+  },
   "keywords": [
     "electron",
     "electron-ipc",

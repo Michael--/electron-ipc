@@ -55,6 +55,8 @@ pnpm dlx @number10/create-electron-ipc
 --pm <manager>            Package manager: pnpm, npm (default: pnpm)
 --inspector <y/n>         Include IPC Inspector (default: n)
 --validation <type>       Validation: none, zod, valibot (default: none)
+                          - zod: Uses modern zodValidator from @number10/electron-ipc/validation
+                          - valibot: Uses modern valibotValidator from @number10/electron-ipc/validation
 --no-install              Skip dependency installation
 --help, -h                Show help message
 ```
@@ -110,6 +112,26 @@ Or test the packed version:
 pnpm pack
 npx -y --package ./number10-create-electron-ipc-0.1.0.tgz create-electron-ipc
 ```
+
+## Testing
+
+The package includes automated tests to ensure the CLI works correctly:
+
+```bash
+# Quick tests (file generation only, ~1 second)
+npm test
+
+# Integration tests (includes npm install + build, ~3 minutes)
+npm run test:integration
+```
+
+Tests verify:
+
+- ✅ Project scaffolding with all validation options (none, zod, valibot)
+- ✅ Modern validation adapters (zodValidator, valibotValidator)
+- ✅ Correct import paths (`@number10/electron-ipc/validation`)
+- ✅ Inspector integration
+- ✅ Full build pipeline (integration tests only)
 
 ## Learn More
 

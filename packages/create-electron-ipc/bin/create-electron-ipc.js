@@ -229,7 +229,7 @@ async function updatePackageJson(targetDir, options) {
   pkg.dependencies['@number10/electron-ipc'] = options.electronIpcVersion
 
   if (options.validation === 'zod') {
-    pkg.dependencies.zod = '^3.24.1'
+    pkg.dependencies.zod = '^4.3.5'
     if (pkg.dependencies.valibot) delete pkg.dependencies.valibot
   } else if (options.validation === 'valibot') {
     pkg.dependencies.valibot = '^1.0.0'
@@ -250,13 +250,13 @@ function getInstallCommand(pm) {
 function getValidationSnippets(mode) {
   if (mode === 'zod') {
     return {
-      helperImports: '  validatorFromSafeParse,\n  withEventValidation,\n  withInvokeValidation,\n',
+      helperImports: '  withEventValidation,\n  withInvokeValidation,\n  zodAdapter,\n',
       libraryImports: "import { z } from 'zod'\n",
-      handlers: `const voidValidator = validatorFromSafeParse(z.void().safeParse)
-const addRequestValidator = validatorFromSafeParse(
-  z.object({ a: z.number(), b: z.number() }).safeParse
+      handlers: `const voidValidator = zodAdapter.zodValidator(z.void())
+const addRequestValidator = zodAdapter.zodValidator(
+  z.object({ a: z.number(), b: z.number() })
 )
-const addResponseValidator = validatorFromSafeParse(z.number().safeParse)
+const addResponseValidator = zodAdapter.zodValidator(z.number())
 
 const addHandler = withInvokeValidation(
   { request: addRequestValidator, response: addResponseValidator },
@@ -272,30 +272,16 @@ const quitHandler = withEventValidation(voidValidator, () => {
 
   if (mode === 'valibot') {
     return {
-      helperImports: '  validatorFromSafeParse,\n  withEventValidation,\n  withInvokeValidation,\n',
+      helperImports: '  withEventValidation,\n  withInvokeValidation,\n  valibotAdapter,\n',
       libraryImports:
         "import { type GenericSchema, number, object, safeParse, undefined as undefinedSchema } from 'valibot'\n",
       handlers: `const addSchema = object({ a: number(), b: number() })
 const addResponseSchema = number()
 const voidSchema = undefinedSchema() as GenericSchema<void>
 
-const safeParseValibot = <T>(schema: GenericSchema<T>, input: unknown) => {
-  const result = safeParse(schema, input)
-  if (result.success) {
-    return { success: true as const, data: result.output }
-  }
-  return { success: false as const, error: result.issues }
-}
-
-const voidValidator = validatorFromSafeParse<void>((input: unknown) =>
-  safeParseValibot(voidSchema, input)
-)
-const addRequestValidator = validatorFromSafeParse((input: unknown) =>
-  safeParseValibot(addSchema, input)
-)
-const addResponseValidator = validatorFromSafeParse((input: unknown) =>
-  safeParseValibot(addResponseSchema, input)
-)
+const voidValidator = valibotAdapter.valibotValidator(voidSchema, safeParse)
+const addRequestValidator = valibotAdapter.valibotValidator(addSchema, safeParse)
+const addResponseValidator = valibotAdapter.valibotValidator(addResponseSchema, safeParse)
 
 const addHandler = withInvokeValidation(
   { request: addRequestValidator, response: addResponseValidator },
