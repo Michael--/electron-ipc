@@ -723,7 +723,6 @@ Aim for these targets in production:
 
 - [IPC Inspector](./inspector.md) - Built-in performance profiling
 - [Security Guide](./security.md) - Security considerations
-- [Example Apps](../../apps/) - Reference implementations
 - [Electron Performance Docs](https://www.electronjs.org/docs/latest/tutorial/performance)
 
 ## Monitoring in Production

@@ -867,11 +867,10 @@ class AppWindowManager {
 export const windowManager = new AppWindowManager()
 ```
 
-See [apps/multi-window](../../apps/multi-window) for a complete working example.
+See the `apps/multi-window` directory in the repository for a complete working example.
 
 ## Resources
 
 - [Window Manager API Reference](./window-manager.md)
 - [Security Best Practices](./security.md)
 - [Inspector Documentation](./inspector.md)
-- [Example Apps](../../apps/multi-window)

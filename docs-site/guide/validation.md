@@ -379,10 +379,10 @@ try {
 
 ## Examples
 
-See example implementations:
+See example implementations in the repository:
 
-- [apps/test-app/src/main/index.ts](../../apps/test-app/src/main/index.ts) - Zod validation with invoke/stream handlers
-- [packages/template-basic](../../packages/template-basic) - Basic template with optional validation
+- `apps/test-app/src/main/index.ts` - Zod validation with invoke/stream handlers
+- `packages/template-basic` - Basic template with optional validation
 
 ## API Reference
 
