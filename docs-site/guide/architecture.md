@@ -323,6 +323,7 @@ The test app includes CSP headers to prevent XSS attacks:
 - [x] Support for streams (Stream Invoke, Stream Upload, Stream Download)
 - [x] Multiple window support (Window Manager with registry and role-based broadcasts)
 - [x] Metrics view backed by the ring buffer (p50/p95, error rate, payload/byte volume, throughput)
+- [x] Inspector Lab app to exercise invokes/events/broadcasts/streams and synthetic trace statuses (`apps/inspector-lab`)
 
 ### Open Items
 
