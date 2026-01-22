@@ -26,7 +26,7 @@ import {
   enableIpcInspector,
   getInspectorWindow,
 } from '@number10/electron-ipc/inspector'
-import { validatorFromSafeParse } from '@number10/electron-ipc/validation'
+import { zodAdapter } from '@number10/electron-ipc/validation'
 import { createBroadcastToAll, getWindowRegistry } from '@number10/electron-ipc/window-manager'
 import { app, BrowserWindow, Menu } from 'electron'
 import * as fs from 'fs'
@@ -41,41 +41,39 @@ let eventHandlerInitialized = false
 /// create type safe accessing to BroadcastContracts, this is the alternative way to send broadcast events
 // const mainBroadcast = createBroadcast<BroadcastContracts>()
 
-const voidValidator = validatorFromSafeParse(z.void().safeParse)
-const addNumbersRequestValidator = validatorFromSafeParse(
-  z.object({ a: z.number(), b: z.number() }).safeParse
+const voidValidator = zodAdapter.zodValidator(z.void())
+const addNumbersRequestValidator = zodAdapter.zodValidator(
+  z.object({ a: z.number(), b: z.number() })
 )
-const addNumbersResponseValidator = validatorFromSafeParse(z.number().safeParse)
-const appInfoResponseValidator = validatorFromSafeParse(
-  z.object({ name: z.string(), version: z.string() }).safeParse
+const addNumbersResponseValidator = zodAdapter.zodValidator(z.number())
+const appInfoResponseValidator = zodAdapter.zodValidator(
+  z.object({ name: z.string(), version: z.string() })
 )
-const logMessageValidator = validatorFromSafeParse(
-  z.object({ level: z.enum(['info', 'warn', 'error']), message: z.string() }).safeParse
+const logMessageValidator = zodAdapter.zodValidator(
+  z.object({ level: z.enum(['info', 'warn', 'error']), message: z.string() })
 )
 
-const streamInvokeRequestValidator = validatorFromSafeParse(z.object({ id: z.string() }).safeParse)
-const streamInvokeDataValidator = validatorFromSafeParse(z.string().safeParse)
+const streamInvokeRequestValidator = zodAdapter.zodValidator(z.object({ id: z.string() }))
+const streamInvokeDataValidator = zodAdapter.zodValidator(z.string())
 
-const uploadRequestValidator = validatorFromSafeParse(z.object({ fileName: z.string() }).safeParse)
-const uploadDataValidator = validatorFromSafeParse(
+const uploadRequestValidator = zodAdapter.zodValidator(z.object({ fileName: z.string() }))
+const uploadDataValidator = zodAdapter.zodValidator(
   z.custom<Uint8Array<ArrayBufferLike>>(
     (value) => value instanceof Uint8Array,
     'Expected Uint8Array'
-  ).safeParse
+  )
 )
 
-const downloadLogsRequestValidator = validatorFromSafeParse(
-  z.object({ level: z.enum(['info', 'warn', 'error']).optional() }).safeParse
+const downloadLogsRequestValidator = zodAdapter.zodValidator(
+  z.object({ level: z.enum(['info', 'warn', 'error']).optional() })
 )
-const downloadLogsDataValidator = validatorFromSafeParse(z.string().safeParse)
-const streamVideoRequestValidator = validatorFromSafeParse(
-  z.object({ url: z.string().url() }).safeParse
-)
-const streamVideoDataValidator = validatorFromSafeParse(
+const downloadLogsDataValidator = zodAdapter.zodValidator(z.string())
+const streamVideoRequestValidator = zodAdapter.zodValidator(z.object({ url: z.string().url() }))
+const streamVideoDataValidator = zodAdapter.zodValidator(
   z.custom<Uint8Array<ArrayBufferLike>>(
     (value) => value instanceof Uint8Array,
     'Expected Uint8Array'
-  ).safeParse
+  )
 )
 
 function initializeEventHandler() {
