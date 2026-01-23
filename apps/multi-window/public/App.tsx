@@ -32,6 +32,7 @@ export function App() {
   const [r2rStatus, setR2rStatus] = useState<string>('')
   const [logCountStatus, setLogCountStatus] = useState<string>('')
   const [clearLogsStatus, setClearLogsStatus] = useState<string>('')
+  const [errorTestStatus, setErrorTestStatus] = useState<string>('')
 
   const refreshWindowInfo = async () => {
     const info = await window.api.invokeGetWindowInfo()
@@ -137,6 +138,45 @@ export function App() {
       setTimeout(() => setClearLogsStatus(''), 5000)
     } catch (error) {
       setClearLogsStatus(`✗ Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  const handleTestInvalidWindow = async () => {
+    if (!windowInfo) return
+    try {
+      setErrorTestStatus('Testing invalid window role...')
+      await window.api.rendererInvokeAddLogEntry('nonExistentRole', {
+        level: 'info',
+        message: 'This should fail',
+        sourceRole: windowInfo.role,
+        sourceId: windowInfo.id,
+      })
+      setErrorTestStatus('✗ Unexpected: No error thrown')
+    } catch (error) {
+      setErrorTestStatus(
+        `✓ Expected error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+      setTimeout(() => setErrorTestStatus(''), 8000)
+    }
+  }
+
+  const handleTestMissingHandler = async () => {
+    if (!windowInfo) return
+    try {
+      setErrorTestStatus('Testing missing handler (timeout expected in 5s)...')
+      // Try to invoke a handler that doesn't exist on main window
+      await window.api.rendererInvokeAddLogEntry('main', {
+        level: 'info',
+        message: 'This should timeout',
+        sourceRole: windowInfo.role,
+        sourceId: windowInfo.id,
+      })
+      setErrorTestStatus('✗ Unexpected: No timeout')
+    } catch (error) {
+      setErrorTestStatus(
+        `✓ Expected timeout: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+      setTimeout(() => setErrorTestStatus(''), 8000)
     }
   }
 
@@ -354,6 +394,26 @@ export function App() {
           </div>
           {logCountStatus && <div className="status-message">{logCountStatus}</div>}
           {clearLogsStatus && <div className="status-message">{clearLogsStatus}</div>}
+
+          <div className="divider" />
+
+          <div className="panel-header">
+            <h3>Error Handling Tests</h3>
+            <span className="muted">Test R2R failure scenarios</span>
+          </div>
+          <div className="button-row">
+            <button className="button ghost" type="button" onClick={handleTestInvalidWindow}>
+              Test: Invalid Window Role
+            </button>
+            <button className="button ghost" type="button" onClick={handleTestMissingHandler}>
+              Test: Missing Handler (5s timeout)
+            </button>
+          </div>
+          {errorTestStatus && (
+            <div className="status-message" style={{ whiteSpace: 'pre-wrap' }}>
+              {errorTestStatus}
+            </div>
+          )}
         </section>
       </main>
     </div>
