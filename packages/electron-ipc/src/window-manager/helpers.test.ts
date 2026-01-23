@@ -1,3 +1,4 @@
+import '../test-helpers/electron-mock'
 import { BrowserWindow as ElectronBrowserWindow } from 'electron'
 import type { BrowserWindow, IpcMainEvent } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -9,12 +10,6 @@ import {
   getWindowRoleFromEvent,
 } from './helpers'
 import { getWindowRegistry } from './registry'
-
-vi.mock('electron', () => ({
-  BrowserWindow: {
-    fromWebContents: vi.fn(),
-  },
-}))
 
 interface MockWindow {
   id: number

@@ -1,16 +1,6 @@
+import '../../test-helpers/electron-mock'
 import { contextBridge, ipcRenderer } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock('electron', () => ({
-  contextBridge: {
-    exposeInMainWorld: vi.fn(),
-  },
-  ipcRenderer: {
-    send: vi.fn(),
-    invoke: vi.fn(),
-    on: vi.fn(),
-  },
-}))
 
 describe('inspector ui preload', () => {
   beforeEach(() => {

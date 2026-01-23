@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import './test-helpers/electron-mock'
 import { ipcMain } from 'electron'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as tracePropagation from './inspector/trace-propagation'
@@ -9,15 +10,6 @@ import {
   IPCStreamUploadHandlerType,
   defineStreamUploadHandlers,
 } from './interfaces/ipc-contracts'
-
-vi.mock('electron', () => ({
-  ipcMain: {
-    handle: vi.fn(),
-    removeHandler: vi.fn(),
-    on: vi.fn(),
-    removeListener: vi.fn(),
-  },
-}))
 
 describe('Stream IPC Contracts - Upload', () => {
   beforeEach(() => {
@@ -120,14 +112,20 @@ describe('Stream IPC Contracts - Upload', () => {
         ([channel]) => channel === 'UploadChunks-start'
       )
       expect(startCall).toBeDefined()
-      const startHandler = startCall![1]
+      if (!startCall) {
+        throw new Error('Expected UploadChunks-start handler to be registered')
+      }
+      const startHandler = startCall[1]
 
       startHandler({}, { id: 123 })
 
       const dataCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'UploadChunks-data'
       )
-      const dataHandler = dataCall![1]
+      if (!dataCall) {
+        throw new Error('Expected UploadChunks-data handler to be registered')
+      }
+      const dataHandler = dataCall[1]
 
       dataHandler({}, 'chunk1')
       dataHandler({}, 'chunk2')
@@ -138,7 +136,10 @@ describe('Stream IPC Contracts - Upload', () => {
       const endCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'UploadChunks-end'
       )
-      const endHandler = endCall![1]
+      if (!endCall) {
+        throw new Error('Expected UploadChunks-end handler to be registered')
+      }
+      const endHandler = endCall[1]
 
       endHandler({}, undefined)
 
@@ -170,14 +171,20 @@ describe('Stream IPC Contracts - Upload', () => {
       const startCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'UploadData-start'
       )
-      const startHandler = startCall![1]
+      if (!startCall) {
+        throw new Error('Expected UploadData-start handler to be registered')
+      }
+      const startHandler = startCall[1]
 
       startHandler({}, null)
 
       const errorCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'UploadData-error'
       )
-      const errorHandler = errorCall![1]
+      if (!errorCall) {
+        throw new Error('Expected UploadData-error handler to be registered')
+      }
+      const errorHandler = errorCall[1]
 
       const testError = new Error('Upload failed')
       errorHandler({}, testError)
@@ -208,7 +215,10 @@ describe('Stream IPC Contracts - Upload', () => {
       const startCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'UploadLogs-start'
       )
-      const startHandler = startCall![1]
+      if (!startCall) {
+        throw new Error('Expected UploadLogs-start handler to be registered')
+      }
+      const startHandler = startCall[1]
 
       startHandler({}, undefined)
 
@@ -235,7 +245,10 @@ describe('Stream IPC Contracts - Upload', () => {
       const dataCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'OrphanData-data'
       )
-      const dataHandler = dataCall![1]
+      if (!dataCall) {
+        throw new Error('Expected OrphanData-data handler to be registered')
+      }
+      const dataHandler = dataCall[1]
 
       expect(() => dataHandler({}, 'orphan-chunk')).not.toThrow()
     })
@@ -260,7 +273,10 @@ describe('Stream IPC Contracts - Upload', () => {
       const endCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'OrphanEnd-end'
       )
-      const endHandler = endCall![1]
+      if (!endCall) {
+        throw new Error('Expected OrphanEnd-end handler to be registered')
+      }
+      const endHandler = endCall[1]
 
       expect(() => endHandler({}, undefined)).not.toThrow()
     })
@@ -285,7 +301,10 @@ describe('Stream IPC Contracts - Upload', () => {
       const errorCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'OrphanError-error'
       )
-      const errorHandler = errorCall![1]
+      if (!errorCall) {
+        throw new Error('Expected OrphanError-error handler to be registered')
+      }
+      const errorHandler = errorCall[1]
 
       expect(() => errorHandler({}, new Error('Orphan error'))).not.toThrow()
     })
@@ -353,7 +372,10 @@ describe('Stream IPC Contracts - Upload', () => {
       const startCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'TracedUpload-start'
       )
-      const startHandler = startCall![1]
+      if (!startCall) {
+        throw new Error('Expected TracedUpload-start handler to be registered')
+      }
+      const startHandler = startCall[1]
 
       startHandler({}, { id: 'test-id' })
 
@@ -399,13 +421,19 @@ describe('Stream IPC Contracts - Upload', () => {
       const startCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'TraceFallback-start'
       )
-      const startHandler = startCall![1]
+      if (!startCall) {
+        throw new Error('Expected TraceFallback-start handler to be registered')
+      }
+      const startHandler = startCall[1]
       startHandler({}, { id: 'test' })
 
       const dataCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'TraceFallback-data'
       )
-      const dataHandler = dataCall![1]
+      if (!dataCall) {
+        throw new Error('Expected TraceFallback-data handler to be registered')
+      }
+      const dataHandler = dataCall[1]
       dataHandler({}, 'chunk')
 
       expect(capturedDataTrace).toEqual(startTrace)
@@ -413,7 +441,10 @@ describe('Stream IPC Contracts - Upload', () => {
       const endCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'TraceFallback-end'
       )
-      const endHandler = endCall![1]
+      if (!endCall) {
+        throw new Error('Expected TraceFallback-end handler to be registered')
+      }
+      const endHandler = endCall[1]
       endHandler({}, undefined)
 
       expect(capturedEndTrace).toEqual(startTrace)
@@ -421,7 +452,10 @@ describe('Stream IPC Contracts - Upload', () => {
       const errorCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'TraceFallback-error'
       )
-      const errorHandler = errorCall![1]
+      if (!errorCall) {
+        throw new Error('Expected TraceFallback-error handler to be registered')
+      }
+      const errorHandler = errorCall[1]
       errorHandler({}, new Error('test'))
 
       expect(capturedErrorTrace).toEqual(startTrace)

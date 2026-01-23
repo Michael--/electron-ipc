@@ -2,17 +2,9 @@
  * Tests for RendererInvokeRouter
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import '../test-helpers/electron-mock'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { RendererInvokeRouter, resetRendererInvokeRouter } from './router'
-
-vi.mock('electron', () => ({
-  ipcMain: {
-    handle: vi.fn(),
-    on: vi.fn(),
-    removeHandler: vi.fn(),
-    removeListener: vi.fn(),
-  },
-}))
 
 describe('RendererInvokeRouter', () => {
   let router: RendererInvokeRouter

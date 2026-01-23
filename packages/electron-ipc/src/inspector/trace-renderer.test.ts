@@ -1,13 +1,8 @@
+import '../test-helpers/electron-mock'
 import { ipcRenderer } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTraceContext, setTraceSink } from './trace'
 import { traceBroadcast, traceEvent, traceInvoke } from './trace-renderer'
-
-vi.mock('electron', () => ({
-  ipcRenderer: {
-    send: vi.fn(),
-  },
-}))
 
 describe('trace-renderer', () => {
   beforeEach(() => {

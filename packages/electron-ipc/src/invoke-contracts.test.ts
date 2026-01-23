@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import './test-helpers/electron-mock'
 import { ipcMain } from 'electron'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -14,16 +15,6 @@ import {
   IStreamInvokeContract,
 } from './interfaces/ipc-contracts'
 import * as tracePropagation from './inspector/trace-propagation'
-
-// Mock Electron APIs
-vi.mock('electron', () => ({
-  ipcMain: {
-    handle: vi.fn(),
-    removeHandler: vi.fn(),
-    on: vi.fn(),
-    removeListener: vi.fn(),
-  },
-}))
 
 describe('Invoke IPC Contracts', () => {
   beforeEach(() => {

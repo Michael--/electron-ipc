@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import './test-helpers/electron-mock'
 import { BrowserWindow, ipcMain } from 'electron'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -20,17 +21,6 @@ import {
   IRendererEventContract,
   IStreamDownloadContract,
 } from './interfaces/ipc-contracts'
-
-// Mock Electron APIs
-vi.mock('electron', () => ({
-  BrowserWindow: vi.fn(),
-  ipcMain: {
-    handle: vi.fn(),
-    removeHandler: vi.fn(),
-    on: vi.fn(),
-    removeListener: vi.fn(),
-  },
-}))
 
 describe('IPC Contracts', () => {
   beforeEach(() => {

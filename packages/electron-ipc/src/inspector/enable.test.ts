@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import '../test-helpers/electron-mock'
+import { extendElectronMock } from '../test-helpers/electron-mock'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getInspectorServer } from './server'
 
@@ -74,12 +76,12 @@ class MockBrowserWindow {
   })
 }
 
-vi.mock('electron', () => ({
+extendElectronMock({
   app,
   BrowserWindow: MockBrowserWindow,
   ipcMain,
   globalShortcut,
-}))
+})
 
 vi.mock('./server', () => ({
   getInspectorServer: vi.fn(),

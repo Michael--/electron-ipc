@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import './test-helpers/electron-mock'
 import { ipcMain } from 'electron'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as tracePropagation from './inspector/trace-propagation'
@@ -9,15 +10,6 @@ import {
   IPCStreamDownloadHandlerType,
   defineStreamDownloadHandlers,
 } from './interfaces/ipc-contracts'
-
-vi.mock('electron', () => ({
-  ipcMain: {
-    handle: vi.fn(),
-    removeHandler: vi.fn(),
-    on: vi.fn(),
-    removeListener: vi.fn(),
-  },
-}))
 
 describe('Stream IPC Contracts - Download', () => {
   beforeEach(() => {
@@ -122,12 +114,18 @@ describe('Stream IPC Contracts - Download', () => {
         ([channel]) => channel === 'GetData-cancel'
       )
       expect(cancelCall).toBeDefined()
-      const cancelHandler = cancelCall![1]
+      if (!cancelCall) {
+        throw new Error('Expected GetData-cancel handler to be registered')
+      }
+      const cancelHandler = cancelCall[1]
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
         ([channel]) => channel === 'GetData'
       )
-      const handler = handleCall![1]
+      if (!handleCall) {
+        throw new Error('Expected GetData handler to be registered')
+      }
+      const handler = handleCall[1]
 
       const mockEvent = {
         sender: {
@@ -171,7 +169,10 @@ describe('Stream IPC Contracts - Download', () => {
       const handleCall = (ipcMain.handle as any).mock.calls.find(
         ([channel]) => channel === 'ErrorDownload'
       )
-      const handler = handleCall![1]
+      if (!handleCall) {
+        throw new Error('Expected ErrorDownload handler to be registered')
+      }
+      const handler = handleCall[1]
 
       const mockEvent = {
         sender: {
@@ -229,7 +230,10 @@ describe('Stream IPC Contracts - Download', () => {
       const handleCall = (ipcMain.handle as any).mock.calls.find(
         ([channel]) => channel === 'MultiDownload'
       )
-      const handler = handleCall![1]
+      if (!handleCall) {
+        throw new Error('Expected MultiDownload handler to be registered')
+      }
+      const handler = handleCall[1]
 
       const mockEvent = {
         sender: {
@@ -273,7 +277,10 @@ describe('Stream IPC Contracts - Download', () => {
       const handleCall = (ipcMain.handle as any).mock.calls.find(
         ([channel]) => channel === 'CancelError'
       )
-      const handler = handleCall![1]
+      if (!handleCall) {
+        throw new Error('Expected CancelError handler to be registered')
+      }
+      const handler = handleCall[1]
 
       const mockEvent = {
         sender: {
@@ -287,7 +294,10 @@ describe('Stream IPC Contracts - Download', () => {
       const cancelCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'CancelError-cancel'
       )
-      const cancelHandler = cancelCall![1]
+      if (!cancelCall) {
+        throw new Error('Expected CancelError-cancel handler to be registered')
+      }
+      const cancelHandler = cancelCall[1]
 
       await expect(cancelHandler({ sender: { id: 1 } })).resolves.toBeUndefined()
 
@@ -317,7 +327,10 @@ describe('Stream IPC Contracts - Download', () => {
       const cancelCall = (ipcMain.on as any).mock.calls.find(
         ([channel]) => channel === 'NoReader-cancel'
       )
-      const cancelHandler = cancelCall![1]
+      if (!cancelCall) {
+        throw new Error('Expected NoReader-cancel handler to be registered')
+      }
+      const cancelHandler = cancelCall[1]
 
       await expect(cancelHandler({ sender: { id: 999 } })).resolves.toBeUndefined()
     })
@@ -403,7 +416,10 @@ describe('Stream IPC Contracts - Download', () => {
       const handleCall = (ipcMain.handle as any).mock.calls.find(
         ([channel]) => channel === 'TracedDownload'
       )
-      const handler = handleCall![1]
+      if (!handleCall) {
+        throw new Error('Expected TracedDownload handler to be registered')
+      }
+      const handler = handleCall[1]
 
       const mockEvent = {
         sender: {
@@ -450,7 +466,10 @@ describe('Stream IPC Contracts - Download', () => {
       const handleCall = (ipcMain.handle as any).mock.calls.find(
         ([channel]) => channel === 'NoTraceDownload'
       )
-      const handler = handleCall![1]
+      if (!handleCall) {
+        throw new Error('Expected NoTraceDownload handler to be registered')
+      }
+      const handler = handleCall[1]
 
       const mockEvent = {
         sender: {

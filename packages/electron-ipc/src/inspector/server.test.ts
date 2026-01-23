@@ -1,14 +1,8 @@
+import '../test-helpers/electron-mock'
 import { BrowserWindow } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { InspectorServer, getInspectorServer, resetInspectorServer } from './server'
 import type { BroadcastTrace, InvokeTrace } from './types'
-
-// Mock electron
-vi.mock('electron', () => ({
-  BrowserWindow: {
-    fromWebContents: vi.fn(),
-  },
-}))
 
 // Mock BrowserWindow
 const createMockWindow = (id: number) => {
