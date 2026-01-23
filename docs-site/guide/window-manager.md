@@ -214,6 +214,17 @@ broadcastToMain('Update', { data: 'main only' })
 broadcastToSecondary('Notification', { message: 'secondaries only' })
 ```
 
+```mermaid
+flowchart LR
+    A["broadcastToAll"] --> B{excludeRoles?}
+    B -->|no| C["all windows"]
+    B -->|yes| D["all windows<br/>minus excluded roles"]
+
+    E["broadcastToRole(role)"] --> F["windows with role"]
+
+    G["broadcastToApp"] --> H["all windows<br/>(exclude inspector)"]
+```
+
 ### broadcastToApp()
 
 Convenience helper that broadcasts to all windows **except inspector**.
@@ -272,6 +283,17 @@ registry.register(window, 'preview')
 ```
 
 ## Lifecycle Management
+
+```mermaid
+stateDiagram-v2
+    [*] --> Created
+    Created --> Registered: register()
+    Registered --> Focused: focus
+    Focused --> Registered: blur
+    Registered --> Closed: window closed
+    Closed --> Unregistered: auto cleanup
+    Unregistered --> [*]
+```
 
 ### Automatic Cleanup
 

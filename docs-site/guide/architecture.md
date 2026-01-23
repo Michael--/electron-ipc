@@ -15,6 +15,38 @@ These helper types enforce a specific structure with named properties:
 - `GenericStreamUploadContract<T>` + `IStreamUploadContract<Request, Chunk>` → `{ request: Request, data: Chunk }`
 - `GenericStreamDownloadContract<T>` + `IStreamDownloadContract<Request, Chunk>` → `{ request: Request, data: Chunk }`
 
+Structure overview:
+
+```mermaid
+classDiagram
+    class IInvokeContract {
+      +request: Request
+      +response: Response
+    }
+    class IRendererEventContract {
+      +request: Payload
+    }
+    class IBroadcastContract {
+      +payload: Payload
+    }
+```
+
+```mermaid
+classDiagram
+    class IStreamInvokeContract {
+      +request: Request
+      +stream: Chunk
+    }
+    class IStreamUploadContract {
+      +request: Request
+      +data: Chunk
+    }
+    class IStreamDownloadContract {
+      +request: Request
+      +data: Chunk
+    }
+```
+
 **Why this is necessary:**
 
 1. **Predictable AST Structure** - The generator can reliably parse TypeScript AST nodes
@@ -66,30 +98,14 @@ View of the code generation pipeline:
 
 ```mermaid
 flowchart TB
-    A["📄 IPC Contracts
-    ipc-api.ts
-    TypeScript Interfaces"]
+    A["IPC contracts<br/>ipc-api.ts"]
+    B["ts-morph parser<br/>extract types"]
+    C["Preload API<br/>api-generated.ts"]
+    D["Main handlers<br/>register classes"]
 
-    B["⚙️ Code Generator
-    ts-morph AST Parser
-    Analyze & Transform"]
-
-    C["🔒 Preload API
-    ipc-api.generated.ts
-    Renderer Wrappers"]
-
-    D["🖥️ Main Handlers
-    AbstractRegisterHandler
-    Type-Safe Backend"]
-
-    A -->|"Parse Contracts"| B
-    B -->|"Generate"| C
-    B -->|"Generate"| D
-
-    style A fill:#e5c07b,stroke:#f59e0b,stroke-width:4px,color:#000
-    style B fill:#c678dd,stroke:#a855f7,stroke-width:4px,color:#000
-    style C fill:#61afef,stroke:#528bff,stroke-width:4px,color:#000
-    style D fill:#98c379,stroke:#10b981,stroke-width:4px,color:#000
+    A -->|parse| B
+    B -->|generate| C
+    B -->|generate| D
 ```
 
 For each contract type, the generator creates:
@@ -158,6 +174,15 @@ The generator ensures **compile-time type safety** through:
 5. **Immediate Validation** - TypeScript compiler catches mismatches instantly
 
 **Key Advantage:** Change a contract interface → TypeScript shows errors in all implementations before you run the code. No runtime surprises!
+
+Type safety feedback loop:
+
+```mermaid
+flowchart LR
+    A["Contract change"] --> B["TypeScript errors"]
+    B --> C["Fix handlers + renderer usage"]
+    C --> D["Green build"]
+```
 
 Example:
 

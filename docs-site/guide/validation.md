@@ -94,6 +94,16 @@ const handlers = defineInvokeHandlers<InvokeContracts>({
 
 Validate both request and response:
 
+```mermaid
+flowchart LR
+    A["request"] --> B["request validator"]
+    B -->|ok| C["handler"]
+    C --> D["response validator (optional)"]
+    D -->|ok| E["result"]
+    B -->|error| F["IPCValidationError"]
+    D -->|error| F
+```
+
 ```typescript
 import { withInvokeValidation } from '@number10/electron-ipc/validation'
 
@@ -127,6 +137,20 @@ const handler = withEventValidation(payloadValidator, (_event, payload) => {
 #### Stream Invoke
 
 Validate request and each chunk:
+
+```mermaid
+sequenceDiagram
+    participant R as Renderer
+    participant M as Main
+    participant V as Validator
+
+    R->>M: start stream (request)
+    M->>V: validate request
+    V-->>M: ok/error
+    M-->>R: stream chunk
+    M->>V: validate chunk
+    V-->>M: ok/error
+```
 
 ```typescript
 import { withStreamInvokeValidation } from '@number10/electron-ipc/validation'

@@ -44,6 +44,15 @@ Add CSP meta tag to your HTML:
 
 **Always validate IPC payloads in main process:**
 
+```mermaid
+flowchart LR
+    R["Renderer"] --> P["Preload (contextBridge)"]
+    P --> M["Main handler"]
+    M --> V["Validation boundary"]
+    V --> H["Business logic"]
+    H --> R
+```
+
 ```typescript
 import { zodAdapter } from '@number10/electron-ipc/validation'
 import { z } from 'zod'
@@ -123,6 +132,17 @@ webview.loadURL('https://external-site.com')
 ### Standardized Error Responses
 
 Use consistent error structures:
+
+```mermaid
+sequenceDiagram
+    participant R as Renderer
+    participant M as Main Handler
+
+    R->>M: invoke(request)
+    M-->>R: IPCValidationError
+    M-->>R: IPCHandlerError
+    M-->>R: generic error (sanitized)
+```
 
 ```typescript
 import { IPCHandlerError, IPCValidationError } from '@number10/electron-ipc/validation'

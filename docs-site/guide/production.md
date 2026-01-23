@@ -2,6 +2,16 @@
 
 Complete checklist for deploying electron-ipc applications to production.
 
+```mermaid
+timeline
+    title Release Phases
+    Pre-deploy checks : lint, tests, audit
+    Build/package : sign, bundle, verify
+    Testing : clean install, upgrade, smoke
+    Release : publish, update feed
+    Monitoring : crashes, errors, perf
+```
+
 ## Pre-Deployment
 
 ### Code Quality

@@ -54,6 +54,20 @@ The inspector module is included in `@number10/electron-ipc`:
 npm install @number10/electron-ipc
 ```
 
+Trace lifecycle (batched):
+
+```mermaid
+sequenceDiagram
+    participant R as Renderer
+    participant S as Inspector Server
+    participant B as Ring Buffer
+    participant UI as Inspector UI
+
+    R->>S: INSPECTOR:TRACE start/end
+    S->>B: store event
+    S-->>UI: broadcast batch
+```
+
 Import from the subpath:
 
 ```typescript
@@ -98,6 +112,16 @@ The inspector supports three payload modes:
 - `none`: no payload data recorded
 - `redacted`: size + a short summary
 - `full`: full payload data (truncated when too large)
+
+```mermaid
+stateDiagram-v2
+    [*] --> none
+    none --> redacted: UI select
+    redacted --> full: UI select
+    full --> redacted: UI select
+    redacted --> none: UI select
+    full --> none: UI select
+```
 
 You can switch the mode live in the Inspector UI.
 

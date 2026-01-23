@@ -15,44 +15,22 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 The following diagram shows how the four IPC contract types work together in an Electron application:
 
 ```mermaid
-flowchart
-    R["🖥️ Renderer Process
-    React/Vue UI
-    window.api.*"]
+flowchart TD
+    R["Renderer<br/>window.api.*"]
+    P["Preload<br/>contextBridge<br/>generated API"]
+    M["Main<br/>IPC handlers"]
+    G["Generator<br/>ts-morph AST"]
 
-    P["🔒 Preload Script
-    Context Bridge
-    Generated API"]
+    R -->|"invoke: request"| P
+    P -->|invoke| M
+    M -->|"invoke: response"| R
 
-    M["⚙️ Main Process
-    IPC Handlers
-    Node.js Backend"]
+    R -->|"event: send"| M
+    M -->|broadcast| R
+    R <-->|stream| M
 
-    G["📝 Generated Code
-    Type-Safe Layer
-    ts-morph AST"]
-
-    R -->|"1. invoke()
-    Request/Response"| P
-    P --> M
-    M -.->|response| R
-
-    R ==>|"2. send()
-    Fire & Forget"| M
-
-    M -->|"3. broadcast()
-    Main → Renderer"| R
-
-    R <-.->|"4. stream()
-    Large Data/Bidirectional"| M
-
-    G -.->|"generates"| P
-    G -.->|"generates"| M
-
-    style R fill:#61afef,stroke:#528bff,stroke-width:3px,color:#000
-    style P fill:#c678dd,stroke:#a855f7,stroke-width:3px,color:#000
-    style M fill:#98c379,stroke:#10b981,stroke-width:3px,color:#000
-    style G fill:#e5c07b,stroke:#f59e0b,stroke-width:3px,color:#000
+    G -.->|generate preload API| P
+    G -.->|generate handlers| M
 ```
 
 - **`packages/electron-ipc`** - Main library with code generator and runtime helpers
@@ -88,6 +66,14 @@ The generator ships with optional runtime modules:
 ## IPC Contract Types
 
 The generator supports four types of IPC communication:
+
+```mermaid
+flowchart LR
+    I["Invoke<br/>Renderer ↔ Main<br/>prefix: invoke"]
+    E["Event<br/>Renderer → Main<br/>prefix: send"]
+    B["Broadcast<br/>Main → Renderer<br/>prefix: on"]
+    S["Stream<br/>Renderer ↔ Main<br/>prefix: invokeStream/upload/download"]
+```
 
 ### 1. Invoke (Renderer ↔ Main, Request/Response)
 
@@ -146,6 +132,19 @@ export type BroadcastContracts = GenericBroadcastContract<{
 ### 4. Streams (Large Data & Real-time)
 
 For efficient handling of large data transfers or real-time data streams using Web Streams API:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Init
+    Init --> StreamStarted: start stream
+    StreamStarted --> Streaming: onData
+    Streaming --> Completed: onEnd
+    Streaming --> Error: onError
+    StreamStarted --> Cancelled: cancel
+    Completed --> [*]
+    Error --> [*]
+    Cancelled --> [*]
+```
 
 ```typescript
 // Stream Invoke: Request-response with streaming response
@@ -249,6 +248,23 @@ apis:
       streamInvoke: StreamInvokeContracts
       streamUpload: StreamUploadContracts
       streamDownload: StreamDownloadContracts
+```
+
+Diagram: how the config maps to generated outputs:
+
+```mermaid
+flowchart LR
+    C["ipc-config.yaml<br/>apis[]"]
+    I["input + contracts<br/>(tsconfig optional)"]
+    G["electron-ipc-generate"]
+    P["preload API<br/>api-generated.ts"]
+    B["main broadcast<br/>broadcast-generated.ts<br/>(optional)"]
+    H["react hooks<br/>api-hooks.ts<br/>(optional)"]
+
+    C --> I --> G
+    G --> P
+    G -.-> B
+    G -.-> H
 ```
 
 Generate all APIs:

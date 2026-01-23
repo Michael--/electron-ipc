@@ -36,6 +36,16 @@ Different patterns have different performance characteristics:
 | **Event**     | Renderer → Main events | Low      | High       |
 | **Stream**    | Large data transfers   | Medium   | Very High  |
 
+```mermaid
+flowchart TD
+    A["Need response?"] -->|yes| B["Payload > 1MB?"]
+    A -->|no| C["High frequency?"]
+    B -->|yes| D["Stream"]
+    B -->|no| E["Invoke"]
+    C -->|yes| F["Event / Broadcast"]
+    C -->|no| G["Event / Broadcast"]
+```
+
 ## IPC Pattern Optimization
 
 ### When to Use Invoke
@@ -100,6 +110,16 @@ const file = await window.api.invokeGetLargeFile('/data/export.csv')
 **Performance tip**: Streams maintain constant memory usage regardless of data size.
 
 ## Batching Strategies
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Collecting: add item
+    Collecting --> FlushSize: batch size reached
+    Collecting --> FlushTime: timer elapsed
+    FlushSize --> Idle: send batch
+    FlushTime --> Idle: send batch
+```
 
 ### Pattern 1: Time-Based Batching
 

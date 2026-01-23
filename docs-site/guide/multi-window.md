@@ -155,6 +155,18 @@ window.api.onWindowMessage(({ message, data }) => {
 
 Window A requests data from Window B:
 
+```mermaid
+sequenceDiagram
+    participant A as Renderer A
+    participant M as Main
+    participant B as Renderer B
+
+    A->>M: invoke RequestWindowData(targetRole, query)
+    M->>B: broadcast WindowDataRequest(requestId, query)
+    B->>M: send WindowDataResponse(requestId, data)
+    M->>A: resolve invoke with data
+```
+
 ```typescript
 // ipc-api.ts
 export const ipcAPI = {
@@ -408,6 +420,15 @@ const confirmDialog = createDialogWindow(mainWindow, {
 ### Pattern 9: Graceful Shutdown
 
 Close all windows in correct order:
+
+```mermaid
+flowchart TD
+    A["before-quit"] --> B["close non-main windows"]
+    B --> C["wait for close"]
+    C --> D["close main window"]
+    C --> E["timeout?"]
+    E --> D
+```
 
 ```typescript
 import { getWindowRegistry } from '@number10/electron-ipc/window-manager'
