@@ -138,7 +138,8 @@ This library provides a code generation approach to create type-safe IPC communi
 ## Features
 
 - ✅ **Type-Safe Communication**: Full TypeScript support with compile-time type checking
-- ✅ **Four Communication Patterns**: Invoke, Event, Broadcast, and Streaming
+- ✅ **Five Communication Patterns**: Invoke, Event, Broadcast, Streaming, and Renderer-to-Renderer
+- ✅ **Renderer-to-Renderer IPC**: Type-safe communication between renderer processes
 - ✅ **Streaming Support**: Handle large data transfers efficiently using Web Streams API
 - ✅ **React Hooks**: Automatic generation of React hooks for all contract types
 - ✅ **Modern Validation Adapters**: First-class support for Zod 4.x and Valibot
@@ -152,7 +153,7 @@ This library provides a code generation approach to create type-safe IPC communi
 
 ## Communication Patterns
 
-electron-ipc supports four main communication patterns:
+electron-ipc supports five main communication patterns:
 
 ### 1. Define IPC Contracts
 
@@ -163,6 +164,7 @@ import {
   GenericInvokeContract,
   GenericRendererEventContract,
   GenericBroadcastContract,
+  GenericRendererInvokeContract,
   GenericStreamInvokeContract,
   GenericStreamUploadContract,
   GenericStreamDownloadContract,
@@ -181,6 +183,16 @@ export type EventContracts = GenericRendererEventContract<{
 export type BroadcastContracts = GenericBroadcastContract<{
   Ping: IBroadcastContract<number>
   About: IBroadcastContract<void>
+}>
+
+export type RendererInvokeContracts = GenericRendererInvokeContract<{
+  GetDashboardData: IRendererInvokeContract<{ query: string }, { data: unknown[]; total: number }>
+  UpdateSettings: IRendererInvokeContract<{ theme: 'light' | 'dark' }, { success: boolean }>
+}>
+
+export type RendererInvokeContracts = GenericRendererInvokeContract<{
+  GetDashboardData: IRendererInvokeContract<{ query: string }, { data: unknown[]; total: number }>
+  UpdateSettings: IRendererInvokeContract<{ theme: 'light' | 'dark' }, { success: boolean }>
 }>
 
 export type StreamInvokeContracts = GenericStreamInvokeContract<{
@@ -209,6 +221,7 @@ apis:
       invoke: InvokeContracts
       event: EventContracts
       send: BroadcastContracts
+      rendererInvoke: RendererInvokeContracts
 
   # You can define multiple APIs in the same file
   - name: streamApi
@@ -259,6 +272,12 @@ window.myApi.sendLogMessage({ level: 'info', message: 'Hello!' })
 
 // Listen to broadcasts
 window.myApi.onPing((count) => console.log('Ping:', count))
+
+// Renderer-to-Renderer invoke (call another window)
+const dashboardData = await window.myApi.rendererInvokeGetDashboardData('dashboard', {
+  query: 'sales',
+})
+console.log('Dashboard data:', dashboardData.data, 'Total:', dashboardData.total)
 
 // Stream invoke (request with streaming response)
 const stopStream = window.myApi.invokeStreamGetLargeData(
@@ -386,6 +405,43 @@ RegisterEvent.register()
 RegisterStreamHandler.register()
 RegisterStreamUpload.register()
 RegisterStreamDownload.register()
+
+// Initialize renderer-to-renderer routing (for multi-window apps)
+import { initRendererInvokeRouter } from '@number10/electron-ipc/renderer-routing'
+initRendererInvokeRouter()
+```
+
+### 7. Handle Renderer-to-Renderer Requests (Multi-Window Apps)
+
+For renderer-to-renderer communication, register handlers in the target renderer:
+
+```typescript
+// dashboard-window/renderer.ts
+
+// Register handler for GetDashboardData
+const cleanup = window.myApi.handleGetDashboardData(async (request, context) => {
+  console.log(`Request from ${context.sourceRole} (window #${context.sourceWindowId})`)
+
+  // Process request
+  const data = await queryDatabase(request.query)
+
+  return {
+    data,
+    total: data.length,
+  }
+})
+
+// Clean up on window close
+window.addEventListener('beforeunload', () => cleanup())
+```
+
+**Note:** Requires `initRendererInvokeRouter()` in main process and windows registered with `WindowRegistry`:
+
+```typescript
+import { getWindowRegistry } from '@number10/electron-ipc/window-manager'
+
+const dashboardWindow = createDashboardWindow()
+getWindowRegistry().register(dashboardWindow, 'dashboard')
 ```
 
 **Optional: typed handler helpers**
@@ -536,6 +592,7 @@ apis:
       invoke: InvokeContracts # Request-response pattern
       event: EventContracts # Renderer → Main events
       send: BroadcastContracts # Main → Renderer broadcasts
+      rendererInvoke: RendererInvokeContracts # Renderer → Renderer (multi-window)
 
   # Stream API for large data transfer
   - name: streamApi
@@ -563,6 +620,7 @@ Each API definition supports the following properties:
 | `contracts.invoke`         | string | ❌       | Type name for invoke contracts                     |
 | `contracts.event`          | string | ❌       | Type name for event contracts                      |
 | `contracts.send`           | string | ❌       | Type name for broadcast contracts                  |
+| `contracts.rendererInvoke` | string | ❌       | Type name for renderer-to-renderer contracts       |
 | `contracts.streamInvoke`   | string | ❌       | Type name for stream invoke contracts              |
 | `contracts.streamUpload`   | string | ❌       | Type name for stream upload contracts              |
 | `contracts.streamDownload` | string | ❌       | Type name for stream download contracts            |
@@ -597,7 +655,7 @@ apis:
 ✅ **Full Type Safety** - Compile-time validation across all IPC communication  
 ✅ **Auto-Generated API** - No manual IPC boilerplate code required  
 ✅ **IntelliSense Support** - Auto-completion in all processes (main, preload, renderer)  
-✅ **Four Communication Patterns** - Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Streams (large data/real-time)  
+✅ **Five Communication Patterns** - Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Renderer-to-Renderer (multi-window), Streams (large data/real-time)  
 ✅ **Context Bridge Integration** - Secure IPC through Electron's `contextBridge`  
 ✅ **TypeScript Strict Mode** - Designed for maximum type safety  
 ✅ **YAML Configuration** - Clean, maintainable multi-API setup  
@@ -610,6 +668,7 @@ For detailed documentation, architecture, and advanced usage, see:
 - [📚 Complete Documentation](https://michael--.github.io/electron-ipc/) - Full guides, examples, and API reference
 - [🏗️ Architecture Guide](https://michael--.github.io/electron-ipc/guide/architecture) - Technical details about the code generator design
 - [🪟 Window Manager](https://michael--.github.io/electron-ipc/guide/window-manager) - Multi-window support and broadcasts
+- [🔄 Renderer-to-Renderer IPC](https://michael--.github.io/electron-ipc/guide/renderer-to-renderer) - Type-safe communication between renderer processes
 - [🔍 IPC Inspector](https://michael--.github.io/electron-ipc/guide/inspector) - Dev-only IPC tracing and debugging
 
 ## Examples & Templates
@@ -671,11 +730,12 @@ import { InvokeContracts } from './generated-api'
 ### New Features in v2.0
 
 - ✅ **Streaming Contracts**: Handle large files and real-time data
+- ✅ **Renderer-to-Renderer IPC**: Type-safe communication between renderer processes via main routing
 - ✅ **Automatic React Hooks**: Generate hooks for all contract types
 - ✅ **Modern Validation Adapters**: First-class Zod 4.x and Valibot support
 - ✅ **Standardized Error Handling**: IPCValidationError and IPCHandlerError types
 - ✅ **Window Manager**: Multi-window broadcast helpers and registry
-- ✅ **IPC Inspector**: Visual debugging and tracing tool
+- ✅ **IPC Inspector**: Visual debugging and tracing tool with renderer-to-renderer support
 - ✅ **YAML Configuration**: Clean, maintainable project setup
 - ✅ **Windows Support**: Full cross-platform compatibility
 - ✅ **Multiple APIs**: Define multiple API configurations in one YAML file

@@ -65,13 +65,14 @@ The generator ships with optional runtime modules:
 
 ## IPC Contract Types
 
-The generator supports four types of IPC communication:
+The generator supports five types of IPC communication:
 
 ```mermaid
 flowchart LR
     I["Invoke<br/>Renderer ↔ Main<br/>prefix: invoke"]
     E["Event<br/>Renderer → Main<br/>prefix: send"]
     B["Broadcast<br/>Main → Renderer<br/>prefix: on"]
+    R["Renderer Invoke<br/>Renderer ↔ Renderer<br/>prefix: rendererInvoke"]
     S["Stream<br/>Renderer ↔ Main<br/>prefix: invokeStream/upload/download"]
 ```
 
@@ -129,7 +130,32 @@ export type BroadcastContracts = GenericBroadcastContract<{
 - `Ping` → `window.api.onPing((count) => ...)`
 - `About` → `window.api.onAbout(() => ...)`
 
-### 4. Streams (Large Data & Real-time)
+### 4. Renderer Invoke (Renderer ↔ Renderer via Main)
+
+Type-safe request-response communication between renderer processes, routed through main process for security:
+
+```typescript
+export type RendererInvokeContracts = GenericRendererInvokeContract<{
+  GetDashboardData: IRendererInvokeContract<{ query: string }, { data: unknown[]; total: number }>
+  UpdateSettings: IRendererInvokeContract<{ theme: 'light' | 'dark' }, { success: boolean }>
+}>
+```
+
+**Why these wrapper types?** `GenericRendererInvokeContract` and `IRendererInvokeContract` enforce the structure with `request` and `response` properties, ensuring the generator can extract types correctly for both the caller and handler sides.
+
+**Generated method names:**
+
+- Caller: `window.api.rendererInvokeGetDashboardData('targetRole', request)` → sends to target window
+- Handler: `window.api.handleGetDashboardData((request, context) => { ... })` → registers handler in target window
+
+**Requirements:**
+
+- Initialize router in main: `initRendererInvokeRouter()`
+- Register windows with roles: `getWindowRegistry().register(window, 'dashboard')`
+
+See [Renderer-to-Renderer IPC](./renderer-to-renderer) for detailed guide.
+
+### 5. Streams (Large Data & Real-time)
 
 For efficient handling of large data transfers or real-time data streams using Web Streams API:
 
@@ -207,6 +233,11 @@ export type BroadcastContracts = GenericBroadcastContract<{
   About: IBroadcastContract<void>
 }>
 
+// Renderer Invoke: Renderer-to-renderer via main routing (multi-window apps)
+export type RendererInvokeContracts = GenericRendererInvokeContract<{
+  GetDashboardData: IRendererInvokeContract<{ query: string }, { data: unknown[]; total: number }>
+}>
+
 // Streams: Large data and real-time communication
 export type StreamInvokeContracts = GenericStreamInvokeContract<{
   GetLargeData: IStreamInvokeContract<{ offset: number }, string>
@@ -239,6 +270,7 @@ apis:
       invoke: InvokeContracts
       event: EventContracts
       send: BroadcastContracts
+      rendererInvoke: RendererInvokeContracts
     mainBroadcastOutput: ./src/main/broadcast-generated.ts
 
   - name: streamApi

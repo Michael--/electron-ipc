@@ -15,8 +15,10 @@ hero:
 features:
   - title: Contract-first IPC
     details: Define contracts once and get fully typed renderer APIs and main handlers with compile-time safety.
-  - title: Four Communication Patterns
-    details: Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), and Streams (large data/real-time).
+  - title: Five Communication Patterns
+    details: Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Renderer-to-Renderer (multi-window), and Streams (large data/real-time).
+  - title: Renderer-to-Renderer IPC
+    details: Type-safe request-response communication between renderer processes via main process routing with full tracing support.
   - title: Streams + Inspector
     details: Stream large data safely using Web Streams API and inspect IPC traffic in dev with payload previews.
   - title: React Hooks
