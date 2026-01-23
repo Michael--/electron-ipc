@@ -54,3 +54,33 @@ export function streamDownloadApi(contract: string, propName: string) {
   add({ v: method, indent: true })
   add({ indent: false })
 }
+
+/**
+ * Generates API method code for renderer invoke contracts
+ * Creates both caller and handler methods for renderer-to-renderer communication
+ */
+export function rendererInvokeApi(contract: string, propName: string) {
+  // Generate caller method: rendererInvoke{PropName}
+  const callerMethod = `rendererInvoke${propName}: (
+  targetRole: string,
+  request: ${contract}['${propName}']['request'],
+  options?: { timeout?: number }
+) => {
+  return invokeInRenderer(targetRole, '${propName}', request, options)
+},`
+
+  add({ v: callerMethod, indent: true })
+
+  // Generate handler method: handle{PropName}
+  const handlerMethod = `handle${propName}: (
+  handler: (
+    request: ${contract}['${propName}']['request'],
+    context: RendererInvokeContext
+  ) => Promise<${contract}['${propName}']['response']>
+) => {
+  return handleRendererInvoke('${propName}', handler)
+},`
+
+  add({ v: handlerMethod, indent: true })
+  add({ indent: false })
+}

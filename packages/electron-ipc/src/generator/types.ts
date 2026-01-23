@@ -9,6 +9,7 @@ export interface IContract {
     | 'streamInvoke'
     | 'streamUpload'
     | 'streamDownload'
+    | 'rendererInvoke'
     | 'reactHooks'
   name: string
 }
@@ -28,6 +29,7 @@ export interface ApiConfig {
     streamInvoke?: string
     streamUpload?: string
     streamDownload?: string
+    rendererInvoke?: string
   }
   reactHooksOutput?: string
   mainBroadcastOutput?: string

@@ -16,6 +16,7 @@ export default defineConfig({
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
         'window-manager/index': resolve(__dirname, 'src/window-manager/index.ts'),
+        'renderer-routing/index': resolve(__dirname, 'src/renderer-routing/index.ts'),
         'inspector/index': resolve(__dirname, 'src/inspector/index.ts'),
         'inspector/trace-renderer': resolve(__dirname, 'src/inspector/trace-renderer.ts'),
         'inspector/ui/preload': resolve(__dirname, 'src/inspector/ui/preload.ts'),

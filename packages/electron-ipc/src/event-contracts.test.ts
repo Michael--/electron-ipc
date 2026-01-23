@@ -261,7 +261,7 @@ describe('Event IPC Contracts', () => {
       const mockTraceContext = { traceId: 'trace-123', spanId: 'span-456' }
       let capturedTraceContext: unknown = null
 
-      vi.spyOn(tracePropagation, 'unwrapTracePayload').mockImplementation((payload) => {
+      vi.spyOn(tracePropagation, 'unwrapTracePayload').mockImplementation((_payload) => {
         return { payload: { data: 'test' }, trace: mockTraceContext }
       })
 
@@ -292,7 +292,7 @@ describe('Event IPC Contracts', () => {
         NoTraceEvent: IRendererEventContract<number>
       }>
 
-      vi.spyOn(tracePropagation, 'unwrapTracePayload').mockImplementation((payload) => {
+      vi.spyOn(tracePropagation, 'unwrapTracePayload').mockImplementation((_payload) => {
         return { payload: 42, trace: undefined }
       })
 

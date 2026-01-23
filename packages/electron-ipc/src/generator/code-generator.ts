@@ -4,6 +4,7 @@ import { InterfaceDeclaration, Node, SourceFile, TypeAliasDeclaration } from 'ts
 import {
   eventApi,
   invokeApi,
+  rendererInvokeApi,
   sendApi,
   streamDownloadApi,
   streamInvokeApi,
@@ -197,7 +198,9 @@ export function processContracts(
                 ? streamUploadApi
                 : type === 'streamDownload'
                   ? streamDownloadApi
-                  : sendApi, // fallback
+                  : type === 'rendererInvoke'
+                    ? rendererInvokeApi
+                    : sendApi, // fallback
       config.searchType
     )
 

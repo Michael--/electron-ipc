@@ -94,6 +94,15 @@ export class WindowRegistry {
   }
 
   /**
+   * Gets window by window ID (alias for getById)
+   * @param windowId - Window ID
+   * @returns Window metadata or undefined if not found
+   */
+  getByWindowId(windowId: number): WindowMetadata | undefined {
+    return this.getById(windowId)
+  }
+
+  /**
    * Gets main window
    * @returns Main window metadata or undefined if no main window exists
    */

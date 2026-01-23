@@ -59,6 +59,8 @@ export function processYamlConfig(configPath: string, options: ProcessOptions = 
         contractNames.push({ type: 'streamUpload', name: api.contracts.streamUpload })
       if (api.contracts.streamDownload)
         contractNames.push({ type: 'streamDownload', name: api.contracts.streamDownload })
+      if (api.contracts.rendererInvoke)
+        contractNames.push({ type: 'rendererInvoke', name: api.contracts.rendererInvoke })
     }
 
     if (contractNames.length === 0) {

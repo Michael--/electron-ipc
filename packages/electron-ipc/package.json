@@ -37,6 +37,11 @@
       "import": "./dist/window-manager/index.mjs",
       "require": "./dist/window-manager/index.cjs"
     },
+    "./renderer-routing": {
+      "types": "./dist/renderer-routing/index.d.ts",
+      "import": "./dist/renderer-routing/index.mjs",
+      "require": "./dist/renderer-routing/index.cjs"
+    },
     "./inspector": {
       "types": "./dist/inspector/index.d.ts",
       "import": "./dist/inspector/index.mjs",

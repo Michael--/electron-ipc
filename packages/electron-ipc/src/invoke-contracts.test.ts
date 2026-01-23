@@ -509,7 +509,7 @@ describe('Invoke IPC Contracts', () => {
       const mockTraceContext = { traceId: 'trace-123', spanId: 'span-456' }
       let capturedTraceContext: unknown = null
 
-      vi.spyOn(tracePropagation, 'unwrapTracePayload').mockImplementation((payload) => {
+      vi.spyOn(tracePropagation, 'unwrapTracePayload').mockImplementation((_payload) => {
         return { payload: { data: 'test' }, trace: mockTraceContext }
       })
 

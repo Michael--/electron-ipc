@@ -899,6 +899,79 @@ const download${contract} = <K extends keyof ${contract}>(
 `
 
 /**
+ * Generates template for renderer invoke contracts (Renderer ↔ Renderer via Main)
+ * Enables type-safe request-response communication between renderer processes
+ * @param contract - The contract type name
+ * @param importPath - Relative import path to the contract definition
+ * @returns Template string for renderer invoke contract helper function
+ */
+export const rendererInvokeContracts = (contract: string, importPath: string) => `
+import { ${contract} } from "${importPath}"
+
+/**
+ * Context information for renderer invoke handlers
+ */
+type RendererInvokeContext = {
+  sourceWindowId: number
+  sourceRole?: string
+}
+
+/**
+ * Generic renderer invoke - call another renderer process by role
+ */
+const invokeInRenderer = async <K extends keyof ${contract}>(
+  targetRole: string,
+  channel: K,
+  request: ${contract}[K]["request"],
+  options?: { timeout?: number } & TraceOptions
+): Promise<${contract}[K]["response"]> => {
+  // Note: Tracing will be added in future enhancement
+  return ipcRenderer.invoke('__RENDERER_ROUTE__', {
+    targetRole,
+    channel: channel as string,
+    request,
+    timeout: options?.timeout ?? 5000
+  })
+}
+
+/**
+ * Register handler for renderer invoke requests
+ */
+const handleRendererInvoke = <K extends keyof ${contract}>(
+  channel: K,
+  handler: (
+    request: ${contract}[K]["request"],
+    context: RendererInvokeContext
+  ) => Promise<${contract}[K]["response"]>
+): (() => void) => {
+  const eventName = \`__RENDERER_HANDLER_\${channel as string}__\`
+
+  const eventHandler = async (_event: any, envelope: any) => {
+    const { requestId, request, sourceWindowId, sourceRole } = envelope
+    try {
+      const response = await handler(request, { sourceWindowId, sourceRole })
+      ipcRenderer.send('__RENDERER_RESPONSE__', { requestId, response })
+    } catch (error: any) {
+      ipcRenderer.send('__RENDERER_RESPONSE__', {
+        requestId,
+        error: {
+          message: error?.message ?? 'Unknown error',
+          name: error?.name ?? 'Error',
+          stack: error?.stack
+        }
+      })
+    }
+  }
+
+  ipcRenderer.on(eventName, eventHandler)
+
+  return () => {
+    ipcRenderer.removeListener(eventName, eventHandler)
+  }
+}
+`
+
+/**
  * Generates an API method for a specific contract property
  * @param prefix - Method prefix (invoke, send, or on)
  * @param propName - Property/channel name

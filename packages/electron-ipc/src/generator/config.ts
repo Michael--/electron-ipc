@@ -1,6 +1,7 @@
 import {
   eventContracts,
   invokeContracts,
+  rendererInvokeContracts,
   sendContracts,
   streamDownloadContracts,
   streamInvokeContracts,
@@ -51,6 +52,13 @@ export const CONTRACT_CONFIG = {
     methodPrefix: 'download',
     paramType: 'data' as const,
     returnType: 'callback' as const,
+    searchType: 'type' as const,
+  },
+  rendererInvoke: {
+    template: rendererInvokeContracts,
+    methodPrefix: 'rendererInvoke',
+    paramType: 'request' as const,
+    returnType: 'invoke' as const,
     searchType: 'type' as const,
   },
 } as const

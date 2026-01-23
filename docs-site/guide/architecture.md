@@ -11,6 +11,7 @@ These helper types enforce a specific structure with named properties:
 - `GenericInvokeContract<T>` + `IInvokeContract<Request, Response>` → `{ request: Request, response: Response }`
 - `GenericRendererEventContract<T>` + `IRendererEventContract<Payload>` → `{ request: Payload }`
 - `GenericBroadcastContract<T>` + `IBroadcastContract<Payload>` → `{ payload: Payload }`
+- `GenericRendererInvokeContract<T>` + `IRendererInvokeContract<Request, Response>` → `{ request: Request, response: Response }`
 - `GenericStreamInvokeContract<T>` + `IStreamInvokeContract<Request, Chunk>` → `{ request: Request, stream: Chunk }`
 - `GenericStreamUploadContract<T>` + `IStreamUploadContract<Request, Chunk>` → `{ request: Request, data: Chunk }`
 - `GenericStreamDownloadContract<T>` + `IStreamDownloadContract<Request, Chunk>` → `{ request: Request, data: Chunk }`
@@ -471,7 +472,7 @@ The test app includes CSP headers to prevent XSS attacks:
 
 **Future Enhancements (P4 - Low):**
 
-- Bi-directional invoke (renderer-to-renderer via main)
+- ~~Bi-directional invoke (renderer-to-renderer via main)~~ ✅ **IMPLEMENTED** (v2.5.0)
 - Alternative transport layers (MessagePort, WebSocket)
 - VS Code extension (contract navigation, auto-completion)
 - Generator watch mode

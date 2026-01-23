@@ -9,6 +9,7 @@
  * - **Events**: Unidirectional renderer → main notifications (see event-contracts.ts)
  * - **Broadcasts**: Unidirectional main → renderer updates (see broadcast-contracts.ts)
  * - **Streams**: Efficient large data transfers (see stream-contracts.ts)
+ * - **RendererInvoke**: Renderer-to-renderer via main (see renderer-invoke-contracts.ts)
  *
  * For detailed usage and examples, see the individual contract modules.
  */
@@ -17,6 +18,7 @@
 export * from './broadcast-contracts'
 export * from './event-contracts'
 export * from './invoke-contracts'
+export * from './renderer-invoke-contracts'
 export * from './stream-contracts'
 export * from './types'
 export * from './validation'
