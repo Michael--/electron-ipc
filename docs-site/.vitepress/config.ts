@@ -48,6 +48,7 @@ export default withMermaid(
           {
             text: 'Advanced Topics',
             items: [
+              { text: 'Renderer-to-Renderer IPC', link: '/guide/renderer-to-renderer' },
               { text: 'Multi-Window Patterns', link: '/guide/multi-window' },
               { text: 'Performance Tuning', link: '/guide/performance' },
               { text: 'Security & Best Practices', link: '/guide/security' },
