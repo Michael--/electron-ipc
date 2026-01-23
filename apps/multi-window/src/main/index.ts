@@ -10,7 +10,7 @@ import {
   enableIpcInspector,
   getInspectorWindow,
 } from '@number10/electron-ipc/inspector'
-import { RendererInvokeRouter } from '@number10/electron-ipc/renderer-routing'
+import { initRendererInvokeRouter } from '@number10/electron-ipc/renderer-routing'
 import {
   broadcastToApp,
   createBroadcastToRole,
@@ -130,8 +130,7 @@ function initializeHandlers() {
   }
 
   // Initialize renderer-to-renderer routing
-  // Note: Handlers are registered in the target renderer processes, not here
-  new RendererInvokeRouter()
+  initRendererInvokeRouter()
 
   RegisterHandler.register()
   RegisterEvent.register()
