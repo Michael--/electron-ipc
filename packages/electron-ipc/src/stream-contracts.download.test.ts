@@ -3,6 +3,7 @@ import './test-helpers/electron-mock'
 import { ipcMain } from 'electron'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as tracePropagation from './inspector/trace-propagation'
+import type { NoRequest } from './test-helpers/contracts'
 import {
   AbstractRegisterStreamDownload,
   GenericStreamDownloadContract,
@@ -10,6 +11,10 @@ import {
   IPCStreamDownloadHandlerType,
   defineStreamDownloadHandlers,
 } from './interfaces/ipc-contracts'
+
+type IpcOnCall = [string, (...args: unknown[]) => unknown]
+type IpcHandleCall = [string, (...args: unknown[]) => unknown]
+type IpcSendCall = [string, ...unknown[]]
 
 describe('Stream IPC Contracts - Download', () => {
   beforeEach(() => {
@@ -64,8 +69,8 @@ describe('Stream IPC Contracts - Download', () => {
 
     it('should support multiple data types', () => {
       type DownloadContract = GenericStreamDownloadContract<{
-        DownloadNumbers: IStreamDownloadContract<null, number>
-        DownloadObjects: IStreamDownloadContract<null, { id: number; value: string }>
+        DownloadNumbers: IStreamDownloadContract<NoRequest, number>
+        DownloadObjects: IStreamDownloadContract<NoRequest, { id: number; value: string }>
       }>
 
       const contract: DownloadContract = {
@@ -111,7 +116,7 @@ describe('Stream IPC Contracts - Download', () => {
       CancelDownloadHandler.register()
 
       const cancelCall = (ipcMain.on as any).mock.calls.find(
-        ([channel]) => channel === 'GetData-cancel'
+        (call: IpcOnCall) => call[0] === 'GetData-cancel'
       )
       expect(cancelCall).toBeDefined()
       if (!cancelCall) {
@@ -120,7 +125,7 @@ describe('Stream IPC Contracts - Download', () => {
       const cancelHandler = cancelCall[1]
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'GetData'
+        (call: IpcHandleCall) => call[0] === 'GetData'
       )
       if (!handleCall) {
         throw new Error('Expected GetData handler to be registered')
@@ -145,7 +150,7 @@ describe('Stream IPC Contracts - Download', () => {
 
     it('should handle stream errors during download', async () => {
       type DownloadContract = GenericStreamDownloadContract<{
-        ErrorDownload: IStreamDownloadContract<void, number>
+        ErrorDownload: IStreamDownloadContract<NoRequest, number>
       }>
 
       const testError = new Error('Stream failed')
@@ -167,7 +172,7 @@ describe('Stream IPC Contracts - Download', () => {
       ErrorDownloadHandler.register()
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'ErrorDownload'
+        (call: IpcHandleCall) => call[0] === 'ErrorDownload'
       )
       if (!handleCall) {
         throw new Error('Expected ErrorDownload handler to be registered')
@@ -181,7 +186,7 @@ describe('Stream IPC Contracts - Download', () => {
         },
       }
 
-      await handler(mockEvent, undefined)
+      await handler(mockEvent, null)
 
       expect(mockEvent.sender.send).toHaveBeenCalledWith('ErrorDownload-data', 1)
       expect(mockEvent.sender.send).toHaveBeenCalledWith('ErrorDownload-error', testError)
@@ -228,7 +233,7 @@ describe('Stream IPC Contracts - Download', () => {
       MultiDownloadHandler.register()
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'MultiDownload'
+        (call: IpcHandleCall) => call[0] === 'MultiDownload'
       )
       if (!handleCall) {
         throw new Error('Expected MultiDownload handler to be registered')
@@ -254,7 +259,7 @@ describe('Stream IPC Contracts - Download', () => {
 
     it('should handle cancel errors gracefully', async () => {
       type DownloadContract = GenericStreamDownloadContract<{
-        CancelError: IStreamDownloadContract<void, string>
+        CancelError: IStreamDownloadContract<NoRequest, string>
       }>
 
       class CancelErrorHandler extends AbstractRegisterStreamDownload {
@@ -275,7 +280,7 @@ describe('Stream IPC Contracts - Download', () => {
       CancelErrorHandler.register()
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'CancelError'
+        (call: IpcHandleCall) => call[0] === 'CancelError'
       )
       if (!handleCall) {
         throw new Error('Expected CancelError handler to be registered')
@@ -289,10 +294,10 @@ describe('Stream IPC Contracts - Download', () => {
         },
       }
 
-      const streamPromise = handler(mockEvent, undefined)
+      const streamPromise = handler(mockEvent, null)
 
       const cancelCall = (ipcMain.on as any).mock.calls.find(
-        ([channel]) => channel === 'CancelError-cancel'
+        (call: IpcOnCall) => call[0] === 'CancelError-cancel'
       )
       if (!cancelCall) {
         throw new Error('Expected CancelError-cancel handler to be registered')
@@ -306,7 +311,7 @@ describe('Stream IPC Contracts - Download', () => {
 
     it('should handle cancel when no active reader exists', async () => {
       type DownloadContract = GenericStreamDownloadContract<{
-        NoReader: IStreamDownloadContract<void, string>
+        NoReader: IStreamDownloadContract<NoRequest, string>
       }>
 
       class NoReaderHandler extends AbstractRegisterStreamDownload {
@@ -325,7 +330,7 @@ describe('Stream IPC Contracts - Download', () => {
       NoReaderHandler.register()
 
       const cancelCall = (ipcMain.on as any).mock.calls.find(
-        ([channel]) => channel === 'NoReader-cancel'
+        (call: IpcOnCall) => call[0] === 'NoReader-cancel'
       )
       if (!cancelCall) {
         throw new Error('Expected NoReader-cancel handler to be registered')
@@ -340,7 +345,7 @@ describe('Stream IPC Contracts - Download', () => {
     it('should define stream download handlers with type safety', () => {
       type DownloadContract = GenericStreamDownloadContract<{
         Download1: IStreamDownloadContract<{ count: number }, number>
-        Download2: IStreamDownloadContract<void, string>
+        Download2: IStreamDownloadContract<NoRequest, string>
       }>
 
       const handlers = defineStreamDownloadHandlers<DownloadContract>({
@@ -354,7 +359,7 @@ describe('Stream IPC Contracts - Download', () => {
             },
           })
         },
-        Download2: () => {
+        Download2: (_request) => {
           return new globalThis.ReadableStream({
             start(controller) {
               controller.enqueue('test')
@@ -414,7 +419,7 @@ describe('Stream IPC Contracts - Download', () => {
       TracedDownloadHandler.register()
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'TracedDownload'
+        (call: IpcHandleCall) => call[0] === 'TracedDownload'
       )
       if (!handleCall) {
         throw new Error('Expected TracedDownload handler to be registered')
@@ -436,7 +441,7 @@ describe('Stream IPC Contracts - Download', () => {
 
     it('should handle download stream end without trace context', async () => {
       type DownloadContract = GenericStreamDownloadContract<{
-        NoTraceDownload: IStreamDownloadContract<void, string>
+        NoTraceDownload: IStreamDownloadContract<NoRequest, string>
       }>
 
       vi.spyOn(tracePropagation, 'unwrapTracePayload').mockImplementation((payload) => ({
@@ -464,7 +469,7 @@ describe('Stream IPC Contracts - Download', () => {
       NoTraceDownloadHandler.register()
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'NoTraceDownload'
+        (call: IpcHandleCall) => call[0] === 'NoTraceDownload'
       )
       if (!handleCall) {
         throw new Error('Expected NoTraceDownload handler to be registered')
@@ -478,10 +483,10 @@ describe('Stream IPC Contracts - Download', () => {
         },
       }
 
-      await handler(mockEvent, undefined)
+      await handler(mockEvent, null)
 
-      const endCalls = mockEvent.sender.send.mock.calls.filter(
-        ([channel]) => channel === 'NoTraceDownload-end'
+      const endCalls = (mockEvent.sender.send.mock.calls as IpcSendCall[]).filter(
+        (call) => call[0] === 'NoTraceDownload-end'
       )
       expect(endCalls.length).toBe(1)
       expect(endCalls[0].length).toBe(1)

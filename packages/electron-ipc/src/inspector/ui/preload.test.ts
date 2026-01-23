@@ -2,6 +2,8 @@ import '../../test-helpers/electron-mock'
 import { contextBridge, ipcRenderer } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+type IpcRendererOnCall = [string, (...args: unknown[]) => unknown]
+
 describe('inspector ui preload', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -36,7 +38,7 @@ describe('inspector ui preload', () => {
     api.onInit(initCallback)
     const initHandler = vi
       .mocked(ipcRenderer.on)
-      .mock.calls.find(([channel]) => channel === 'INSPECTOR:INIT')?.[1]
+      .mock.calls.find((call: IpcRendererOnCall) => call[0] === 'INSPECTOR:INIT')?.[1]
     initHandler?.(undefined, { events: [] })
     expect(initCallback).toHaveBeenCalledWith({ events: [] })
   })

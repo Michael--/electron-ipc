@@ -11,6 +11,8 @@ import {
 } from './interfaces/ipc-contracts'
 import * as tracePropagation from './inspector/trace-propagation'
 
+type IpcOnCall = [string, (...args: unknown[]) => unknown]
+
 describe('Event IPC Contracts', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -111,7 +113,9 @@ describe('Event IPC Contracts', () => {
 
       LogEventHandler.register()
 
-      const onCall = (ipcMain.on as any).mock.calls.find(([channel]) => channel === 'LogEvent')
+      const onCall = (ipcMain.on as any).mock.calls.find(
+        (call: IpcOnCall) => call[0] === 'LogEvent'
+      )
       expect(onCall).toBeDefined()
       const handler = onCall[1]
 
@@ -139,7 +143,9 @@ describe('Event IPC Contracts', () => {
 
       QuitEventHandler.register()
 
-      const onCall = (ipcMain.on as any).mock.calls.find(([channel]) => channel === 'QuitEvent')
+      const onCall = (ipcMain.on as any).mock.calls.find(
+        (call: IpcOnCall) => call[0] === 'QuitEvent'
+      )
       const handler = onCall[1]
 
       const mockEvent = { sender: { id: 1 } }
@@ -213,7 +219,7 @@ describe('Event IPC Contracts', () => {
 
       // Verify removeHandler was called at least once
       const removeHandlerCalls = (ipcMain.removeHandler as any).mock.calls.filter(
-        ([channel]: any) => channel === 'ReplaceEvent'
+        (call: [string, ...unknown[]]) => call[0] === 'ReplaceEvent'
       )
       expect(removeHandlerCalls.length).toBeGreaterThan(0)
     })
@@ -271,7 +277,9 @@ describe('Event IPC Contracts', () => {
 
       TracedEventHandler.register()
 
-      const onCall = (ipcMain.on as any).mock.calls.find(([channel]) => channel === 'TracedEvent')
+      const onCall = (ipcMain.on as any).mock.calls.find(
+        (call: IpcOnCall) => call[0] === 'TracedEvent'
+      )
       const handler = onCall[1]
 
       const mockEvent = { sender: { id: 1 } }
@@ -306,7 +314,9 @@ describe('Event IPC Contracts', () => {
 
       NoTraceEventHandler.register()
 
-      const onCall = (ipcMain.on as any).mock.calls.find(([channel]) => channel === 'NoTraceEvent')
+      const onCall = (ipcMain.on as any).mock.calls.find(
+        (call: IpcOnCall) => call[0] === 'NoTraceEvent'
+      )
       const handler = onCall[1]
 
       const mockEvent = { sender: { id: 1 } }

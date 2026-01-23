@@ -2,7 +2,26 @@
 import '../test-helpers/electron-mock'
 import { extendElectronMock } from '../test-helpers/electron-mock'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Mock } from 'vitest'
 import { getInspectorServer } from './server'
+
+type InspectorServerInstance = ReturnType<typeof getInspectorServer>
+type MockInspectorServer = {
+  push: Mock
+  subscribe: Mock
+  getSubscriber: Mock
+  sendInit: Mock
+  getOptions: Mock
+  getStatus: Mock
+  clear: Mock
+  pause: Mock
+  resume: Mock
+  setTracingEnabled: Mock
+  setPayloadMode: Mock
+  setBufferSize: Mock
+  exportJson: Mock
+  flush: Mock
+}
 
 const ipcMainOnHandlers = new Map<string, (...args: any[]) => void>()
 const ipcMainHandleHandlers = new Map<string, (...args: any[]) => unknown>()
@@ -44,7 +63,7 @@ class MockBrowserWindow {
   webContents: {
     id: number
     send: ReturnType<typeof vi.fn>
-    isDestroyed: ReturnType<typeof vi.fn<[], boolean>>
+    isDestroyed: Mock<() => boolean>
   }
   private listeners: Record<string, Array<(...args: unknown[]) => void>> = {}
 
@@ -87,7 +106,7 @@ vi.mock('./server', () => ({
   getInspectorServer: vi.fn(),
 }))
 
-const createMockServer = () => ({
+const createMockServer = (): MockInspectorServer => ({
   push: vi.fn(),
   subscribe: vi.fn(),
   getSubscriber: vi.fn(),
@@ -103,6 +122,9 @@ const createMockServer = () => ({
   exportJson: vi.fn(() => ({ events: [] })),
   flush: vi.fn(),
 })
+
+const asInspectorServer = (server: MockInspectorServer): InspectorServerInstance =>
+  server as unknown as InspectorServerInstance
 
 const originalEnv = process.env.NODE_ENV
 
@@ -128,7 +150,7 @@ describe('inspector/enable', () => {
 
   it('flushInspector calls server.flush when available', async () => {
     const server = createMockServer()
-    vi.mocked(getInspectorServer).mockReturnValue(server)
+    vi.mocked(getInspectorServer).mockReturnValue(asInspectorServer(server))
 
     const { flushInspector } = await loadEnableModule()
     flushInspector()
@@ -158,7 +180,7 @@ describe('inspector/enable', () => {
 
   it('creates inspector window when openOnStart is true', async () => {
     const server = createMockServer()
-    vi.mocked(getInspectorServer).mockReturnValue(server)
+    vi.mocked(getInspectorServer).mockReturnValue(asInspectorServer(server))
 
     const { enableIpcInspector } = await loadEnableModule()
     const window = enableIpcInspector({ openOnStart: true })
@@ -177,7 +199,7 @@ describe('inspector/enable', () => {
 
   it('registers keyboard shortcut when configured', async () => {
     const server = createMockServer()
-    vi.mocked(getInspectorServer).mockReturnValue(server)
+    vi.mocked(getInspectorServer).mockReturnValue(asInspectorServer(server))
 
     const { enableIpcInspector } = await loadEnableModule()
     app.whenReady.mockImplementation(
@@ -201,7 +223,7 @@ describe('inspector/enable', () => {
 
   it('handles inspector IPC commands', async () => {
     const server = createMockServer()
-    vi.mocked(getInspectorServer).mockReturnValue(server)
+    vi.mocked(getInspectorServer).mockReturnValue(asInspectorServer(server))
 
     const { enableIpcInspector } = await loadEnableModule()
     enableIpcInspector({ openOnStart: false, shortcut: undefined })
@@ -229,7 +251,7 @@ describe('inspector/enable', () => {
 
   it('routes HELLO and TRACE messages through handlers', async () => {
     const server = createMockServer()
-    vi.mocked(getInspectorServer).mockReturnValue(server)
+    vi.mocked(getInspectorServer).mockReturnValue(asInspectorServer(server))
 
     const { enableIpcInspector } = await loadEnableModule()
     enableIpcInspector({ openOnStart: false, shortcut: undefined })
@@ -278,7 +300,7 @@ describe('inspector/enable', () => {
 
   it('enableIpcInspector runs without errors', async () => {
     const server = createMockServer()
-    vi.mocked(getInspectorServer).mockReturnValue(server)
+    vi.mocked(getInspectorServer).mockReturnValue(asInspectorServer(server))
 
     const { enableIpcInspector } = await loadEnableModule()
 

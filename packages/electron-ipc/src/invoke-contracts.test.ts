@@ -16,6 +16,8 @@ import {
 } from './interfaces/ipc-contracts'
 import * as tracePropagation from './inspector/trace-propagation'
 
+type IpcHandleCall = [string, (...args: unknown[]) => unknown]
+
 describe('Invoke IPC Contracts', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -139,7 +141,7 @@ describe('Invoke IPC Contracts', () => {
       AsyncInvokeHandler.register()
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'AsyncEcho'
+        (call: IpcHandleCall) => call[0] === 'AsyncEcho'
       )
       const handler = handleCall[1]
 
@@ -165,7 +167,7 @@ describe('Invoke IPC Contracts', () => {
       SyncInvokeHandler.register()
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'SyncAdd'
+        (call: IpcHandleCall) => call[0] === 'SyncAdd'
       )
       const handler = handleCall[1]
 
@@ -191,7 +193,7 @@ describe('Invoke IPC Contracts', () => {
       VoidRequestHandler.register()
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'GetRandom'
+        (call: IpcHandleCall) => call[0] === 'GetRandom'
       )
       const handler = handleCall[1]
 
@@ -220,7 +222,7 @@ describe('Invoke IPC Contracts', () => {
       VoidResponseHandler.register()
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'DoWork'
+        (call: IpcHandleCall) => call[0] === 'DoWork'
       )
       const handler = handleCall[1]
 
@@ -386,7 +388,7 @@ describe('Invoke IPC Contracts', () => {
       InvalidStreamHandler.register()
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'InvalidStream'
+        (call: IpcHandleCall) => call[0] === 'InvalidStream'
       )
       const handler = handleCall[1]
 
@@ -520,7 +522,7 @@ describe('Invoke IPC Contracts', () => {
       TracedInvokeHandler.register()
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'TracedInvoke'
+        (call: IpcHandleCall) => call[0] === 'TracedInvoke'
       )
       const handler = handleCall[1]
 
@@ -571,7 +573,7 @@ describe('Invoke IPC Contracts', () => {
       TracedStreamHandler.register()
 
       const handleCall = (ipcMain.handle as any).mock.calls.find(
-        ([channel]) => channel === 'TracedStream'
+        (call: IpcHandleCall) => call[0] === 'TracedStream'
       )
       const handler = handleCall[1]
 
