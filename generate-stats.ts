@@ -62,6 +62,7 @@ function generateStats() {
   const outputPath = path.join(distDir, 'stats.md')
   fs.writeFileSync(outputPath, markdown, 'utf-8')
 
+  // eslint-disable-next-line no-console
   console.log(`Statistics generated at ${outputPath}`)
 }
 
