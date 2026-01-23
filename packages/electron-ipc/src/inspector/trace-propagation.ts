@@ -1,6 +1,9 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import type { TraceContext } from './types'
 
+// Re-export TraceContext for external use
+export type { TraceContext }
+
 const TRACE_CONTEXT_KEY = '__ipcTrace'
 const TRACE_DATA_KEY = '__ipcData'
 

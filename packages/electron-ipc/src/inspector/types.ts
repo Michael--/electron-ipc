@@ -1,7 +1,7 @@
 /**
  * Direction of IPC communication
  */
-export type Direction = 'renderer→main' | 'main→renderer'
+export type Direction = 'renderer→main' | 'main→renderer' | 'renderer→renderer' // Renderer-to-renderer via main
 
 /**
  * Type of IPC trace event
@@ -131,11 +131,11 @@ export interface PayloadPreview {
 }
 
 /**
- * Trace event for invoke operations (renderer→main→renderer)
+ * Trace event for invoke operations (renderer→main→renderer or renderer→renderer)
  */
 export interface InvokeTrace extends TraceEventBase {
   kind: 'invoke'
-  direction: 'renderer→main'
+  direction: 'renderer→main' | 'renderer→renderer'
 
   /** Source (renderer) information */
   source: TraceSource

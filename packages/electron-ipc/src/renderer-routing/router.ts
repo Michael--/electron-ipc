@@ -7,6 +7,8 @@
  */
 
 import { ipcMain, IpcMainInvokeEvent } from 'electron'
+import { emitTrace, createTraceEnvelope, createPayloadPreview } from '../inspector/trace'
+import { unwrapTracePayload, wrapTracePayload } from '../inspector/trace-propagation'
 import { getWindowRegistry } from '../window-manager/registry'
 import { getWindowFromEvent } from '../window-manager/helpers'
 
@@ -81,7 +83,7 @@ export class RendererInvokeRouter {
     event: IpcMainInvokeEvent,
     envelope: Omit<RendererInvokeEnvelope, 'requestId' | 'sourceWindowId'>
   ): Promise<unknown> {
-    const { targetRole, channel, request, timeout } = envelope
+    const { targetRole, channel, request: rawRequest, timeout } = envelope
     const requestId = this.generateRequestId()
     const tsStart = Date.now()
 
@@ -101,10 +103,54 @@ export class RendererInvokeRouter {
       throw new Error(`Target window '${targetRole}' is destroyed`)
     }
 
+    // Unwrap trace context if present
+    const { payload: request, trace } = unwrapTracePayload(rawRequest)
+
+    // Emit trace for main-process routing
+    if (trace) {
+      emitTrace({
+        id: trace.spanId,
+        kind: 'invoke',
+        channel,
+        direction: 'renderer→renderer',
+        status: 'ok',
+        tsStart,
+        trace: createTraceEnvelope(trace, tsStart),
+        source: {
+          windowId: sourceWindow.id,
+          webContentsId: sourceWindow.webContents.id,
+        },
+        request: createPayloadPreview(request),
+      })
+    }
+
     // Create promise for response
     return new Promise((resolve, reject) => {
       const timeoutHandle = setTimeout(() => {
         this.pendingRequests.delete(requestId)
+
+        // Emit trace for timeout
+        if (trace) {
+          const tsEnd = Date.now()
+          emitTrace({
+            id: trace.spanId,
+            kind: 'invoke',
+            channel,
+            direction: 'renderer→renderer',
+            status: 'timeout',
+            tsStart,
+            tsEnd,
+            durationMs: tsEnd - tsStart,
+            trace: createTraceEnvelope(trace, tsStart, tsEnd),
+            source: {
+              windowId: sourceWindow.id,
+              webContentsId: sourceWindow.webContents.id,
+            },
+            request: createPayloadPreview(request),
+            error: { name: 'TimeoutError', message: `Timeout after ${timeout}ms` },
+          })
+        }
+
         reject(new Error(`Renderer invoke timeout after ${timeout}ms for channel '${channel}'`))
       }, timeout)
 
@@ -121,10 +167,10 @@ export class RendererInvokeRouter {
       // Get source role if available
       const sourceMetadata = getWindowRegistry().getByWindowId(sourceWindow.id)
 
-      // Send request to target renderer
+      // Send request to target renderer (with trace)
       targetWindow.webContents.send(`__RENDERER_HANDLER_${channel}__`, {
         requestId,
-        request,
+        request: wrapTracePayload(request, trace ?? undefined),
         sourceWindowId: sourceWindow.id,
         sourceRole: sourceMetadata?.role,
       })
@@ -135,7 +181,7 @@ export class RendererInvokeRouter {
    * Handle response from target renderer
    */
   private handleResponse(response: RendererResponseEnvelope): void {
-    const { requestId, response: data, error } = response
+    const { requestId, response: rawData, error } = response
     const pending = this.pendingRequests.get(requestId)
 
     if (!pending) {
@@ -145,12 +191,59 @@ export class RendererInvokeRouter {
     clearTimeout(pending.timeout)
     this.pendingRequests.delete(requestId)
 
+    const tsEnd = Date.now()
+
+    // Unwrap trace context if present
+    const { payload: data, trace } = unwrapTracePayload(rawData)
+
     if (error) {
+      // Emit trace for error response
+      if (trace) {
+        const sourceWindow = getWindowRegistry().getByWindowId(pending.sourceWindowId)?.window
+        emitTrace({
+          id: trace.spanId,
+          kind: 'invoke',
+          channel: pending.channel,
+          direction: 'renderer→renderer',
+          status: 'error',
+          tsStart: pending.tsStart,
+          tsEnd,
+          durationMs: tsEnd - pending.tsStart,
+          trace: createTraceEnvelope(trace, pending.tsStart, tsEnd),
+          source: {
+            windowId: pending.sourceWindowId,
+            webContentsId: sourceWindow?.webContents.id ?? 0,
+          },
+          error: { name: error.name ?? 'Error', message: error.message },
+        })
+      }
+
       const err = new Error(error.message)
       if (error.name) err.name = error.name
       if (error.stack) err.stack = error.stack
       pending.reject(err)
     } else {
+      // Emit trace for successful response
+      if (trace) {
+        const sourceWindow = getWindowRegistry().getByWindowId(pending.sourceWindowId)?.window
+        emitTrace({
+          id: trace.spanId,
+          kind: 'invoke',
+          channel: pending.channel,
+          direction: 'renderer→renderer',
+          status: 'ok',
+          tsStart: pending.tsStart,
+          tsEnd,
+          durationMs: tsEnd - pending.tsStart,
+          trace: createTraceEnvelope(trace, pending.tsStart, tsEnd),
+          source: {
+            windowId: pending.sourceWindowId,
+            webContentsId: sourceWindow?.webContents.id ?? 0,
+          },
+          response: createPayloadPreview(data),
+        })
+      }
+
       pending.resolve(data)
     }
   }

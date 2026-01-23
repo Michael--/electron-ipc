@@ -925,13 +925,88 @@ const invokeInRenderer = async <K extends keyof ${contract}>(
   request: ${contract}[K]["request"],
   options?: { timeout?: number } & TraceOptions
 ): Promise<${contract}[K]["response"]> => {
-  // Note: Tracing will be added in future enhancement
-  return ipcRenderer.invoke('__RENDERER_ROUTE__', {
-    targetRole,
-    channel: channel as string,
-    request,
-    timeout: options?.timeout ?? 5000
-  })
+  const channelStr = channel as string
+  const tsStart = Date.now()
+
+  // Create trace context for the renderer invoke
+  const traceContext = shouldTraceChannel(channelStr)
+    ? createTraceContext(options?.trace)
+    : undefined
+
+  // Emit trace for renderer invoke start
+  if (traceContext) {
+    try {
+      ipcRenderer.send('INSPECTOR:TRACE', {
+        id: traceContext.spanId,
+        kind: 'invoke',
+        channel: channelStr,
+        direction: 'renderer→renderer',
+        status: 'ok',
+        tsStart,
+        trace: createTraceEnvelope(traceContext, tsStart),
+        source: { webContentsId: -1 },
+        request: createPayloadPreview(request)
+      })
+    } catch {}
+  }
+
+  try {
+    const response = await ipcRenderer.invoke('__RENDERER_ROUTE__', {
+      targetRole,
+      channel: channelStr,
+      request: wrapTracePayload(request, traceContext ?? undefined),
+      timeout: options?.timeout ?? 5000
+    })
+
+    // Emit trace for successful response
+    if (traceContext) {
+      const tsEnd = Date.now()
+      try {
+        ipcRenderer.send('INSPECTOR:TRACE', {
+          id: traceContext.spanId,
+          kind: 'invoke',
+          channel: channelStr,
+          direction: 'renderer→renderer',
+          status: 'ok',
+          tsStart,
+          tsEnd,
+          durationMs: tsEnd - tsStart,
+          trace: createTraceEnvelope(traceContext, tsStart, tsEnd),
+          source: { webContentsId: -1 },
+          request: createPayloadPreview(request),
+          response: createPayloadPreview(response)
+        })
+      } catch {}
+    }
+
+    return response
+  } catch (error: any) {
+    // Emit trace for error
+    if (traceContext) {
+      const tsEnd = Date.now()
+      try {
+        ipcRenderer.send('INSPECTOR:TRACE', {
+          id: traceContext.spanId,
+          kind: 'invoke',
+          channel: channelStr,
+          direction: 'renderer→renderer',
+          status: 'error',
+          tsStart,
+          tsEnd,
+          durationMs: tsEnd - tsStart,
+          trace: createTraceEnvelope(traceContext, tsStart, tsEnd),
+          source: { webContentsId: -1 },
+          request: createPayloadPreview(request),
+          error: {
+            name: error instanceof Error ? error.name : 'Error',
+            message: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
+          }
+        })
+      } catch {}
+    }
+    throw error
+  }
 }
 
 /**
@@ -945,13 +1020,87 @@ const handleRendererInvoke = <K extends keyof ${contract}>(
   ) => Promise<${contract}[K]["response"]>
 ): (() => void) => {
   const eventName = \`__RENDERER_HANDLER_\${channel as string}__\`
+  const channelStr = channel as string
 
   const eventHandler = async (_event: any, envelope: any) => {
-    const { requestId, request, sourceWindowId, sourceRole } = envelope
+    const { requestId, request: rawRequest, sourceWindowId, sourceRole } = envelope
+    const tsStart = Date.now()
+
+    // Unwrap trace payload if present
+    const { payload: request, trace } = unwrapTracePayload(rawRequest)
+
+    // Emit trace for handler invocation
+    if (trace && shouldTraceChannel(channelStr)) {
+      try {
+        ipcRenderer.send('INSPECTOR:TRACE', {
+          id: trace.spanId,
+          kind: 'invoke',
+          channel: channelStr,
+          direction: 'renderer→renderer',
+          status: 'ok',
+          tsStart,
+          trace: createTraceEnvelope(trace, tsStart),
+          source: { webContentsId: -1 },
+          request: createPayloadPreview(request)
+        })
+      } catch {}
+    }
+
     try {
       const response = await handler(request, { sourceWindowId, sourceRole })
-      ipcRenderer.send('__RENDERER_RESPONSE__', { requestId, response })
+      const tsEnd = Date.now()
+
+      // Emit trace for handler response
+      if (trace && shouldTraceChannel(channelStr)) {
+        try {
+          ipcRenderer.send('INSPECTOR:TRACE', {
+            id: trace.spanId,
+            kind: 'invoke',
+            channel: channelStr,
+            direction: 'renderer→renderer',
+            status: 'ok',
+            tsStart,
+            tsEnd,
+            durationMs: tsEnd - tsStart,
+            trace: createTraceEnvelope(trace, tsStart, tsEnd),
+            source: { webContentsId: -1 },
+            request: createPayloadPreview(request),
+            response: createPayloadPreview(response)
+          })
+        } catch {}
+      }
+
+      ipcRenderer.send('__RENDERER_RESPONSE__', {
+        requestId,
+        response: wrapTracePayload(response, trace ?? undefined)
+      })
     } catch (error: any) {
+      const tsEnd = Date.now()
+
+      // Emit trace for handler error
+      if (trace && shouldTraceChannel(channelStr)) {
+        try {
+          ipcRenderer.send('INSPECTOR:TRACE', {
+            id: trace.spanId,
+            kind: 'invoke',
+            channel: channelStr,
+            direction: 'renderer→renderer',
+            status: 'error',
+            tsStart,
+            tsEnd,
+            durationMs: tsEnd - tsStart,
+            trace: createTraceEnvelope(trace, tsStart, tsEnd),
+            source: { webContentsId: -1 },
+            request: createPayloadPreview(request),
+            error: {
+              name: error instanceof Error ? error.name : 'Error',
+              message: error instanceof Error ? error.message : String(error),
+              stack: error instanceof Error ? error.stack : undefined
+            }
+          })
+        } catch {}
+      }
+
       ipcRenderer.send('__RENDERER_RESPONSE__', {
         requestId,
         error: {
