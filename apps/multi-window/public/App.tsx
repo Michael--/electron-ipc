@@ -30,6 +30,8 @@ export function App() {
   const [r2rLogMessage, setR2rLogMessage] = useState('')
   const [r2rLogLevel, setR2rLogLevel] = useState<LogLevel>('info')
   const [r2rStatus, setR2rStatus] = useState<string>('')
+  const [logCountStatus, setLogCountStatus] = useState<string>('')
+  const [clearLogsStatus, setClearLogsStatus] = useState<string>('')
 
   const refreshWindowInfo = async () => {
     const info = await window.api.invokeGetWindowInfo()
@@ -108,11 +110,33 @@ export function App() {
         sourceRole: windowInfo.role,
         sourceId: windowInfo.id,
       })
-      setR2rStatus(`✓ Sent (ID: ${result.entryId})`)
+      setR2rStatus(`✓ Log sent: success=${result.success}, entryId=${result.entryId}`)
       setR2rLogMessage('')
-      setTimeout(() => setR2rStatus(''), 3000)
+      setTimeout(() => setR2rStatus(''), 5000)
     } catch (error) {
       setR2rStatus(`✗ Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  const handleGetLogCount = async () => {
+    try {
+      setLogCountStatus('Fetching...')
+      const result = await window.api.rendererInvokeGetLogCount('logger')
+      setLogCountStatus(`✓ Logger has ${result.count} log entries`)
+      setTimeout(() => setLogCountStatus(''), 5000)
+    } catch (error) {
+      setLogCountStatus(`✗ Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  const handleClearLogs = async () => {
+    try {
+      setClearLogsStatus('Clearing...')
+      const result = await window.api.rendererInvokeClearLogs('logger')
+      setClearLogsStatus(`✓ Cleared ${result.cleared} log entries`)
+      setTimeout(() => setClearLogsStatus(''), 5000)
+    } catch (error) {
+      setClearLogsStatus(`✗ Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -313,6 +337,23 @@ export function App() {
             </button>
           </div>
           {r2rStatus && <div className="status-message">{r2rStatus}</div>}
+
+          <div className="divider" />
+
+          <div className="panel-header">
+            <h3>Logger Commands</h3>
+            <span className="muted">Test R2R responses</span>
+          </div>
+          <div className="button-row">
+            <button className="button" type="button" onClick={handleGetLogCount}>
+              Get Log Count
+            </button>
+            <button className="button" type="button" onClick={handleClearLogs}>
+              Clear Logger
+            </button>
+          </div>
+          {logCountStatus && <div className="status-message">{logCountStatus}</div>}
+          {clearLogsStatus && <div className="status-message">{clearLogsStatus}</div>}
         </section>
       </main>
     </div>
