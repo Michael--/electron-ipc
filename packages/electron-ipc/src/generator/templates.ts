@@ -1103,6 +1103,7 @@ const handleRendererInvoke = <K extends keyof ${contract}>(
 
       ipcRenderer.send('__RENDERER_RESPONSE__', {
         requestId,
+        response: wrapTracePayload(undefined, trace ?? undefined),
         error: {
           message: error?.message ?? 'Unknown error',
           name: error?.name ?? 'Error',

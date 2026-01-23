@@ -39,7 +39,16 @@ export default defineConfig({
       },
     },
     rollupOptions: {
-      external: ['electron', 'fs', 'path', 'ts-morph', 'colors', 'yaml', 'node:async_hooks'],
+      external: [
+        'electron',
+        'fs',
+        'path',
+        'ts-morph',
+        'colors',
+        'yaml',
+        'node:async_hooks',
+        'node:crypto',
+      ],
     },
     sourcemap: true,
     outDir: 'dist',

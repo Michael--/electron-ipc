@@ -10,6 +10,7 @@ vi.mock('electron', () => ({
     handle: vi.fn(),
     on: vi.fn(),
     removeHandler: vi.fn(),
+    removeListener: vi.fn(),
   },
 }))
 
@@ -41,18 +42,5 @@ describe('RendererInvokeRouter', () => {
     router.cleanup()
     const stats = router.getStats()
     expect(stats.pendingRequests).toBe(0)
-  })
-
-  it('should generate unique request IDs', () => {
-    // Access private method through any for testing
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const generateId = (router as any).generateRequestId.bind(router)
-
-    const id1 = generateId()
-    const id2 = generateId()
-
-    expect(id1).toContain('rr-')
-    expect(id2).toContain('rr-')
-    expect(id1).not.toBe(id2)
   })
 })

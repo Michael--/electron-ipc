@@ -7,10 +7,17 @@
  */
 
 import { ipcMain, IpcMainInvokeEvent } from 'electron'
+import { randomUUID } from 'node:crypto'
 import { emitTrace, createTraceEnvelope, createPayloadPreview } from '../inspector/trace'
 import { unwrapTracePayload, wrapTracePayload } from '../inspector/trace-propagation'
 import { getWindowRegistry } from '../window-manager/registry'
 import { getWindowFromEvent } from '../window-manager/helpers'
+
+/**
+ * Timeout constraints for renderer invoke requests
+ */
+const MIN_TIMEOUT = 100
+const MAX_TIMEOUT = 60000
 
 /**
  * Envelope for renderer invoke requests (renderer → main)
@@ -41,9 +48,11 @@ interface PendingRequest {
   reject: (error: Error) => void
   timeout: NodeJS.Timeout
   sourceWindowId: number
+  targetWindowId: number
   channel: string
   targetRole: string
   tsStart: number
+  cleanupHandler?: () => void
 }
 
 /**
@@ -52,7 +61,14 @@ interface PendingRequest {
  */
 export class RendererInvokeRouter {
   private pendingRequests = new Map<string, PendingRequest>()
-  private requestCounter = 0
+  private routeHandler?: (
+    event: IpcMainInvokeEvent,
+    envelope: RendererInvokeEnvelope
+  ) => Promise<unknown>
+  private responseHandler?: (
+    event: Electron.IpcMainEvent,
+    response: RendererResponseEnvelope
+  ) => void
 
   constructor() {
     this.setupHandlers()
@@ -63,17 +79,19 @@ export class RendererInvokeRouter {
    */
   private setupHandlers(): void {
     // Handle invoke requests from renderers
-    ipcMain.handle(
-      '__RENDERER_ROUTE__',
-      async (event, envelope: Omit<RendererInvokeEnvelope, 'requestId' | 'sourceWindowId'>) => {
-        return this.route(event, envelope)
-      }
-    )
+    this.routeHandler = async (
+      event: IpcMainInvokeEvent,
+      envelope: Omit<RendererInvokeEnvelope, 'requestId' | 'sourceWindowId'>
+    ) => {
+      return this.route(event, envelope)
+    }
+    ipcMain.handle('__RENDERER_ROUTE__', this.routeHandler)
 
     // Handle responses from target renderers
-    ipcMain.on('__RENDERER_RESPONSE__', (_event, response: RendererResponseEnvelope) => {
-      this.handleResponse(response)
-    })
+    this.responseHandler = (event: Electron.IpcMainEvent, response: RendererResponseEnvelope) => {
+      this.handleResponse(event, response)
+    }
+    ipcMain.on('__RENDERER_RESPONSE__', this.responseHandler)
   }
 
   /**
@@ -83,9 +101,12 @@ export class RendererInvokeRouter {
     event: IpcMainInvokeEvent,
     envelope: Omit<RendererInvokeEnvelope, 'requestId' | 'sourceWindowId'>
   ): Promise<unknown> {
-    const { targetRole, channel, request: rawRequest, timeout } = envelope
-    const requestId = this.generateRequestId()
+    const { targetRole, channel, request: rawRequest, timeout: rawTimeout } = envelope
+    const requestId = randomUUID()
     const tsStart = Date.now()
+
+    // Validate and clamp timeout to prevent abuse
+    const timeout = Math.max(MIN_TIMEOUT, Math.min(rawTimeout, MAX_TIMEOUT))
 
     const sourceWindow = getWindowFromEvent(event)
     if (!sourceWindow) {
@@ -127,7 +148,11 @@ export class RendererInvokeRouter {
     // Create promise for response
     return new Promise((resolve, reject) => {
       const timeoutHandle = setTimeout(() => {
-        this.pendingRequests.delete(requestId)
+        const pending = this.pendingRequests.get(requestId)
+        if (pending) {
+          pending.cleanupHandler?.()
+          this.pendingRequests.delete(requestId)
+        }
 
         // Emit trace for timeout
         if (trace) {
@@ -154,14 +179,43 @@ export class RendererInvokeRouter {
         reject(new Error(`Renderer invoke timeout after ${timeout}ms for channel '${channel}'`))
       }, timeout)
 
+      // Setup cleanup handlers for window lifecycle
+      const sourceCleanup = () => {
+        const pending = this.pendingRequests.get(requestId)
+        if (pending) {
+          clearTimeout(pending.timeout)
+          this.pendingRequests.delete(requestId)
+          reject(new Error(`Source window closed before response for channel '${channel}'`))
+        }
+      }
+
+      const targetCleanup = () => {
+        const pending = this.pendingRequests.get(requestId)
+        if (pending) {
+          clearTimeout(pending.timeout)
+          this.pendingRequests.delete(requestId)
+          reject(new Error(`Target window closed before response for channel '${channel}'`))
+        }
+      }
+
+      const combinedCleanup = () => {
+        sourceWindow.webContents.off('destroyed', sourceCleanup)
+        targetWindow.webContents.off('destroyed', targetCleanup)
+      }
+
+      sourceWindow.webContents.once('destroyed', sourceCleanup)
+      targetWindow.webContents.once('destroyed', targetCleanup)
+
       this.pendingRequests.set(requestId, {
         resolve,
         reject,
         timeout: timeoutHandle,
         sourceWindowId: sourceWindow.id,
+        targetWindowId: targetWindow.id,
         channel,
         targetRole,
         tsStart,
+        cleanupHandler: combinedCleanup,
       })
 
       // Get source role if available
@@ -180,7 +234,7 @@ export class RendererInvokeRouter {
   /**
    * Handle response from target renderer
    */
-  private handleResponse(response: RendererResponseEnvelope): void {
+  private handleResponse(event: Electron.IpcMainEvent, response: RendererResponseEnvelope): void {
     const { requestId, response: rawData, error } = response
     const pending = this.pendingRequests.get(requestId)
 
@@ -188,6 +242,16 @@ export class RendererInvokeRouter {
       return // Already timed out or resolved
     }
 
+    // Security: Validate that response comes from expected target window
+    const senderWindow = getWindowFromEvent(event)
+    if (!senderWindow || senderWindow.id !== pending.targetWindowId) {
+      console.warn(
+        `[RendererInvokeRouter] Response spoofing attempt: expected window ${pending.targetWindowId}, got ${senderWindow?.id ?? 'unknown'}`
+      )
+      return
+    }
+
+    pending.cleanupHandler?.()
     clearTimeout(pending.timeout)
     this.pendingRequests.delete(requestId)
 
@@ -249,14 +313,6 @@ export class RendererInvokeRouter {
   }
 
   /**
-   * Generate unique request ID
-   */
-  private generateRequestId(): string {
-    this.requestCounter = (this.requestCounter + 1) % 1000000
-    return `rr-${Date.now()}-${this.requestCounter.toString(36)}`
-  }
-
-  /**
    * Get statistics about pending requests
    */
   public getStats(): {
@@ -280,11 +336,23 @@ export class RendererInvokeRouter {
    * Clean up all pending requests (e.g., on app shutdown)
    */
   public cleanup(): void {
-    this.pendingRequests.forEach((pending) => {
+    // Clean up all pending requests with their cleanup handlers
+    for (const pending of this.pendingRequests.values()) {
+      pending.cleanupHandler?.()
       clearTimeout(pending.timeout)
       pending.reject(new Error('Router cleanup: request cancelled'))
-    })
+    }
     this.pendingRequests.clear()
+
+    // Remove IPC handlers to prevent memory leaks
+    if (this.routeHandler) {
+      ipcMain.removeHandler('__RENDERER_ROUTE__')
+      this.routeHandler = undefined
+    }
+    if (this.responseHandler) {
+      ipcMain.removeListener('__RENDERER_RESPONSE__', this.responseHandler)
+      this.responseHandler = undefined
+    }
   }
 }
 
