@@ -27,6 +27,9 @@ export function App() {
   const [targetRole, setTargetRole] = useState<(typeof roleOptions)[number]>('secondary')
   const [logMessage, setLogMessage] = useState('')
   const [logLevel, setLogLevel] = useState<LogLevel>('info')
+  const [r2rLogMessage, setR2rLogMessage] = useState('')
+  const [r2rLogLevel, setR2rLogLevel] = useState<LogLevel>('info')
+  const [r2rStatus, setR2rStatus] = useState<string>('')
 
   const refreshWindowInfo = async () => {
     const info = await window.api.invokeGetWindowInfo()
@@ -91,6 +94,26 @@ export function App() {
     if (!trimmed) return
     window.api.sendLogMessage({ level: logLevel, message: trimmed })
     setLogMessage('')
+  }
+
+  const handleSendR2RLog = async () => {
+    const trimmed = r2rLogMessage.trim()
+    if (!trimmed || !windowInfo) return
+
+    try {
+      setR2rStatus('Sending...')
+      const result = await window.api.rendererInvokeAddLogEntry('logger', {
+        level: r2rLogLevel,
+        message: trimmed,
+        sourceRole: windowInfo.role,
+        sourceId: windowInfo.id,
+      })
+      setR2rStatus(`✓ Sent (ID: ${result.entryId})`)
+      setR2rLogMessage('')
+      setTimeout(() => setR2rStatus(''), 3000)
+    } catch (error) {
+      setR2rStatus(`✗ Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   return (
@@ -255,6 +278,41 @@ export function App() {
               Send log event
             </button>
           </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-header">
+            <h2>Renderer-to-Renderer Logging</h2>
+            <span className="muted">Send logs directly to logger window</span>
+          </div>
+          <label className="field">
+            <span>Message</span>
+            <input
+              className="input"
+              type="text"
+              placeholder="Log message to send to logger window"
+              value={r2rLogMessage}
+              onChange={(event) => setR2rLogMessage(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') handleSendR2RLog()
+              }}
+            />
+          </label>
+          <div className="inline-field">
+            <select
+              className="select"
+              value={r2rLogLevel}
+              onChange={(event) => setR2rLogLevel(event.target.value as LogLevel)}
+            >
+              <option value="info">info</option>
+              <option value="warn">warn</option>
+              <option value="error">error</option>
+            </select>
+            <button className="button primary" type="button" onClick={handleSendR2RLog}>
+              Send to Logger (R2R)
+            </button>
+          </div>
+          {r2rStatus && <div className="status-message">{r2rStatus}</div>}
         </section>
       </main>
     </div>

@@ -10,6 +10,7 @@ import {
   enableIpcInspector,
   getInspectorWindow,
 } from '@number10/electron-ipc/inspector'
+import { RendererInvokeRouter } from '@number10/electron-ipc/renderer-routing'
 import {
   broadcastToApp,
   createBroadcastToRole,
@@ -128,17 +129,22 @@ function initializeHandlers() {
     })
   }
 
+  // Initialize renderer-to-renderer routing
+  // Note: Handlers are registered in the target renderer processes, not here
+  new RendererInvokeRouter()
+
   RegisterHandler.register()
   RegisterEvent.register()
 }
 
-function createAppWindow(role: 'main' | 'secondary'): BrowserWindow {
+function createAppWindow(role: 'main' | 'secondary' | 'logger'): BrowserWindow {
   const index = role === 'secondary' ? ++secondaryCount : 0
-  const title = role === 'main' ? 'Multi-Window Main' : `Secondary Window ${index}`
+  const title =
+    role === 'main' ? 'Multi-Window Main' : role === 'logger' ? 'Logger' : `Secondary ${index}`
 
   const window = new BrowserWindow({
-    width: role === 'main' ? 1200 : 900,
-    height: role === 'main' ? 860 : 700,
+    width: role === 'main' ? 1200 : role === 'logger' ? 800 : 900,
+    height: role === 'main' ? 860 : role === 'logger' ? 600 : 700,
     title,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -174,6 +180,11 @@ function setupMenu() {
           accelerator: 'CmdOrCtrl+Shift+N',
           click: () => createAppWindow('secondary'),
         },
+        {
+          label: 'New Logger Window',
+          accelerator: 'CmdOrCtrl+Shift+L',
+          click: () => createAppWindow('logger'),
+        },
         { type: 'separator' },
         { role: 'quit' },
       ],
@@ -202,6 +213,7 @@ app.whenReady().then(() => {
 
   createAppWindow('main')
   createAppWindow('secondary')
+  createAppWindow('logger')
 
   openInspectorWindow()
   setupMenu()

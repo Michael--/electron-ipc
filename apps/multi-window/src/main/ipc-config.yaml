@@ -10,3 +10,4 @@ apis:
       invoke: InvokeContracts
       event: EventContracts
       send: BroadcastContracts
+      rendererInvoke: RendererInvokeContracts

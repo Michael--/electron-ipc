@@ -2,9 +2,11 @@ import {
   GenericBroadcastContract,
   GenericInvokeContract,
   GenericRendererEventContract,
+  GenericRendererInvokeContract,
   IBroadcastContract,
   IInvokeContract,
   IRendererEventContract,
+  IRendererInvokeContract,
 } from '@number10/electron-ipc'
 
 export type InvokeContracts = GenericInvokeContract<{
@@ -35,4 +37,18 @@ export type BroadcastContracts = GenericBroadcastContract<{
   WindowList: IBroadcastContract<{
     windows: { id: number; role: string; title: string; webContentsId: number }[]
   }>
+}>
+
+export type RendererInvokeContracts = GenericRendererInvokeContract<{
+  AddLogEntry: IRendererInvokeContract<
+    {
+      level: 'info' | 'warn' | 'error'
+      message: string
+      sourceRole: string
+      sourceId: number
+    },
+    { success: boolean; entryId: string }
+  >
+  GetLogCount: IRendererInvokeContract<void, { count: number }>
+  ClearLogs: IRendererInvokeContract<void, { cleared: number }>
 }>
