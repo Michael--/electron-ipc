@@ -443,28 +443,11 @@ The test app includes CSP headers to prevent XSS attacks:
 - [x] Metrics view backed by the ring buffer (p50/p95, error rate, payload/byte volume, throughput)
 - [x] Inspector Lab app to exercise invokes/events/broadcasts/streams and synthetic trace statuses (`apps/inspector-lab`)
 - [x] Bi-directional invoke, renderer to renderer via main by using renderer generic invoke router
+- [x] Runtime validation with Zod/Valibot adapters and error deserialization
+- [x] Standardized error handling across all IPC contract types
+- [x] Security best practices guide and production deployment checklist
 
 ### Open Items
-
-**Production Readiness (P1 - Critical):**
-
-- ✅ Runtime validation integration (Zod/Valibot adapter with consistent error payloads)
-  - Zod and Valibot adapters fully implemented
-  - Standardized `IPCValidationError` and `IPCHandlerError` classes
-  - Validation helpers for all contract types (invoke/event/stream)
-  - Error deserialization for renderer process
-  - Full test coverage
-- ✅ Standardized error handling (consistent error structure across invoke/event/stream)
-  - Unified error types with serialization/deserialization
-  - `deserializeError()` and `withErrorDeserialization()` helpers
-  - Type guards for error checking
-  - Stream error handling support
-- ✅ Security audit & best practices guide (CSP, context isolation, input validation)
-  - Comprehensive security guide in `docs-site/guide/security.md`
-  - Context isolation patterns
-  - Input validation best practices
-  - Error handling security
-  - Production deployment checklist
 
 **Developer Experience (P2 - High):**
 
