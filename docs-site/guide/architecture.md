@@ -446,14 +446,14 @@ The test app includes CSP headers to prevent XSS attacks:
 - [x] Runtime validation with Zod/Valibot adapters and error deserialization
 - [x] Standardized error handling across all IPC contract types
 - [x] Security best practices guide and production deployment checklist
+- [x] Best practices documentation (multi-window, streaming, performance)
+- [x] Production deployment checklist
+- [x] Generator snapshot tests
 
 ### Open Items
 
-**Developer Experience (P2 - High):**
+**Developer Experience (P3 - Medium):**
 
-- Documentation: Best practices guide (multi-window, streaming, performance tuning)
-- Documentation: Production deployment checklist
-- Testing: Generator output snapshot tests
 - Testing: E2E multi-window scenarios
 
 **Extensibility (P2 - High):**
