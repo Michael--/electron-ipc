@@ -442,6 +442,7 @@ The test app includes CSP headers to prevent XSS attacks:
 - [x] Multiple window support (Window Manager with registry and role-based broadcasts)
 - [x] Metrics view backed by the ring buffer (p50/p95, error rate, payload/byte volume, throughput)
 - [x] Inspector Lab app to exercise invokes/events/broadcasts/streams and synthetic trace statuses (`apps/inspector-lab`)
+- [x] Bi-directional invoke, renderer to renderer via main by using renderer generic invoke router
 
 ### Open Items
 
@@ -472,7 +473,6 @@ The test app includes CSP headers to prevent XSS attacks:
 
 **Future Enhancements (P4 - Low):**
 
-- ~~Bi-directional invoke (renderer-to-renderer via main)~~ ✅ **IMPLEMENTED** (v2.5.0)
 - Alternative transport layers (MessagePort, WebSocket)
 - VS Code extension (contract navigation, auto-completion)
 - Generator watch mode
