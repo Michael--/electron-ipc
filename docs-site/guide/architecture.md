@@ -455,11 +455,14 @@ The test app includes CSP headers to prevent XSS attacks:
 **Developer Experience (P3 - Medium):**
 
 - Testing: E2E multi-window scenarios
+- Error boundary utilities for React renderer error handling
+- Debug logging levels (TRACE, DEBUG, INFO, WARN, ERROR)
 
-**Extensibility (P2 - High):**
+**Extensibility (P3 - Medium):**
 
 - Plugin system for transformations (AST hooks without forking)
 - IPC middleware system (pre/post hooks for auth, logging, metrics)
+- Custom validators beyond Zod/Valibot
 
 **Advanced Features (P3 - Medium):**
 
@@ -472,4 +475,5 @@ The test app includes CSP headers to prevent XSS attacks:
 
 - Alternative transport layers (MessagePort, WebSocket)
 - VS Code extension (contract navigation, auto-completion)
-- Generator watch mode
+- Generator watch mode (auto-regenerate on file changes)
+- Performance profiling tools (flame graphs, bottleneck detection)
