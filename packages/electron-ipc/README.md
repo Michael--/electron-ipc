@@ -143,7 +143,8 @@ This library provides a code generation approach to create type-safe IPC communi
 - ✅ **Streaming Support**: Handle large data transfers efficiently using Web Streams API
 - ✅ **React Hooks**: Automatic generation of React hooks for all contract types
 - ✅ **Modern Validation Adapters**: First-class support for Zod 4.x and Valibot
-- ✅ **Runtime Validation (Optional)**: Standardized error handling for all validation scenarios
+- ✅ **Runtime Validation**: Standardized error handling with error deserialization
+- ✅ **Error Deserialization**: Reconstruct structured validation errors in renderer
 - ✅ **YAML Configuration**: Clean, maintainable configuration for multiple APIs
 - ✅ **Generator Workflows**: `--watch` and `--check` modes for dev and CI
 - ✅ **Window Manager**: Multi-window broadcast helpers and registry

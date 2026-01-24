@@ -1,3 +1,48 @@
+# Changelog
+
+## [2.5.0] - 2026-01-24
+
+### Added
+
+- **Error Deserialization**: New utilities for reconstructing validation errors in renderer
+  - `deserializeError()`: Reconstruct `IPCValidationError` and `IPCHandlerError` from JSON
+  - `withErrorDeserialization()`: Wrapper function for automatic error reconstruction
+  - Preserves structured error information across IPC boundary
+  - Demo: ValidateUser component in test-app showing detailed error display
+- **Generator Structure Tests**: Focused tests for API surface integrity
+  - Replace 24k-line snapshot tests with targeted structure validation
+  - Tests verify method names, type references, and contract patterns
+  - Resilient to comment and whitespace changes
+  - 8 test cases covering all contract types
+- **E2E Testing**
+  - Comprehensive UI E2E tests with Playwright
+  - E2E tests for renderer-to-renderer invoke functionality
+  - Renderer-to-renderer invoke support in test-app
+- **CI/CD Pipeline**
+  - Multi-OS testing (macOS, Windows, Linux)
+  - Automated dry-run publishing workflow
+  - Detailed status reporting with timing and colored output
+
+### Changed
+
+- **Dependencies**
+  - Updated TypeScript from ^5.3.3 to ^5.9.3
+  - Replaced vulnerable 'colors' package with secure 'picocolors' ^1.1.1
+- **Documentation**: Updated and reorganized architecture roadmap
+  - Moved completed P1 and P2 items to "Implemented Features"
+  - Reorganized open items by realistic priority
+  - Added missing roadmap items (error boundaries, debug logging, profiling)
+  - Enhanced security and validation guides with error deserialization examples
+- **Linting**: Exclude test artifacts (playwright-report, test-results, coverage) from linting
+
+### Fixed
+
+- **Renderer-to-Renderer**: Security and stability hardening
+  - Better error handling in routing layer
+  - Improved tracing for R2R invokes
+  - Comprehensive test coverage
+  - Type issues in test-app display controls
+
 ## [2.4.0] - 2026-01-22
 
 ### Added

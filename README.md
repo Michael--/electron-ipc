@@ -14,17 +14,19 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 
 ## 📦 Packages
 
-### `packages/electron-ipc` (v2.3.0)
+### `packages/electron-ipc` (v2.5.0)
 
 The main library - a TypeScript code generator that creates type-safe IPC communication code for Electron applications.
 
 **Features:**
 
 - ✅ Type-safe invoke/event/broadcast patterns
+- ✅ Renderer-to-renderer IPC (multi-window communication)
 - ✅ Stream support for large data transfers
 - ✅ Automatic React hooks generation
 - ✅ Modern validation adapters (Zod 4.x/Valibot)
 - ✅ Runtime validation helpers with standardized error handling
+- ✅ Error deserialization utilities for structured error handling
 - ✅ Generator watch/check workflow for CI
 - ✅ Templates + integration examples (electron-vite/forge)
 - ✅ YAML-based configuration
