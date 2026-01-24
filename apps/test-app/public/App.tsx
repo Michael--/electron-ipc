@@ -5,6 +5,7 @@ import { LogMessageDemo } from './components/demos/event/LogMessage'
 import { QuitDemo } from './components/demos/event/Quit'
 import { AddNumbersDemo } from './components/demos/invoke/AddNumbers'
 import { AppInfoDemo } from './components/demos/invoke/AppInfo'
+import { ValidateUserDemo } from './components/demos/invoke/ValidateUser'
 import { StreamDownloadDemo } from './components/demos/stream/StreamDownload/DownloadLogs'
 import { VideoStreamDemo } from './components/demos/stream/StreamDownload/StreamVideo'
 import { StreamDataDemo } from './components/demos/stream/StreamInvoke/GetLargeData'
@@ -40,6 +41,7 @@ export function App() {
         <div className="demo-grid">
           <AddNumbersDemo variant={variant} />
           <AppInfoDemo variant={variant} />
+          <ValidateUserDemo variant={variant} />
         </div>
       </section>
 

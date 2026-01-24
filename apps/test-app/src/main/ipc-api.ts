@@ -26,6 +26,18 @@ export type InvokeContracts = GenericInvokeContract<{
    * @returns {object} Application information including name and version.
    */
   GetAppInfo: IInvokeContract<void, { name: string; version: string }>
+
+  /**
+   * ValidateUser validates user input and demonstrates validation error handling.
+   * @type {object}
+   * @property {string} name - User name (min 3 chars)
+   * @property {number} age - User age (must be positive)
+   * @returns {object} Validation result with user data
+   */
+  ValidateUser: IInvokeContract<
+    { name: string; age: number },
+    { valid: true; data: { name: string; age: number } }
+  >
 }>
 
 /**

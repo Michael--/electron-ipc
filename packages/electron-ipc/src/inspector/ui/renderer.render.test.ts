@@ -21,14 +21,14 @@ vi.mock('./renderer.utils', async () => {
   const actual = await vi.importActual<typeof import('./renderer.utils')>('./renderer.utils')
   return {
     ...actual,
-    isNearBottom: (...args: unknown[]) => isNearBottom(...args),
-    scrollToBottom: (...args: unknown[]) => scrollToBottom(...args),
+    isNearBottom: (...args: Parameters<typeof isNearBottom>) => isNearBottom(...args),
+    scrollToBottom: (...args: Parameters<typeof scrollToBottom>) => scrollToBottom(...args),
   }
 })
 
 const renderModule = await import('./renderer.render')
 const stateModule = await import('./renderer.state')
-const { calculateVisibleRange, handleScroll, renderEvents, renderNow, scheduleRender } =
+const { calculateVisibleRange, handleScroll, renderEvents, /*renderNow,*/ scheduleRender } =
   renderModule
 
 describe('inspector ui renderer render', () => {

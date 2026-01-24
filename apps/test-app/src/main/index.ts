@@ -53,6 +53,23 @@ const logMessageValidator = zodAdapter.zodValidator(
   z.object({ level: z.enum(['info', 'warn', 'error']), message: z.string() })
 )
 
+// Validator for ValidateUser demo
+const validateUserRequestValidator = zodAdapter.zodValidator(
+  z.object({
+    name: z.string().min(3, 'Name must be at least 3 characters'),
+    age: z.number().min(1, 'Age must be a positive number').max(150, 'Age must be under 150'),
+  })
+)
+const validateUserResponseValidator = zodAdapter.zodValidator(
+  z.object({
+    valid: z.literal(true),
+    data: z.object({
+      name: z.string(),
+      age: z.number(),
+    }),
+  })
+)
+
 const streamInvokeRequestValidator = zodAdapter.zodValidator(z.object({ id: z.string() }))
 const streamInvokeDataValidator = zodAdapter.zodValidator(z.string())
 
@@ -107,6 +124,17 @@ function initializeEventHandler() {
               name: app.getName(),
               version: app.getVersion(),
             }
+          }
+        }
+      ),
+      ValidateUser: withInvokeValidation(
+        { request: validateUserRequestValidator, response: validateUserResponseValidator },
+        async (_event, userData) => {
+          // This handler demonstrates validation error handling
+          // The validators will throw IPCValidationError if input is invalid
+          return {
+            valid: true as const,
+            data: userData,
           }
         }
       ),
