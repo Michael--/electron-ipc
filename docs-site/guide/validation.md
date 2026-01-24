@@ -385,18 +385,56 @@ const handler = withStreamUploadValidation(
 
 ### 4. Error Handling in Renderer
 
+**Automatic Error Deserialization:**
+
+Errors thrown in main process handlers are serialized for IPC transmission. Use `deserializeError()` to reconstruct proper error instances:
+
 ```typescript
-import { isIPCValidationError, formatValidationIssues } from '@number10/electron-ipc/validation'
+import {
+  deserializeError,
+  isIPCValidationError,
+  formatValidationIssues,
+} from '@number10/electron-ipc/validation'
 
 try {
   const result = await window.api.invokeAddNumbers({ a, b })
-} catch (error) {
+} catch (err) {
+  // Deserialize error to get proper IPCValidationError instance
+  const error = deserializeError(err)
+
   if (isIPCValidationError(error)) {
     // Show user-friendly validation errors
     showError(`Invalid input:\n${formatValidationIssues(error.issues)}`)
+
+    // Access structured error details
+    error.issues.forEach((issue) => {
+      console.error(`${issue.path.join('.')}: ${issue.message}`)
+    })
   } else {
     // Handle other errors
     showError('Request failed')
+  }
+}
+```
+
+**Wrapper for Automatic Deserialization:**
+
+For convenience, wrap IPC calls with `withErrorDeserialization()`:
+
+```typescript
+import { withErrorDeserialization } from '@number10/electron-ipc/validation'
+
+// Create wrapped version of API call
+const safeAddNumbers = withErrorDeserialization(async (params: { a: number; b: number }) =>
+  window.api.invokeAddNumbers(params)
+)
+
+try {
+  const result = await safeAddNumbers({ a: 1, b: 2 })
+} catch (error) {
+  // Error is automatically deserialized
+  if (isIPCValidationError(error)) {
+    console.log('Validation failed:', error.issues)
   }
 }
 ```
@@ -432,6 +470,8 @@ See example implementations in the repository:
 - `isIPCValidationError(error): boolean`
 - `isIPCHandlerError(error): boolean`
 - `formatValidationIssues(issues): string`
+- `deserializeError(error): Error` - Deserialize errors from IPC
+- `withErrorDeserialization<TArgs, TResult>(fn): (...args: TArgs) => Promise<TResult>` - Wrapper for automatic error deserialization
 
 ### Types
 

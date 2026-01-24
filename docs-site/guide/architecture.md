@@ -448,9 +448,23 @@ The test app includes CSP headers to prevent XSS attacks:
 
 **Production Readiness (P1 - Critical):**
 
-- Runtime validation integration (Zod/Valibot adapter with consistent error payloads)
-- Standardized error handling (consistent error structure across invoke/event/stream)
-- Security audit & best practices guide (CSP, context isolation, input validation)
+- ✅ Runtime validation integration (Zod/Valibot adapter with consistent error payloads)
+  - Zod and Valibot adapters fully implemented
+  - Standardized `IPCValidationError` and `IPCHandlerError` classes
+  - Validation helpers for all contract types (invoke/event/stream)
+  - Error deserialization for renderer process
+  - Full test coverage
+- ✅ Standardized error handling (consistent error structure across invoke/event/stream)
+  - Unified error types with serialization/deserialization
+  - `deserializeError()` and `withErrorDeserialization()` helpers
+  - Type guards for error checking
+  - Stream error handling support
+- ✅ Security audit & best practices guide (CSP, context isolation, input validation)
+  - Comprehensive security guide in `docs-site/guide/security.md`
+  - Context isolation patterns
+  - Input validation best practices
+  - Error handling security
+  - Production deployment checklist
 
 **Developer Experience (P2 - High):**
 

@@ -181,15 +181,31 @@ async function handler(_event, request) {
 
 ### Renderer Error Handling
 
+**Automatic Error Deserialization:**
+
+When errors are thrown in main process handlers, they're serialized for IPC transmission. Use `deserializeError()` to reconstruct proper error instances:
+
 ```typescript
-import { isIPCValidationError, isIPCHandlerError } from '@number10/electron-ipc/validation'
+import {
+  deserializeError,
+  isIPCValidationError,
+  isIPCHandlerError,
+} from '@number10/electron-ipc/validation'
 
 try {
   const result = await window.api.invokeGetUser(userId)
-} catch (error) {
+} catch (err) {
+  // Deserialize error to get proper IPCValidationError/IPCHandlerError instances
+  const error = deserializeError(err)
+
   if (isIPCValidationError(error)) {
     // Show user-friendly validation errors
     showValidationErrors(error.issues)
+
+    // Log detailed issues
+    error.issues.forEach((issue) => {
+      console.error(`${issue.path.join('.')}: ${issue.message}`)
+    })
   } else if (isIPCHandlerError(error)) {
     // Handle business logic errors
     if (error.code === 'NOT_FOUND') {
@@ -203,6 +219,26 @@ try {
     // Unexpected errors
     console.error('Unexpected error:', error)
     showNotification('An unexpected error occurred')
+  }
+}
+```
+
+**Wrapper for Automatic Deserialization:**
+
+```typescript
+import { withErrorDeserialization } from '@number10/electron-ipc/validation'
+
+// Wrap IPC calls for automatic error deserialization
+const safeInvoke = withErrorDeserialization(async (userId: number) =>
+  window.api.invokeGetUser(userId)
+)
+
+try {
+  const result = await safeInvoke(123)
+} catch (error) {
+  // Error is automatically deserialized
+  if (isIPCValidationError(error)) {
+    console.log('Validation failed:', error.issues)
   }
 }
 ```
