@@ -43,6 +43,9 @@ export {
   withStreamUploadValidation,
 } from './helpers'
 
+// Error deserialization (for renderer process)
+export { deserializeError, withErrorDeserialization } from './error-deserialization'
+
 // Adapter exports (type-only to avoid dependency requirements)
 export type { ZodType, ZodIssue, ZodError } from './adapters/zod'
 export type { BaseSchema, BaseIssue, ValibotPathItem } from './adapters/valibot'
