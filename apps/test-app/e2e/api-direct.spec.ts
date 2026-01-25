@@ -71,7 +71,7 @@ test.describe('IPC Direct API Tests', () => {
       } catch (e: unknown) {
         return {
           message: e instanceof Error ? e.message : String(e),
-          name: e.name,
+          name: e instanceof Error ? e.name : 'Error',
         }
       }
     })
@@ -89,7 +89,7 @@ test.describe('IPC Direct API Tests', () => {
       } catch (e: unknown) {
         return {
           message: e instanceof Error ? e.message : String(e),
-          name: e.name,
+          name: e instanceof Error ? e.name : 'Error',
         }
       }
     })
@@ -118,7 +118,7 @@ test.describe('IPC Direct API Tests', () => {
       } catch (e: unknown) {
         return {
           message: e instanceof Error ? e.message : String(e),
-          name: e.name,
+          name: e instanceof Error ? e.name : 'Error',
         }
       }
     })
@@ -136,7 +136,7 @@ test.describe('IPC Direct API Tests', () => {
       } catch (e: unknown) {
         return {
           message: e instanceof Error ? e.message : String(e),
-          name: e.name,
+          name: e instanceof Error ? e.name : 'Error',
         }
       }
     })
@@ -182,14 +182,20 @@ test.describe('IPC Direct API Tests', () => {
 
   test('API completeness: all expected methods exist', async () => {
     const apis = await window.evaluate(() => {
-      // @ts-expect-error - window.api injected by preload
       return {
+        // @ts-expect-error - window.api injected by preload
         invokeAddNumbers: typeof window.api.invokeAddNumbers === 'function',
+        // @ts-expect-error - window.api injected by preload
         invokeGetAppInfo: typeof window.api.invokeGetAppInfo === 'function',
+        // @ts-expect-error - window.api injected by preload
         invokeValidateUser: typeof window.api.invokeValidateUser === 'function',
+        // @ts-expect-error - window.api injected by preload
         onPing: typeof window.api.onPing === 'function',
+        // @ts-expect-error - window.api injected by preload
         onAbout: typeof window.api.onAbout === 'function',
+        // @ts-expect-error - window.api injected by preload
         sendQuit: typeof window.api.sendQuit === 'function',
+        // @ts-expect-error - window.api injected by preload
         sendLogMessage: typeof window.api.sendLogMessage === 'function',
       }
     })
