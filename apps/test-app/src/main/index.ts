@@ -55,6 +55,7 @@ const addNumbersResponseValidator = zodAdapter.zodValidator(z.number())
 const appInfoResponseValidator = zodAdapter.zodValidator(
   z.object({ name: z.string(), version: z.string() })
 )
+const openLoggerWindowResponseValidator = zodAdapter.zodValidator(z.boolean())
 const logMessageValidator = zodAdapter.zodValidator(
   z.object({ level: z.enum(['info', 'warn', 'error']), message: z.string() })
 )
@@ -141,6 +142,18 @@ function initializeEventHandler() {
           return {
             valid: true as const,
             data: userData,
+          }
+        }
+      ),
+      OpenLoggerWindow: withInvokeValidation(
+        { request: voidValidator, response: openLoggerWindowResponseValidator },
+        async (_event, _request) => {
+          if (!loggerWindow) {
+            createLoggerWindow()
+            return true
+          } else {
+            loggerWindow.focus()
+            return true
           }
         }
       ),

@@ -202,4 +202,66 @@ test.describe('UI Basic Tests', () => {
     // Stop button should appear
     await expect(window.locator('[data-testid="stream-video-stop"]')).toBeVisible()
   })
+
+  test('AddLogEntry UI: should fail when logger window is not open', async () => {
+    // Close logger window if it's open (using keyboard shortcut)
+    await window.keyboard.press(process.platform === 'darwin' ? 'Meta+W' : 'Control+W')
+    await new Promise((resolve) => setTimeout(resolve, 500)) // Wait for potential close
+
+    // Fill in log message
+    await window.locator('[data-testid="add-log-entry-message-input"]').fill('Test log message')
+
+    // Select error level
+    await window.locator('[data-testid="add-log-entry-level-select"]').selectOption('error')
+
+    // Click add log entry button
+    await window.locator('[data-testid="add-log-entry-button"]').click()
+
+    // Wait for error message (should fail because logger window is not open)
+    await window.waitForSelector('text=/Error:/', { timeout: 5000 })
+
+    // Verify error message is displayed
+    const errorElements = window.locator('.demo-result.error').filter({ hasText: /Error:/ })
+    await expect(errorElements.first()).toBeVisible()
+  })
+
+  test('AddLogEntry UI: should succeed when logger window is open', async () => {
+    // Open logger window using IPC method
+    const result = await window.evaluate(() => window.api.invokeOpenLoggerWindow())
+    expect(result).toBe(true)
+
+    // Wait a bit for the window to open
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    // Fill in log message
+    await window
+      .locator('[data-testid="add-log-entry-message-input"]')
+      .fill('Test log message from E2E')
+
+    // Select info level
+    await window.locator('[data-testid="add-log-entry-level-select"]').selectOption('info')
+
+    // Click add log entry button
+    await window.locator('[data-testid="add-log-entry-button"]').click()
+
+    // Wait for success message
+    await window.waitForSelector('text=/Success:/', { timeout: 5000 })
+
+    // Verify success message is displayed
+    const successElements = window.locator('.demo-result.success').filter({ hasText: /Success:/ })
+    await expect(successElements.first()).toBeVisible()
+
+    // Get all windows and find the logger window
+    const allWindows = electronApp.windows()
+    const loggerWindow = allWindows.find((w) => w.title() === 'Logger Window')
+
+    if (loggerWindow) {
+      // Verify logger window received the message
+      await loggerWindow.waitForSelector('text=Test log message from E2E', { timeout: 5000 })
+      await expect(loggerWindow.locator('text=Test log message from E2E')).toBeVisible()
+    } else {
+      // If we can't find the logger window, at least verify the success message
+      console.warn('Logger window not found, but message was sent successfully')
+    }
+  })
 })

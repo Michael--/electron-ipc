@@ -31,6 +31,7 @@ export function AddLogEntryUI({
           value={level}
           onChange={(e) => onLevelChange(e.target.value as 'info' | 'warn' | 'error')}
           disabled={loading}
+          data-testid="add-log-entry-level-select"
         >
           <option value="info">Info</option>
           <option value="warn">Warning</option>
@@ -48,10 +49,16 @@ export function AddLogEntryUI({
           placeholder="Enter log message..."
           disabled={loading}
           onKeyDown={(e) => e.key === 'Enter' && onAdd()}
+          data-testid="add-log-entry-message-input"
         />
       </div>
 
-      <button className="demo-button" onClick={onAdd} disabled={loading || !message.trim()}>
+      <button
+        className="demo-button"
+        onClick={onAdd}
+        disabled={loading || !message.trim()}
+        data-testid="add-log-entry-button"
+      >
         {loading ? 'Adding...' : 'Add Log Entry'}
       </button>
 

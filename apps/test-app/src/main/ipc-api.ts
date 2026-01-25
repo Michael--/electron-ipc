@@ -40,6 +40,12 @@ export type InvokeContracts = GenericInvokeContract<{
     { name: string; age: number },
     { valid: true; data: { name: string; age: number } }
   >
+
+  /**
+   * OpenLoggerWindow opens the logger window for renderer-to-renderer IPC testing.
+   * @returns {boolean} Success status
+   */
+  OpenLoggerWindow: IInvokeContract<void, boolean>
 }>
 
 /**
