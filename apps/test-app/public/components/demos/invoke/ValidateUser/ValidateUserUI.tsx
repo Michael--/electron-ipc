@@ -53,6 +53,7 @@ export function ValidateUserUI({
               fontSize: '14px',
             }}
             placeholder="Enter name..."
+            data-testid="validate-user-name-input"
           />
 
           <label style={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}>
@@ -70,10 +71,16 @@ export function ValidateUserUI({
               fontSize: '14px',
             }}
             placeholder="Enter age..."
+            data-testid="validate-user-age-input"
           />
         </div>
 
-        <button onClick={onValidate} disabled={loading} className="demo-button">
+        <button
+          onClick={onValidate}
+          disabled={loading}
+          className="demo-button"
+          data-testid="validate-user-button"
+        >
           {loading ? '⏳' : '✓'} Validate
         </button>
       </div>

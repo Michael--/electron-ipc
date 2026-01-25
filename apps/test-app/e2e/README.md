@@ -6,6 +6,8 @@ Automated end-to-end tests using Playwright for Electron to ensure IPC communica
 
 **12 passing tests** in `api-direct.spec.ts` that verify the IPC layer directly without UI interaction.
 
+**13 passing UI tests** in `ui-basic.spec.ts` that verify user interface interactions, validation, and streaming operations.
+
 ### ✅ Invoke Calls
 
 - AddNumbers: Basic arithmetic operation
@@ -30,6 +32,20 @@ Automated end-to-end tests using Playwright for Electron to ensure IPC communica
 
 - All expected methods are available
 - Type-safe API surface
+
+### ✅ UI Interactions
+
+- AddNumbers: Click button and verify result display
+- AppInfo: Click button and verify app info display
+- ValidateUser: Fill form and verify validation success
+- ValidateUser: Test validation error for short name
+- ValidateUser: Test validation error for invalid age
+- LogMessage: Click info/warn/error event buttons
+- API Toggle: Switch between native and hooks variants
+- Stream Data: Start stream invoke operation
+- Stream Upload: Start file upload operation
+- Stream Download Logs: Select log level and start download
+- Stream Video: Select video and start streaming
 
 ## Running Tests
 
@@ -64,6 +80,7 @@ npx playwright test e2e/api-direct.spec.ts:30
 5. **Performance**: Handles 100+ rapid concurrent calls
 6. **Error Handling**: Proper error propagation from main to renderer
 7. **API Completeness**: All expected methods exist
+8. **UI Interactions**: Button clicks, form inputs, validation errors, UI state changes, and stream operations
 
 ### ❌ **Not Tested** (requires manual testing)
 
@@ -77,25 +94,32 @@ npx playwright test e2e/api-direct.spec.ts:30
 apps/test-app/
 ├── e2e/
 │   ├── api-direct.spec.ts         # 12 tests - IPC API layer
+│   ├── ui-basic.spec.ts           # 13 tests - UI interactions, validation, and streaming
 │   └── README.md                  # This file
 ├── playwright.config.ts           # Playwright configuration
 └── test-results/                  # Test artifacts (screenshots, traces)
 ```
 
-## Why Only API Tests?
+## Test Strategy
 
-**UI tests are intentionally excluded** because:
-
-- ❌ Fragile (break on every UI change)
-- ❌ Slow (selector timeouts)
-- ❌ Not the focus (testing IPC, not React components)
-
-**API tests are sufficient** because:
+**API tests are the foundation** because they:
 
 - ✅ Test the IPC layer directly
 - ✅ Fast and reliable (<2s)
 - ✅ Cover all contract types (invoke, event, broadcast)
 - ✅ Verify validation and error handling
+
+**UI tests complement API tests** by verifying:
+
+- ✅ Basic user interactions work
+- ✅ UI updates correctly after IPC calls
+- ✅ End-to-end user experience
+
+**UI tests are minimal** because:
+
+- ❌ Fragile (break on every UI change)
+- ❌ Slow (selector timeouts)
+- ❌ Not the primary focus (testing IPC, not React components)
 
 ## Integration with CI/CD
 

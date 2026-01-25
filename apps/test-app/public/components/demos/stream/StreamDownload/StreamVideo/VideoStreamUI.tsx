@@ -35,6 +35,7 @@ export function VideoStreamUI({
           value={selectedVideo}
           onChange={(e) => onVideoChange(e.target.value)}
           disabled={isStreaming}
+          data-testid="stream-video-select"
         >
           <option value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
             Big Buck Bunny (158MB)
@@ -46,10 +47,14 @@ export function VideoStreamUI({
             For Bigger Blazes (6MB)
           </option>
         </select>
-        <button onClick={onStartStream} disabled={isStreaming}>
+        <button onClick={onStartStream} disabled={isStreaming} data-testid="stream-video-start">
           {isStreaming ? 'Downloading...' : 'Stream Video'}
         </button>
-        {isStreaming && onStopStream && <button onClick={onStopStream}>Stop</button>}
+        {isStreaming && onStopStream && (
+          <button onClick={onStopStream} data-testid="stream-video-stop">
+            Stop
+          </button>
+        )}
       </div>
       {error && <div className="demo-error">Error: {error}</div>}
       {progress && <div className="demo-result">{progress}</div>}

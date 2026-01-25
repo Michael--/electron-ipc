@@ -29,7 +29,7 @@ export function StreamUploadUI({
   return (
     <>
       <div className="demo-controls">
-        <button onClick={onStartUpload} disabled={isUploading}>
+        <button onClick={onStartUpload} disabled={isUploading} data-testid="stream-upload-start">
           {isUploading ? 'Uploading...' : 'Start Upload'}
         </button>
       </div>

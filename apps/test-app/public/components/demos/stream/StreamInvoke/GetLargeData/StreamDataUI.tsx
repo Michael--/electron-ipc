@@ -31,10 +31,14 @@ export function StreamDataUI({
   return (
     <>
       <div className="demo-controls">
-        <button onClick={onStartStream} disabled={isStreaming}>
+        <button onClick={onStartStream} disabled={isStreaming} data-testid="stream-data-start">
           {isStreaming ? 'Streaming...' : 'Start Stream'}
         </button>
-        {isStreaming && onStopStream && <button onClick={onStopStream}>Stop</button>}
+        {isStreaming && onStopStream && (
+          <button onClick={onStopStream} data-testid="stream-data-stop">
+            Stop
+          </button>
+        )}
       </div>
       {error && <div className="demo-error">Error: {error}</div>}
       <div className="demo-result stream-output" ref={outputRef}>

@@ -14,12 +14,14 @@ export function Toggle({ value, onChange }: ToggleProps) {
       <button
         className={`toggle-button ${value === 'native' ? 'active' : ''}`}
         onClick={() => onChange('native')}
+        data-testid="api-toggle-native"
       >
         Native API
       </button>
       <button
         className={`toggle-button ${value === 'hooks' ? 'active' : ''}`}
         onClick={() => onChange('hooks')}
+        data-testid="api-toggle-hooks"
       >
         React Hooks
       </button>

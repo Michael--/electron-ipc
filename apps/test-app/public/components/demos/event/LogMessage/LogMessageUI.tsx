@@ -10,9 +10,15 @@ interface LogMessageUIProps {
 export function LogMessageUI({ onSend }: LogMessageUIProps) {
   return (
     <div className="demo-controls">
-      <button onClick={() => onSend('info')}>Info</button>
-      <button onClick={() => onSend('warn')}>Warn</button>
-      <button onClick={() => onSend('error')}>Error</button>
+      <button onClick={() => onSend('info')} data-testid="log-info-button">
+        Info
+      </button>
+      <button onClick={() => onSend('warn')} data-testid="log-warn-button">
+        Warn
+      </button>
+      <button onClick={() => onSend('error')} data-testid="log-error-button">
+        Error
+      </button>
     </div>
   )
 }

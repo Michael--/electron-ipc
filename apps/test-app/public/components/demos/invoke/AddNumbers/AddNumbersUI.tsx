@@ -16,7 +16,7 @@ export function AddNumbersUI({ result, loading, error, valueA, valueB, onAdd }: 
   return (
     <>
       <div className="demo-controls">
-        <button onClick={onAdd} disabled={loading}>
+        <button onClick={onAdd} disabled={loading} data-testid="add-numbers-button">
           {loading ? 'Adding...' : `Add ${valueA} + ${valueB}`}
         </button>
       </div>

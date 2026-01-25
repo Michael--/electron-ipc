@@ -39,15 +39,24 @@ export function StreamDownloadUI({
           value={logLevel}
           onChange={(e) => onLevelChange(e.target.value as 'info' | 'warn' | 'error')}
           disabled={isDownloading}
+          data-testid="download-logs-level"
         >
           <option value="info">Info</option>
           <option value="warn">Warning</option>
           <option value="error">Error</option>
         </select>
-        <button onClick={onStartDownload} disabled={isDownloading}>
+        <button
+          onClick={onStartDownload}
+          disabled={isDownloading}
+          data-testid="download-logs-start"
+        >
           {isDownloading ? 'Downloading...' : 'Start Download'}
         </button>
-        {isDownloading && onStopDownload && <button onClick={onStopDownload}>Stop</button>}
+        {isDownloading && onStopDownload && (
+          <button onClick={onStopDownload} data-testid="download-logs-stop">
+            Stop
+          </button>
+        )}
       </div>
       {error && <div className="demo-error">Error: {error}</div>}
       <div className="demo-result stream-output" ref={outputRef}>

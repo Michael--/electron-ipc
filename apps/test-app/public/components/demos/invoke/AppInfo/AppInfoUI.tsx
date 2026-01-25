@@ -14,7 +14,7 @@ export function AppInfoUI({ info, loading, error, onGetInfo }: AppInfoUIProps) {
   return (
     <>
       <div className="demo-controls">
-        <button onClick={onGetInfo} disabled={loading}>
+        <button onClick={onGetInfo} disabled={loading} data-testid="get-app-info-button">
           {loading ? 'Getting info...' : 'Get App Info'}
         </button>
       </div>
