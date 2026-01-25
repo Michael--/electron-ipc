@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import colors from 'colors'
+import pc from 'picocolors'
 import * as fs from 'fs'
 import * as path from 'path'
 import { Project } from 'ts-morph'
@@ -43,7 +43,7 @@ function printUsage() {
 function writeOutputs(outputs: OutputArtifact[], baseDir: string) {
   outputs.forEach(({ outputPath, code, label }) => {
     fs.writeFileSync(outputPath, code, 'utf8')
-    console.log(colors.green(`Generated ${label} written to ${path.relative(baseDir, outputPath)}`))
+    console.log(pc.green(`Generated ${label} written to ${path.relative(baseDir, outputPath)}`))
   })
 }
 
@@ -52,19 +52,19 @@ function checkOutputs(outputs: OutputArtifact[], baseDir: string) {
 
   outputs.forEach(({ outputPath, code, label }) => {
     if (!fs.existsSync(outputPath)) {
-      console.error(colors.red(`Missing ${label} output: ${path.relative(baseDir, outputPath)}`))
+      console.error(pc.red(`Missing ${label} output: ${path.relative(baseDir, outputPath)}`))
       matched = false
       return
     }
     const existing = fs.readFileSync(outputPath, 'utf8')
     if (existing !== code) {
-      console.error(colors.red(`Outdated ${label} output: ${path.relative(baseDir, outputPath)}`))
+      console.error(pc.red(`Outdated ${label} output: ${path.relative(baseDir, outputPath)}`))
       matched = false
     }
   })
 
   if (matched) {
-    console.log(colors.green('All generated outputs are up to date.'))
+    console.log(pc.green('All generated outputs are up to date.'))
   }
 
   return matched
@@ -183,7 +183,7 @@ export function processApiConfig(
 
   const sourceFile = project.addSourceFileAtPath(resolvedInputPath)
   project.resolveSourceFileDependencies()
-  console.log(colors.green(`Read ${path.relative(baseDir, resolvedInputPath)}`))
+  console.log(pc.green(`Read ${path.relative(baseDir, resolvedInputPath)}`))
 
   const outputs = buildOutputs(
     {
@@ -283,9 +283,7 @@ function runWatch(configPath: string) {
       const watcher = fs.watch(targetPath, scheduleRun)
       watchers.push(watcher)
     } catch (error) {
-      console.warn(
-        colors.yellow(`Watch not supported for ${targetPath}: ${(error as Error).message}`)
-      )
+      console.warn(pc.yellow(`Watch not supported for ${targetPath}: ${(error as Error).message}`))
       fs.watchFile(targetPath, { interval: 500 }, scheduleRun)
       watchFileTargets.push(targetPath)
     }
@@ -293,7 +291,7 @@ function runWatch(configPath: string) {
 
   const runOnce = () => {
     cleanupWatchers()
-    console.log(colors.cyan('Regenerating IPC API...'))
+    console.log(pc.cyan('Regenerating IPC API...'))
     const result = processYamlConfig(resolvedConfigPath, { mode: 'write', cwd: process.cwd() })
 
     const watchSet = new Set<string>([resolvedConfigPath])
@@ -303,7 +301,7 @@ function runWatch(configPath: string) {
       try {
         watchPath(file)
       } catch (error) {
-        console.warn(colors.yellow(`Unable to watch ${file}: ${(error as Error).message}`))
+        console.warn(pc.yellow(`Unable to watch ${file}: ${(error as Error).message}`))
       }
     })
   }

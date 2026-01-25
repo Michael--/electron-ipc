@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import colors from 'colors'
+import pc from 'picocolors'
 import { InterfaceDeclaration, Node, SourceFile, TypeAliasDeclaration } from 'ts-morph'
 import {
   eventApi,
@@ -148,7 +148,7 @@ export function processContracts(
         } else {
           propNames = type.getProperties().map((p) => p.getName())
         }
-        console.log(colors.gray(`Processing ${name}: found ${propNames.length} properties`))
+        console.log(pc.gray(`Processing ${name}: found ${propNames.length} properties`))
         processProperties({ ifaceName: name, propNames, contract, api, definitions: '' })
       })
       return declarations.length

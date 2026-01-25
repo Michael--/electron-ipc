@@ -1,7 +1,5 @@
 // just make colors implicit available, e.g. to use "output string".green
-import colors from 'colors'
-
-colors.enable()
+import pc from 'picocolors'
 
 export let output = ''
 export let space = 0
