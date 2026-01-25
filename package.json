@@ -10,7 +10,7 @@
     "clean": "pnpm -r run clean",
     "test": "pnpm -r run test",
     "test:e2e": "pnpm --filter electron-ipc-test-app run build && pnpm --filter electron-ipc-test-app exec playwright test --reporter=line",
-    "test:integration": "pnpm --filter electron-ipc run test",
+    "test:integration": "pnpm -r run test:integration",
     "lint": "pnpm -r run lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -22,7 +22,7 @@
     "prepare": "husky",
     "pre-commit": "pnpm exec lint-staged",
     "pack-electron-ipc": "pnpm --filter electron-ipc pack",
-    "ci": "pnpm run clean && pnpm run build && pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run test:e2e"
+    "ci": "node ci.js"
   },
   "keywords": [
     "electron",
