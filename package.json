@@ -9,6 +9,8 @@
     "build": "pnpm -r --filter electron-ipc run build && pnpm install && pnpm -r run build",
     "clean": "pnpm -r run clean",
     "test": "pnpm -r run test",
+    "test:e2e": "pnpm --filter electron-ipc-test-app run build && pnpm --filter electron-ipc-test-app exec playwright test --reporter=line",
+    "test:integration": "pnpm --filter electron-ipc run test",
     "lint": "pnpm -r run lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -19,7 +21,8 @@
     "spell": "cspell \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky",
     "pre-commit": "pnpm exec lint-staged",
-    "pack-electron-ipc": "pnpm --filter electron-ipc pack"
+    "pack-electron-ipc": "pnpm --filter electron-ipc pack",
+    "ci": "pnpm run clean && pnpm run build && pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run test:e2e"
   },
   "keywords": [
     "electron",
