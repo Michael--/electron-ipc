@@ -40,37 +40,37 @@ export function ValidateUserUI({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
           <label style={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}>
             Name (min 3 chars):
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => onNameChange(e.target.value)}
-              style={{
-                marginTop: '4px',
-                padding: '8px',
-                borderRadius: '4px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-              }}
-              placeholder="Enter name..."
-            />
           </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => onNameChange(e.target.value)}
+            style={{
+              marginTop: '4px',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #e2e8f0',
+              fontSize: '14px',
+            }}
+            placeholder="Enter name..."
+          />
 
           <label style={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}>
             Age (1-150):
-            <input
-              type="text"
-              value={age}
-              onChange={(e) => onAgeChange(e.target.value)}
-              style={{
-                marginTop: '4px',
-                padding: '8px',
-                borderRadius: '4px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-              }}
-              placeholder="Enter age..."
-            />
           </label>
+          <input
+            type="text"
+            value={age}
+            onChange={(e) => onAgeChange(e.target.value)}
+            style={{
+              marginTop: '4px',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #e2e8f0',
+              fontSize: '14px',
+            }}
+            placeholder="Enter age..."
+          />
         </div>
 
         <button onClick={onValidate} disabled={loading} className="demo-button">
