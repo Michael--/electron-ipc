@@ -16,6 +16,7 @@ apis:
       invoke: InvokeContracts
       event: EventContracts
       send: BroadcastContracts
+      rendererInvoke: RendererInvokeContracts
 
   # Stream API with streaming contracts
   - name: streamApi

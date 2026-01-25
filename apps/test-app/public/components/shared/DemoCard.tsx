@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-type DemoType = 'invoke' | 'event' | 'broadcast' | 'stream'
+type DemoType = 'invoke' | 'event' | 'broadcast' | 'stream' | 'renderer-invoke'
 
 interface DemoCardProps {
   title: string
@@ -45,5 +45,7 @@ function getTypeEmoji(type: DemoType): string {
       return '📡'
     case 'stream':
       return '🌊'
+    case 'renderer-invoke':
+      return '🔄'
   }
 }

@@ -1,4 +1,9 @@
-import { BroadcastContracts, EventContracts, InvokeContracts } from '@gen/ipc-api'
+import {
+  BroadcastContracts,
+  EventContracts,
+  InvokeContracts,
+  RendererInvokeContracts,
+} from '@gen/ipc-api'
 import {
   StreamDownloadContracts,
   StreamInvokeContracts,
@@ -26,6 +31,7 @@ import {
   enableIpcInspector,
   getInspectorWindow,
 } from '@number10/electron-ipc/inspector'
+import { initRendererInvokeRouter } from '@number10/electron-ipc/renderer-routing'
 import { zodAdapter } from '@number10/electron-ipc/validation'
 import { createBroadcastToAll, getWindowRegistry } from '@number10/electron-ipc/window-manager'
 import { app, BrowserWindow, Menu } from 'electron'
@@ -330,6 +336,9 @@ function initializeEventHandler() {
   RegisterStreamHandler.register()
   RegisterStreamUpload.register()
   RegisterStreamDownload.register()
+
+  // Initialize renderer-to-renderer routing
+  initRendererInvokeRouter()
 }
 
 /**
@@ -338,6 +347,7 @@ function initializeEventHandler() {
 
 let mainWindow: BrowserWindow | null = null
 let secondaryWindow: BrowserWindow | null = null
+let loggerWindow: BrowserWindow | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -357,7 +367,9 @@ function createWindow(): void {
   initializeEventHandler()
 
   // Load the index.html from dist/renderer
-  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
+  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
+    query: { role: 'main' },
+  })
 
   // Open DevTools in development
   if (process.env.NODE_ENV === 'development') {
@@ -401,7 +413,9 @@ function createSecondaryWindow(): void {
   getWindowRegistry().register(secondaryWindow, 'secondary')
 
   // Load same content (would typically be different)
-  secondaryWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
+  secondaryWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
+    query: { role: 'secondary' },
+  })
 
   if (process.env.NODE_ENV === 'development') {
     secondaryWindow.webContents.openDevTools()
@@ -409,6 +423,36 @@ function createSecondaryWindow(): void {
 
   secondaryWindow.on('closed', () => {
     secondaryWindow = null
+  })
+}
+
+function createLoggerWindow(): void {
+  loggerWindow = new BrowserWindow({
+    width: 600,
+    height: 400,
+    title: 'Logger Window',
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/index.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+    },
+  })
+
+  // Register as logger window
+  getWindowRegistry().register(loggerWindow, 'logger')
+
+  // Load same content (would typically be different)
+  loggerWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
+    query: { role: 'logger' },
+  })
+
+  if (process.env.NODE_ENV === 'development') {
+    loggerWindow.webContents.openDevTools()
+  }
+
+  loggerWindow.on('closed', () => {
+    loggerWindow = null
   })
 }
 
@@ -448,6 +492,17 @@ app.whenReady().then(() => {
               createSecondaryWindow()
             } else {
               secondaryWindow.focus()
+            }
+          },
+        },
+        {
+          label: 'Open Logger Window',
+          accelerator: 'CmdOrCtrl+L',
+          click: () => {
+            if (!loggerWindow) {
+              createLoggerWindow()
+            } else {
+              loggerWindow.focus()
             }
           },
         },

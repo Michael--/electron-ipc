@@ -6,6 +6,7 @@ import { QuitDemo } from './components/demos/event/Quit'
 import { AddNumbersDemo } from './components/demos/invoke/AddNumbers'
 import { AppInfoDemo } from './components/demos/invoke/AppInfo'
 import { ValidateUserDemo } from './components/demos/invoke/ValidateUser'
+import { AddLogEntryDemo } from './components/demos/renderer-invoke/AddLogEntry'
 import { StreamDownloadDemo } from './components/demos/stream/StreamDownload/DownloadLogs'
 import { VideoStreamDemo } from './components/demos/stream/StreamDownload/StreamVideo'
 import { StreamDataDemo } from './components/demos/stream/StreamInvoke/GetLargeData'
@@ -50,6 +51,13 @@ export function App() {
         <div className="demo-grid">
           <QuitDemo variant={variant} />
           <LogMessageDemo variant={variant} />
+        </div>
+      </section>
+
+      <section className="section">
+        <h2 className="section-title">🔄 Renderer Invoke (Renderer ↔ Renderer)</h2>
+        <div className="demo-grid">
+          <AddLogEntryDemo variant={variant} />
         </div>
       </section>
 

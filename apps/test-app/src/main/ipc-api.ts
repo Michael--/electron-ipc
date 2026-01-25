@@ -2,9 +2,11 @@ import {
   GenericBroadcastContract,
   GenericInvokeContract,
   GenericRendererEventContract,
+  GenericRendererInvokeContract,
   IBroadcastContract,
   IInvokeContract,
   IRendererEventContract,
+  IRendererInvokeContract,
 } from '@number10/electron-ipc'
 
 /**
@@ -78,4 +80,36 @@ export type BroadcastContracts = GenericBroadcastContract<{
    * @property {void} payload - No payload, used to trigger the display of 'About' information.
    */
   About: IBroadcastContract<void>
+}>
+
+/**
+ * RendererInvokeContracts: Defines bidirectional IPC contracts for renderer-to-renderer communication.
+ * @interface
+ */
+export type RendererInvokeContracts = GenericRendererInvokeContract<{
+  /**
+   * AddLogEntry allows renderers to add log entries that can be accessed by other renderers.
+   * @type {object}
+   * @property {object} request - Log entry details
+   * @property {string} request.level - Log level (info, warn, error)
+   * @property {string} request.message - Log message
+   * @property {string} request.sourceWindow - Source window identifier
+   * @returns {object} Response with success status and entry ID
+   */
+  AddLogEntry: IRendererInvokeContract<
+    { level: 'info' | 'warn' | 'error'; message: string; sourceWindow: string },
+    { success: boolean; entryId: string }
+  >
+
+  /**
+   * GetLogCount retrieves the total number of log entries.
+   * @returns {object} Response with log count
+   */
+  GetLogCount: IRendererInvokeContract<void, { count: number }>
+
+  /**
+   * ClearLogs removes all log entries.
+   * @returns {object} Response with number of cleared entries
+   */
+  ClearLogs: IRendererInvokeContract<void, { cleared: number }>
 }>
