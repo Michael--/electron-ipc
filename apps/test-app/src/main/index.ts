@@ -1,9 +1,4 @@
-import {
-  BroadcastContracts,
-  EventContracts,
-  InvokeContracts,
-  RendererInvokeContracts,
-} from '@gen/ipc-api'
+import { BroadcastContracts, EventContracts, InvokeContracts } from '@gen/ipc-api'
 import {
   StreamDownloadContracts,
   StreamInvokeContracts,
