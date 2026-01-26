@@ -11,7 +11,10 @@ test.describe('IPC Direct API Tests', () => {
 
   test.beforeAll(async () => {
     electronApp = await electron.launch({
-      args: [path.join(__dirname, '../dist/main/index.js')],
+      args: [
+        path.join(__dirname, '../dist/main/index.js'),
+        ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
+      ],
       env: {
         ...process.env,
         NODE_ENV: 'test',
