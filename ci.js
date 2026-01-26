@@ -71,6 +71,21 @@ class CIPipeline {
       const testCountText = testInfo ? ` (${testInfo})` : ''
 
       console.log(colorize(`❌ ${stepName} failed after ${duration}s${testCountText}`, 'red'))
+
+      // Print failure details for debugging
+      console.log(colorize('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'red'))
+      console.log(colorize(`ERROR DETAILS FOR: ${stepName}`, 'red'))
+      console.log(colorize('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'red'))
+      if (error.stdout) {
+        console.log(colorize('STDOUT:', 'yellow'))
+        console.log(error.stdout)
+      }
+      if (error.stderr) {
+        console.log(colorize('STDERR:', 'yellow'))
+        console.log(error.stderr)
+      }
+      console.log(colorize('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'red'))
+
       return false
     }
   }
