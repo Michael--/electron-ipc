@@ -117,7 +117,7 @@ jobs:
         run: pnpm publish --dry-run --no-git-checks --access public
 
   publish-create-electron-ipc:
-    needs: [test, publish-electron-ipc]
+    needs: test
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/create-electron-ipc-v')
 
