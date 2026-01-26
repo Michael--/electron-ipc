@@ -29,6 +29,7 @@
     "electron": "^40.0.0",
     "mkdirp": "^3.0.1",
     "rimraf": "^6.1.2",
+    "shx": "^0.4.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {

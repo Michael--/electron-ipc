@@ -108,8 +108,17 @@ class CIPipeline {
 
     for (const [step, status] of this.results.entries()) {
       const duration = this.durations.get(step)
-      const statusIcon = status === 'PASS' ? '✅' : '❌'
-      const color = status === 'PASS' ? 'green' : 'red'
+      let statusIcon, color
+      if (status === 'PASS') {
+        statusIcon = '✅'
+        color = 'green'
+      } else if (status === 'SKIP') {
+        statusIcon = '⚠️ '
+        color = 'yellow'
+      } else {
+        statusIcon = '❌'
+        color = 'red'
+      }
       console.log(colorize(`${statusIcon} ${step} (${duration}s)`, color))
     }
 
@@ -164,12 +173,14 @@ class CIPipeline {
 
     for (const step of steps) {
       const success = this.runCommand(step.command, step.name)
-      if (!success && !step.optional) {
+      if (!success && step.optional) {
+        console.log(colorize(`⚠️  ${step.name} failed but is optional - continuing`, 'yellow'))
+        // Override FAIL status to SKIP for optional steps
+        this.results.set(step.name, 'SKIP')
+      } else if (!success) {
         // eslint-disable-next-line no-unused-vars
         allPassed = false
         // Continue with other steps even if one fails, to show complete status
-      } else if (!success && step.optional) {
-        console.log(colorize(`⚠️  ${step.name} failed but is optional - continuing`, 'yellow'))
       }
     }
 
