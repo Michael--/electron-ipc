@@ -6,6 +6,15 @@ Type-safe IPC communication generator for Electron applications with streaming s
 
 This monorepo contains a TypeScript code generator that creates type-safe IPC (Inter-Process Communication) APIs for Electron applications. It eliminates boilerplate code and ensures type safety across main, preload, and renderer processes.
 
+**Why a generator?** The generated APIs are still plain TypeScript, so you keep IDE support and refactoring safety while avoiding manual IPC boilerplate.
+
+**Key benefits at a glance:**
+
+- **Refactor-friendly**: rename or reshape a contract and TypeScript highlights every affected call site.
+- **Single source of truth**: one contract definition drives main, preload, and renderer types.
+- **IDE-native**: autocomplete and jump-to-definition work without custom tooling.
+- **Less boilerplate**: generated APIs and handlers replace repetitive IPC glue.
+
 **The Key Benefit:** When you change an IPC contract interface, TypeScript immediately shows compile errors everywhere the contract is used incorrectly - before you even run the code. No runtime surprises!
 
 ## Architecture
@@ -194,6 +203,27 @@ export type StreamDownloadContracts = GenericStreamDownloadContract<{
 - Stream Invoke: `invokeStreamGetLargeData(request, callbacks)` → starts stream, returns cleanup
 - Stream Upload: `uploadUploadFile(request)` → returns StreamWriter
 - Stream Download: `downloadDownloadLogs(request, onData, onEnd?, onError?)` → starts stream, returns cleanup
+
+## IPC Patterns Quick Map
+
+Use this as a fast mental model for which pattern to pick:
+
+| Pattern         | Direction                      | When to use                           |
+| --------------- | ------------------------------ | ------------------------------------- |
+| Invoke          | Renderer ↔ Main                | Request/response with a single result |
+| Event           | Renderer → Main                | Fire-and-forget commands              |
+| Broadcast       | Main → Renderer                | One-way notifications to renderer(s)  |
+| Renderer Invoke | Renderer ↔ Renderer (via Main) | Multi-window request/response         |
+| Streams         | Renderer ↔ Main                | Large data or continuous updates      |
+
+## First IPC in 5 Minutes (Checklist)
+
+1. **Define contracts** in `src/main/ipc-api.ts`
+2. **Create config** in `ipc-config.yaml`
+3. **Generate APIs** with `electron-ipc-generate --config=./ipc-config.yaml`
+4. **Expose in preload** with `exposeMyApi()` (generated)
+5. **Call from renderer** with `window.myApi.invokeXxx(...)`
+6. **Register handlers** in main via `AbstractRegisterHandler` (or `defineInvokeHandlers`)
 
 ## Workflow
 
@@ -893,3 +923,11 @@ electron-ipc/
 ## 📝 License
 
 MIT
+
+## Common Mistakes (and fixes)
+
+- **Using non-serializable types**: avoid `Date`, `Map`, `Set`, and class instances across IPC; send ISO strings or plain objects instead.
+- **Missing `contextIsolation`**: IPC APIs should be exposed via preload and `contextBridge`, not directly in the renderer.
+- **Forgetting `tsconfig` in YAML**: add `tsconfig` when you rely on path aliases or re-exports.
+- **Misreading prefixes**: generated methods add `invoke/send/on/rendererInvoke/invokeStream/upload/download` prefixes.
+- **Not registering handlers**: make sure `RegisterHandler.register()` (and other register classes) are called in main.
