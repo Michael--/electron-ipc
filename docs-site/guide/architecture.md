@@ -2,6 +2,8 @@
 
 ## Code Generator Design
 
+The generator reads **plain TypeScript contracts** using ts-morph. There is no custom scripting language to learn; the YAML config only wires inputs/outputs. See [No Separate DSL](/guide/overview#no-separate-dsl) for the rationale and benefits.
+
 ### Why Contract Helper Types?
 
 The generator uses structured wrapper types (`GenericInvokeContract`, `IInvokeContract`, etc.) instead of simple function signatures for a critical reason: **reliable code generation**.

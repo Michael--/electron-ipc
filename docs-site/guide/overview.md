@@ -255,6 +255,16 @@ export type StreamDownloadContracts = GenericStreamDownloadContract<{
 // export const mainBroadcast = createBroadcast<BroadcastContracts>()
 ```
 
+## No Separate DSL
+
+The generator does **not** require a custom scripting language. Your contracts are plain TypeScript types, and the generator reads them directly using `ts-morph`. The only "config" is a small YAML file that wires inputs and outputs; the actual API surface stays in TypeScript.
+
+**Why this matters:**
+
+- **Refactor-friendly**: rename or reshape a contract and TypeScript highlights every affected call site immediately.
+- **Single source of truth**: the same types are used by main, preload, and renderer.
+- **IDE-native**: autocomplete, jump-to-definition, and linting work without any extra tooling.
+
 ## Configuration File
 
 For managing IPC APIs, use a YAML configuration file:

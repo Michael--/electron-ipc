@@ -31,7 +31,7 @@ features:
 
 ## New here? Start fast
 
-This project is built to be friendly for beginners and fast to adopt in real apps. You define IPC contracts once, run a generator, and get typed APIs for main, preload, and renderer with minimal boilerplate. The documentation is organized so you can either skim for a quick overview or dive into concrete setup steps and examples.
+This project is built to be friendly for beginners and fast to adopt in real apps. You define IPC contracts once, run a generator, and get typed APIs for main, preload, and renderer with minimal boilerplate. It uses plain TypeScript types (no separate scripting language), and the docs are organized so you can either skim for a quick overview or dive into concrete setup steps and examples. For details, see [No Separate DSL](/guide/overview#no-separate-dsl).
 
 **Quick path (10–15 min):**
 
