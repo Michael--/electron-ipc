@@ -12,7 +12,7 @@
     "predev": "pnpm run generate",
     "dev": "node build.mjs --watch",
     "start": "electron .",
-    "clean": "rimraf dist \"*.tsbuildinfo\"",
+    "clean": "rimraf dist && rimraf *.tsbuildinfo",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [

@@ -67,7 +67,7 @@
   "scripts": {
     "build": "vite build && shx chmod +x dist/bin/generate-api.js && shx cp src/inspector/ui/index.html dist/inspector/ui/",
     "dev": "vite build --watch",
-    "clean": "rimraf dist \"*.tsbuildinfo\"",
+    "clean": "rimraf dist && rimraf *.tsbuildinfo",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
