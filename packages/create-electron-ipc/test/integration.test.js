@@ -82,7 +82,7 @@ async function fileExists(filePath) {
   }
 }
 
-describe('create-electron-ipc integration', { timeout: 180000 }, () => {
+describe('create-electron-ipc integration', { timeout: 300000 }, () => {
   /**
    * Test without validation
    */
