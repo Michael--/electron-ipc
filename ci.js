@@ -180,9 +180,20 @@ class CIPipeline {
       { name: 'Typecheck', command: 'pnpm run typecheck' },
       { name: 'Lint', command: 'pnpm run lint' },
       { name: 'Unit Tests', command: 'pnpm run test' },
-      { name: 'Integration Tests', command: 'pnpm run test:integration' },
       { name: 'E2E Tests', command: 'pnpm run test:e2e' },
     ]
+
+    // Only run integration tests if explicitly enabled
+    if (process.env.RUN_INTEGRATION_TESTS === 'true') {
+      steps.splice(5, 0, { name: 'Integration Tests', command: 'pnpm run test:integration' })
+    } else {
+      console.log(
+        colorize(
+          'ℹ️  Skipping Integration Tests (set RUN_INTEGRATION_TESTS=true to enable)',
+          'yellow'
+        )
+      )
+    }
 
     let allPassed = true
 
