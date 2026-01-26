@@ -9,7 +9,7 @@ const path = require('path')
 const readline = require('readline')
 const { spawnSync } = require('child_process')
 
-const DEFAULT_ELECTRON_IPC_VERSION = '^2.4.0'
+const DEFAULT_ELECTRON_IPC_VERSION = '^2.5.0'
 
 const VALIDATION_OPTIONS = ['none', 'zod', 'valibot']
 const PACKAGE_MANAGERS = ['pnpm', 'npm']
