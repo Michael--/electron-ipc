@@ -10,7 +10,7 @@
     "build:standalone": "pnpm --filter electron-ipc run build && pnpm run build",
     "preview": "electron-vite preview",
     "start": "electron-vite preview",
-    "clean": "rimraf dist out *.tsbuildinfo",
+    "clean": "rimraf dist out \"*.tsbuildinfo\"",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
