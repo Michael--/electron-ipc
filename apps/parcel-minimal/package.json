@@ -32,7 +32,7 @@
     "predev": "pnpm run generate",
     "dev": "parcel watch",
     "start": "electron .",
-    "clean": "rimraf dist .parcel-cache && rimraf *.tsbuildinfo",
+    "clean": "rimraf dist .parcel-cache && shx rm -rf *.tsbuildinfo",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [

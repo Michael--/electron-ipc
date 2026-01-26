@@ -13,7 +13,7 @@
     "predev": "pnpm run generate",
     "dev": "webpack --mode development --watch",
     "start": "electron .",
-    "clean": "rimraf dist && rimraf *.tsbuildinfo",
+    "clean": "rimraf dist && shx rm -rf *.tsbuildinfo",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [

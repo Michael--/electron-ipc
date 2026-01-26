@@ -9,7 +9,7 @@
     "build": "mkdirp dist && pnpm run generate && electron-vite build",
     "build:standalone": "pnpm --filter electron-ipc run build && pnpm run build",
     "preview": "electron-vite preview",
-    "clean": "rimraf dist out && rimraf *.tsbuildinfo",
+    "clean": "rimraf dist out && shx rm -rf *.tsbuildinfo",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
