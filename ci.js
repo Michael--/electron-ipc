@@ -151,7 +151,7 @@ class CIPipeline {
     console.log('==================================================')
 
     const steps = [
-      { name: 'Clean', command: 'pnpm run clean' },
+      { name: 'Clean', command: 'pnpm run clean', optional: true },
       { name: 'Build', command: 'pnpm run build' },
       { name: 'Typecheck', command: 'pnpm run typecheck' },
       { name: 'Lint', command: 'pnpm run lint' },
@@ -163,10 +163,13 @@ class CIPipeline {
     let allPassed = true
 
     for (const step of steps) {
-      if (!this.runCommand(step.command, step.name)) {
+      const success = this.runCommand(step.command, step.name)
+      if (!success && !step.optional) {
         // eslint-disable-next-line no-unused-vars
         allPassed = false
         // Continue with other steps even if one fails, to show complete status
+      } else if (!success && step.optional) {
+        console.log(colorize(`⚠️  ${step.name} failed but is optional - continuing`, 'yellow'))
       }
     }
 
