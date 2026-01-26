@@ -28,3 +28,15 @@ features:
   - title: Runtime Validation
     details: Optional validation helpers for Zod/Valibot-style validators with stream chunk validation support.
 ---
+
+## New here? Start fast
+
+This project is built to be friendly for beginners and fast to adopt in real apps. You define IPC contracts once, run a generator, and get typed APIs for main, preload, and renderer with minimal boilerplate. The documentation is organized so you can either skim for a quick overview or dive into concrete setup steps and examples.
+
+**Quick path (10–15 min):**
+
+- Read the core flow and generator setup: [Overview](/guide/overview)
+- Pick a real integration example: [Electron + Vite](/examples/electron-vite) or [Electron Forge](/examples/electron-forge)
+- Check the IPC patterns and multi-window flow when needed: [Architecture](/guide/architecture) and [Renderer-to-Renderer](/guide/renderer-to-renderer)
+
+If you want to go deeper, the guides cover streams, validation helpers, the inspector, and multi-window tooling with concrete code examples.
