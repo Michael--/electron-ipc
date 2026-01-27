@@ -55,3 +55,6 @@ electron-ipc*.tgz
 number10*.tgz
 /packages/template-basic/ipc-api-main-broadcast.ts
 /packages/template-basic/ipc-api.generated.ts
+
+# Misc
+AGENTS.md
