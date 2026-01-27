@@ -25,6 +25,8 @@ features:
     details: Automatic generation of type-safe React hooks with state management for all contract types.
   - title: Multi-window tooling
     details: Window registry and broadcast helpers for role-based multi-window apps with automatic lifecycle tracking.
+  - title: IPC Middleware
+    details: Koa-style middleware hooks for invoke, event, stream, renderer routing, and broadcast flows (auth/logging/metrics).
   - title: Runtime Validation
     details: Optional validation helpers for Zod/Valibot-style validators with stream chunk validation support.
 ---

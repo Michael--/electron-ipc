@@ -148,9 +148,29 @@ This library provides a code generation approach to create type-safe IPC communi
 - ✅ **YAML Configuration**: Clean, maintainable configuration for multiple APIs
 - ✅ **Generator Workflows**: `--watch` and `--check` modes for dev and CI
 - ✅ **Window Manager**: Multi-window broadcast helpers and registry
+- ✅ **IPC Middleware**: Koa-style hooks for invoke/event/stream/broadcast/renderer routing
 - ✅ **IPC Inspector**: Visual tracing and debugging tool (dev-only)
 - ✅ **Cross-Platform**: Full support for Windows, macOS, and Linux
 - ✅ **Zero Runtime Overhead (Default)**: Type safety at compile time unless validation is enabled
+
+## Middleware
+
+Register global middleware hooks to add logging, auth, or metrics across all IPC calls.
+
+```typescript
+import { registerIpcMiddleware, type InvokeMiddleware } from '@number10/electron-ipc'
+
+const logInvoke: InvokeMiddleware = async (ctx, next) => {
+  const startedAt = Date.now()
+  await next()
+  const durationMs = Date.now() - startedAt
+  console.warn(`[IPC][invoke] channel=${ctx.channel} durationMs=${durationMs}`)
+}
+
+registerIpcMiddleware({ onInvoke: logInvoke })
+```
+
+For a full multi-hook logging example, see `apps/test-app/src/main/middleware.ts`.
 
 ## Communication Patterns
 

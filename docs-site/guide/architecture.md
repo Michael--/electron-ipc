@@ -395,6 +395,27 @@ The test app includes CSP headers to prevent XSS attacks:
 />
 ```
 
+## IPC Middleware
+
+electron-ipc exposes a Koa-style middleware registry that runs before and after each IPC handler. Middleware can read and mutate context, short-circuit handlers, or translate errors.
+
+```typescript
+import { registerIpcMiddleware, type InvokeMiddleware } from '@number10/electron-ipc'
+
+const logInvoke: InvokeMiddleware = async (ctx, next) => {
+  const startedAt = Date.now()
+  await next()
+  const durationMs = Date.now() - startedAt
+  console.warn(`[IPC][invoke] channel=${ctx.channel} durationMs=${durationMs}`)
+}
+
+registerIpcMiddleware({
+  onInvoke: logInvoke,
+})
+```
+
+Supported hooks include invoke, event, stream invoke/upload/download, renderer-to-renderer routing, and broadcast operations. For a full multi-hook logging example, see `apps/test-app/src/main/middleware.ts`.
+
 ## Testing Strategy
 
 ### Unit Tests
@@ -442,6 +463,7 @@ The test app includes CSP headers to prevent XSS attacks:
 - [x] IPC call logging/debugging (IPC Inspector with trace system)
 - [x] Support for streams (Stream Invoke, Stream Upload, Stream Download)
 - [x] Multiple window support (Window Manager with registry and role-based broadcasts)
+- [x] IPC middleware system (pre/post hooks for auth, logging, metrics)
 - [x] Metrics view backed by the ring buffer (p50/p95, error rate, payload/byte volume, throughput)
 - [x] Inspector Lab app to exercise invokes/events/broadcasts/streams and synthetic trace statuses (`apps/inspector-lab`)
 - [x] Bi-directional invoke, renderer to renderer via main by using renderer generic invoke router
@@ -463,7 +485,6 @@ The test app includes CSP headers to prevent XSS attacks:
 **Extensibility (P3 - Medium):**
 
 - Plugin system for transformations (AST hooks without forking)
-- IPC middleware system (pre/post hooks for auth, logging, metrics)
 - Custom validators beyond Zod/Valibot
 
 **Advanced Features (P3 - Medium):**
