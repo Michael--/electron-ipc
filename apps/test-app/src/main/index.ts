@@ -25,6 +25,7 @@ import {
 import type {
   EventMiddleware,
   InvokeMiddleware,
+  BroadcastMiddleware,
   RendererInvokeMiddleware,
   StreamDownloadMiddleware,
   StreamInvokeMiddleware,
@@ -206,8 +207,23 @@ const rendererInvokeMiddleware: RendererInvokeMiddleware = async (ctx, next) => 
   }
 }
 
+const logBroadcastMiddleware: BroadcastMiddleware = async (ctx, next) => {
+  const startedAt = Date.now()
+  console.warn(`[IPC][broadcast][start] channel=${ctx.channel} mode=${ctx.mode}`, ctx.payload)
+  try {
+    await next()
+    const durationMs = Date.now() - startedAt
+    console.warn(`[IPC][broadcast][end] channel=${ctx.channel} durationMs=${durationMs}`)
+  } catch (error) {
+    const durationMs = Date.now() - startedAt
+    console.error(`[IPC][broadcast][error] channel=${ctx.channel} durationMs=${durationMs}`, error)
+    throw error
+  }
+}
+
 registerIpcMiddleware({
   onInvoke: logInvokeMiddleware,
+  onBroadcast: logBroadcastMiddleware,
   onEvent: logEventMiddleware,
   onStreamInvoke: logStreamInvokeMiddleware,
   onStreamUpload: logStreamUploadMiddleware,

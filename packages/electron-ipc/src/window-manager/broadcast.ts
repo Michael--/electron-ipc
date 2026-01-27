@@ -1,4 +1,6 @@
 import { getCurrentTraceContext, wrapTracePayload } from '../inspector/trace-propagation'
+import { runBroadcastMiddleware } from '../middleware'
+import type { BroadcastMiddlewareContext } from '../middleware'
 import { getWindowRegistry } from './registry'
 
 /**
@@ -45,7 +47,19 @@ export function createBroadcastToAll<T>() {
       if (options?.excludeRoles?.includes(meta.role)) return
 
       if (!meta.window.isDestroyed()) {
-        meta.window.webContents.send(channel as string, tracePayload)
+        const context: BroadcastMiddlewareContext = {
+          channel: String(channel),
+          payload,
+          window: meta.window,
+          mode: 'all',
+          excludeRoles: options?.excludeRoles,
+        }
+        void runBroadcastMiddleware(context, async (ctx) => {
+          ctx.window.webContents.send(ctx.channel, tracePayload)
+        }).catch((error) => {
+          // Avoid unhandled rejections from broadcast middleware
+          console.error('[electron-ipc] Broadcast middleware error:', error)
+        })
       }
     })
   }
@@ -81,7 +95,19 @@ export function createBroadcastToRole<T>(role: string) {
 
     windows.forEach((meta) => {
       if (!meta.window.isDestroyed()) {
-        meta.window.webContents.send(channel as string, tracePayload)
+        const context: BroadcastMiddlewareContext = {
+          channel: String(channel),
+          payload,
+          window: meta.window,
+          mode: 'role',
+          role,
+        }
+        void runBroadcastMiddleware(context, async (ctx) => {
+          ctx.window.webContents.send(ctx.channel, tracePayload)
+        }).catch((error) => {
+          // Avoid unhandled rejections from broadcast middleware
+          console.error('[electron-ipc] Broadcast middleware error:', error)
+        })
       }
     })
   }

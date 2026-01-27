@@ -14,6 +14,8 @@ export { clearIpcMiddleware, registerIpcMiddleware } from './middleware'
 export type {
   EventMiddleware,
   EventMiddlewareContext,
+  BroadcastMiddleware,
+  BroadcastMiddlewareContext,
   InvokeMiddleware,
   InvokeMiddlewareContext,
   IpcMiddleware,

@@ -150,6 +150,36 @@ export interface RendererInvokeMiddlewareContext {
 }
 
 /**
+ * Context passed to broadcast middleware.
+ */
+export interface BroadcastMiddlewareContext {
+  /**
+   * IPC channel name for the broadcast.
+   */
+  channel: string
+  /**
+   * Payload sent to the renderer.
+   */
+  payload: unknown
+  /**
+   * Target window for the broadcast.
+   */
+  window: import('electron').BrowserWindow
+  /**
+   * Broadcast mode identifier.
+   */
+  mode: 'single' | 'all' | 'role' | 'app'
+  /**
+   * Target role for role broadcasts.
+   */
+  role?: string
+  /**
+   * Excluded roles for broadcast-to-all.
+   */
+  excludeRoles?: string[]
+}
+
+/**
  * Middleware for invoke IPC calls (renderer → main).
  */
 export type InvokeMiddleware = Middleware<InvokeMiddlewareContext>
@@ -180,6 +210,11 @@ export type StreamDownloadMiddleware = Middleware<StreamDownloadMiddlewareContex
 export type RendererInvokeMiddleware = Middleware<RendererInvokeMiddlewareContext>
 
 /**
+ * Middleware for broadcast operations (main → renderer).
+ */
+export type BroadcastMiddleware = Middleware<BroadcastMiddlewareContext>
+
+/**
  * IPC middleware registration object.
  */
 export interface IpcMiddleware {
@@ -207,6 +242,10 @@ export interface IpcMiddleware {
    * Middleware for renderer-to-renderer invoke routing.
    */
   onRendererInvoke?: RendererInvokeMiddleware
+  /**
+   * Middleware for broadcast operations (main → renderer).
+   */
+  onBroadcast?: BroadcastMiddleware
 }
 
 const invokeMiddlewareRegistry: InvokeMiddleware[] = []
@@ -215,6 +254,7 @@ const streamInvokeMiddlewareRegistry: StreamInvokeMiddleware[] = []
 const streamUploadMiddlewareRegistry: StreamUploadMiddleware[] = []
 const streamDownloadMiddlewareRegistry: StreamDownloadMiddleware[] = []
 const rendererInvokeMiddlewareRegistry: RendererInvokeMiddleware[] = []
+const broadcastMiddlewareRegistry: BroadcastMiddleware[] = []
 
 /**
  * Registers IPC middleware handlers.
@@ -279,6 +319,15 @@ export const registerIpcMiddleware = (middleware: IpcMiddleware): (() => void) =
     })
   }
 
+  if (middleware.onBroadcast) {
+    const handler = middleware.onBroadcast
+    broadcastMiddlewareRegistry.push(handler)
+    unregisters.push(() => {
+      const index = broadcastMiddlewareRegistry.indexOf(handler)
+      if (index >= 0) broadcastMiddlewareRegistry.splice(index, 1)
+    })
+  }
+
   return () => {
     unregisters.forEach((unregister) => unregister())
   }
@@ -294,6 +343,7 @@ export const clearIpcMiddleware = (): void => {
   streamUploadMiddlewareRegistry.length = 0
   streamDownloadMiddlewareRegistry.length = 0
   rendererInvokeMiddlewareRegistry.length = 0
+  broadcastMiddlewareRegistry.length = 0
 }
 
 /**
@@ -396,6 +446,24 @@ export const runRendererInvokeMiddleware = async (
 ): Promise<void> => {
   const composed = composeMiddleware<RendererInvokeMiddlewareContext>([
     ...rendererInvokeMiddlewareRegistry,
+    terminal,
+  ])
+  await composed(context)
+}
+
+/**
+ * Runs broadcast middleware chain.
+ *
+ * @param context - Middleware context
+ * @param terminal - Terminal middleware that executes the handler
+ * @returns Promise that resolves when the chain completes
+ */
+export const runBroadcastMiddleware = async (
+  context: BroadcastMiddlewareContext,
+  terminal: BroadcastMiddleware
+): Promise<void> => {
+  const composed = composeMiddleware<BroadcastMiddlewareContext>([
+    ...broadcastMiddlewareRegistry,
     terminal,
   ])
   await composed(context)

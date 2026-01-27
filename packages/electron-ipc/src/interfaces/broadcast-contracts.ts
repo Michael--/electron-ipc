@@ -37,6 +37,8 @@
 
 import { BrowserWindow } from 'electron'
 import { getCurrentTraceContext, wrapTracePayload } from '../inspector/trace-propagation'
+import { runBroadcastMiddleware } from '../middleware'
+import type { BroadcastMiddlewareContext } from '../middleware'
 
 /**
  * IBroadcastContract: A generic interface defining the structure for IPC send contracts.
@@ -71,10 +73,21 @@ export function createBroadcast<T>() {
     payload: T[K] extends { payload: infer P } ? P : never // Ensure payload compatibility
   ): void => {
     if (!mainWindow.isDestroyed()) {
-      mainWindow.webContents.send(
-        channel as string,
-        wrapTracePayload(payload, getCurrentTraceContext())
-      )
+      const context: BroadcastMiddlewareContext = {
+        channel: String(channel),
+        payload,
+        window: mainWindow,
+        mode: 'single',
+      }
+      void runBroadcastMiddleware(context, async (ctx) => {
+        ctx.window.webContents.send(
+          ctx.channel,
+          wrapTracePayload(ctx.payload, getCurrentTraceContext())
+        )
+      }).catch((error) => {
+        // Avoid unhandled rejections from broadcast middleware
+        console.error('[electron-ipc] Broadcast middleware error:', error)
+      })
     }
   }
 }
