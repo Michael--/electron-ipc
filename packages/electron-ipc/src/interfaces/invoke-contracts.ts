@@ -44,6 +44,8 @@ import {
   unwrapTracePayload,
   wrapTracePayload,
 } from '../inspector/trace-propagation'
+import { runInvokeMiddleware } from '../middleware'
+import type { InvokeMiddlewareContext } from '../middleware'
 import type {
   GenericInvokeContract,
   GenericStreamInvokeContract,
@@ -105,10 +107,24 @@ function handle<T extends GenericInvokeContract<T>, K extends keyof T>(
     args: RequestType<T, K>
   ) => Promise<ResponseType<T, K>> | ResponseType<T, K>
 ): void {
-  ipcMain.removeHandler(channel as string)
-  ipcMain.handle(channel as string, (event, args) => {
+  const channelName = String(channel)
+  ipcMain.removeHandler(channelName)
+  ipcMain.handle(channelName, (event, args) => {
     const { payload, trace } = unwrapTracePayload(args)
-    return runWithTraceContext(trace, () => listener(event, payload as RequestType<T, K>))
+    return runWithTraceContext(trace, async () => {
+      const context: InvokeMiddlewareContext = {
+        event,
+        channel: channelName,
+        request: payload as RequestType<T, K>,
+      }
+
+      await runInvokeMiddleware(context, async (ctx) => {
+        const result = await listener(ctx.event, ctx.request as RequestType<T, K>)
+        ctx.response = result as ResponseType<T, K>
+      })
+
+      return context.response as ResponseType<T, K>
+    })
   })
 }
 

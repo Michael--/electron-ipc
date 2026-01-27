@@ -10,6 +10,7 @@ import {
   AbstractRegisterStreamDownload,
   AbstractRegisterStreamHandler,
   AbstractRegisterStreamUpload,
+  registerIpcMiddleware,
   defineEventHandlers,
   defineInvokeHandlers,
   defineStreamDownloadHandlers,
@@ -21,6 +22,7 @@ import {
   withStreamInvokeValidation,
   withStreamUploadValidation,
 } from '@number10/electron-ipc'
+import type { InvokeMiddleware } from '@number10/electron-ipc'
 import {
   closeInspector,
   enableIpcInspector,
@@ -94,6 +96,22 @@ const streamVideoDataValidator = zodAdapter.zodValidator(
     'Expected Uint8Array'
   )
 )
+
+const logInvokeMiddleware: InvokeMiddleware = async (ctx, next) => {
+  const startedAt = Date.now()
+  console.warn(`[IPC][invoke][start] channel=${ctx.channel}`, ctx.request)
+  try {
+    await next()
+    const durationMs = Date.now() - startedAt
+    console.warn(`[IPC][invoke][end] channel=${ctx.channel} durationMs=${durationMs}`, ctx.response)
+  } catch (error) {
+    const durationMs = Date.now() - startedAt
+    console.error(`[IPC][invoke][error] channel=${ctx.channel} durationMs=${durationMs}`, error)
+    throw error
+  }
+}
+
+registerIpcMiddleware({ onInvoke: logInvokeMiddleware })
 
 function initializeEventHandler() {
   // check if already initialized
