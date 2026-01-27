@@ -11,7 +11,21 @@ import './inspector/auto-init'
 // Export interfaces
 export * from './interfaces'
 export { clearIpcMiddleware, registerIpcMiddleware } from './middleware'
-export type { InvokeMiddleware, InvokeMiddlewareContext, IpcMiddleware } from './middleware'
+export type {
+  EventMiddleware,
+  EventMiddlewareContext,
+  InvokeMiddleware,
+  InvokeMiddlewareContext,
+  IpcMiddleware,
+  RendererInvokeMiddleware,
+  RendererInvokeMiddlewareContext,
+  StreamDownloadMiddleware,
+  StreamDownloadMiddlewareContext,
+  StreamInvokeMiddleware,
+  StreamInvokeMiddlewareContext,
+  StreamUploadMiddleware,
+  StreamUploadMiddlewareContext,
+} from './middleware'
 
 // Note: validation module exports are kept in './interfaces/validation' for backward compatibility
 // For new code, prefer importing from '@number10/electron-ipc/validation'

@@ -99,6 +99,8 @@ import {
   unwrapTracePayload,
   wrapTracePayload,
 } from '../inspector/trace-propagation'
+import { runStreamDownloadMiddleware, runStreamUploadMiddleware } from '../middleware'
+import type { StreamDownloadMiddlewareContext, StreamUploadMiddlewareContext } from '../middleware'
 import type {
   DownloadDataType,
   DownloadRequestType,
@@ -109,6 +111,33 @@ import type {
 } from './types'
 import type { Serializable } from './types'
 import type { TraceContext } from '../inspector/types'
+
+type Completion = {
+  promise: Promise<void>
+  resolve: () => void
+  reject: (error: unknown) => void
+}
+
+const createCompletion = (): Completion => {
+  let resolve!: () => void
+  let reject!: (error: unknown) => void
+  let settled = false
+
+  const promise = new Promise<void>((innerResolve, innerReject) => {
+    resolve = () => {
+      if (settled) return
+      settled = true
+      innerResolve()
+    }
+    reject = (error: unknown) => {
+      if (settled) return
+      settled = true
+      innerReject(error)
+    }
+  })
+
+  return { promise, resolve, reject }
+}
 
 /**
  * IStreamUploadContract: A generic interface defining the structure for IPC stream upload contracts.
@@ -215,13 +244,16 @@ export abstract class AbstractRegisterStreamUpload {
         onEnd: () => void
         onError: (error: unknown) => void
         trace?: TraceContext
+        completion?: Completion
       }
     >()
 
     for (const [channel, handler] of Object.entries(this.handlers)) {
+      const channelName = String(channel)
       // Listen for stream start with request parameter
-      ipcMain.on(`${channel}-start`, (_event, request) => {
+      ipcMain.on(`${channelName}-start`, (event, request) => {
         const { payload, trace } = unwrapTracePayload(request)
+        const completion = createCompletion()
         // Create callback functions that the handler can replace
         let onDataCallback: (chunk: import('./types').Serializable) => void = (_chunk) => {
           // Default: do nothing
@@ -244,22 +276,34 @@ export abstract class AbstractRegisterStreamUpload {
         }
 
         // Store the callbacks for this channel
-        activeCallbacks.set(channel, {
+        activeCallbacks.set(channelName, {
           onData: (chunk) => onDataCallback(chunk),
           onEnd: () => onEndCallback(),
           onError: (error) => onErrorCallback(error),
           trace,
+          completion,
         })
 
         // Call the handler with the request and callback setters
+        const context: StreamUploadMiddlewareContext = {
+          event,
+          channel: channelName,
+          request: payload as AnyStreamUploadRequest,
+        }
         runWithTraceContext(trace, () => {
-          handler(payload as AnyStreamUploadRequest, onData, onEnd, onError)
+          void runStreamUploadMiddleware(context, async (ctx) => {
+            handler(ctx.request as AnyStreamUploadRequest, onData, onEnd, onError)
+            await completion.promise
+          }).catch((error) => {
+            onErrorCallback(error)
+            completion.reject(error)
+          })
         })
       })
 
       // Listen for data chunks
-      ipcMain.on(`${channel}-data`, (_event, chunk) => {
-        const callbacks = activeCallbacks.get(channel)
+      ipcMain.on(`${channelName}-data`, (_event, chunk) => {
+        const callbacks = activeCallbacks.get(channelName)
         if (callbacks) {
           const { payload, trace } = unwrapTracePayload(chunk)
           const activeTrace = trace ?? callbacks.trace
@@ -268,24 +312,26 @@ export abstract class AbstractRegisterStreamUpload {
       })
 
       // Listen for stream end
-      ipcMain.on(`${channel}-end`, (_event, endPayload) => {
-        const callbacks = activeCallbacks.get(channel)
+      ipcMain.on(`${channelName}-end`, (_event, endPayload) => {
+        const callbacks = activeCallbacks.get(channelName)
         if (callbacks) {
           const { trace } = unwrapTracePayload(endPayload)
           const activeTrace = trace ?? callbacks.trace
           runWithTraceContext(activeTrace, () => callbacks.onEnd())
-          activeCallbacks.delete(channel)
+          callbacks.completion?.resolve()
+          activeCallbacks.delete(channelName)
         }
       })
 
       // Listen for stream error/abort
-      ipcMain.on(`${channel}-error`, (_event, err) => {
-        const callbacks = activeCallbacks.get(channel)
+      ipcMain.on(`${channelName}-error`, (_event, err) => {
+        const callbacks = activeCallbacks.get(channelName)
         if (callbacks) {
           const { payload, trace } = unwrapTracePayload(err)
           const activeTrace = trace ?? callbacks.trace
           runWithTraceContext(activeTrace, () => callbacks.onError(payload))
-          activeCallbacks.delete(channel)
+          callbacks.completion?.reject(payload)
+          activeCallbacks.delete(channelName)
         }
       })
     }
@@ -390,47 +436,60 @@ export abstract class AbstractRegisterStreamDownload {
     const activeReaders = new Map<string, ReadableStreamDefaultReader<unknown>>()
 
     for (const [channel, handler] of Object.entries(this.handlers)) {
-      ipcMain.handle(channel as string, async (event, request) => {
+      const channelName = String(channel)
+      ipcMain.handle(channelName, async (event, request) => {
         const { payload, trace } = unwrapTracePayload(request)
         return runWithTraceContext(trace, async () => {
-          const stream = handler(payload as AnyStreamDownloadRequest, event)
-          const reader = stream.getReader()
-          const key = `${event.sender.id}:${channel}`
-          const existingReader = activeReaders.get(key)
-          if (existingReader) {
+          const context: StreamDownloadMiddlewareContext = {
+            event,
+            channel: channelName,
+            request: payload as AnyStreamDownloadRequest,
+          }
+
+          await runStreamDownloadMiddleware(context, async (ctx) => {
+            const stream = handler(ctx.request as AnyStreamDownloadRequest, ctx.event)
+            ctx.stream = stream as ReadableStream<unknown>
+            const reader = stream.getReader()
+            const key = `${event.sender.id}:${channelName}`
+            const existingReader = activeReaders.get(key)
+            if (existingReader) {
+              try {
+                await existingReader.cancel()
+              } catch {
+                // Ignore cancel errors
+              }
+            }
+            activeReaders.set(key, reader)
             try {
-              await existingReader.cancel()
-            } catch {
-              // Ignore cancel errors
-            }
-          }
-          activeReaders.set(key, reader)
-          try {
-            while (true) {
-              const { done, value } = await reader.read()
-              if (done) break
+              while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+                event.sender.send(
+                  `${channelName}-data`,
+                  wrapTracePayload(value, getCurrentTraceContext())
+                )
+              }
+              const trace = getCurrentTraceContext()
+              if (trace) {
+                event.sender.send(`${channelName}-end`, wrapTracePayload(undefined, trace))
+              } else {
+                event.sender.send(`${channelName}-end`)
+              }
+            } catch (err) {
               event.sender.send(
-                `${channel}-data`,
-                wrapTracePayload(value, getCurrentTraceContext())
+                `${channelName}-error`,
+                wrapTracePayload(err, getCurrentTraceContext())
               )
+            } finally {
+              activeReaders.delete(key)
+              reader.releaseLock()
             }
-            const trace = getCurrentTraceContext()
-            if (trace) {
-              event.sender.send(`${channel}-end`, wrapTracePayload(undefined, trace))
-            } else {
-              event.sender.send(`${channel}-end`)
-            }
-          } catch (err) {
-            event.sender.send(`${channel}-error`, wrapTracePayload(err, getCurrentTraceContext()))
-          } finally {
-            activeReaders.delete(key)
-            reader.releaseLock()
-          }
+          })
         })
       })
 
-      ipcMain.on(`${channel}-cancel`, async (event) => {
-        const key = `${event.sender.id}:${channel}`
+      ipcMain.on(`${channelName}-cancel`, async (event) => {
+        const key = `${event.sender.id}:${channelName}`
         const reader = activeReaders.get(key)
         if (!reader) return
         try {

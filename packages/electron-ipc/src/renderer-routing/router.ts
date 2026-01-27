@@ -10,6 +10,8 @@ import { ipcMain, IpcMainInvokeEvent } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { emitTrace, createTraceEnvelope, createPayloadPreview } from '../inspector/trace'
 import { unwrapTracePayload, wrapTracePayload } from '../inspector/trace-propagation'
+import { runRendererInvokeMiddleware } from '../middleware'
+import type { RendererInvokeMiddlewareContext } from '../middleware'
 import { getWindowRegistry } from '../window-manager/registry'
 import { getWindowFromEvent } from '../window-manager/helpers'
 
@@ -113,122 +115,141 @@ export class RendererInvokeRouter {
       throw new Error('Source window not found')
     }
 
-    // Find target window by role
-    const targetWindows = getWindowRegistry().getByRole(targetRole)
-    if (targetWindows.length === 0) {
-      throw new Error(`No window with role '${targetRole}' found`)
-    }
-
-    const targetWindow = targetWindows[0].window
-    if (targetWindow.isDestroyed()) {
-      throw new Error(`Target window '${targetRole}' is destroyed`)
-    }
-
     // Unwrap trace context if present
     const { payload: request, trace } = unwrapTracePayload(rawRequest)
 
-    // Emit trace for main-process routing
-    if (trace) {
-      emitTrace({
-        id: trace.spanId,
-        kind: 'invoke',
-        channel,
-        direction: 'renderer→renderer',
-        status: 'ok',
-        tsStart,
-        trace: createTraceEnvelope(trace, tsStart),
-        source: {
-          windowId: sourceWindow.id,
-          webContentsId: sourceWindow.webContents.id,
-        },
-        request: createPayloadPreview(request),
-      })
+    const context: RendererInvokeMiddlewareContext = {
+      event,
+      channel,
+      request,
+      targetRole,
+      timeout,
+      sourceWindowId: sourceWindow.id,
     }
 
-    // Create promise for response
-    return new Promise((resolve, reject) => {
-      const timeoutHandle = setTimeout(() => {
-        const pending = this.pendingRequests.get(requestId)
-        if (pending) {
-          pending.cleanupHandler?.()
-          this.pendingRequests.delete(requestId)
-        }
-
-        // Emit trace for timeout
-        if (trace) {
-          const tsEnd = Date.now()
-          emitTrace({
-            id: trace.spanId,
-            kind: 'invoke',
-            channel,
-            direction: 'renderer→renderer',
-            status: 'timeout',
-            tsStart,
-            tsEnd,
-            durationMs: tsEnd - tsStart,
-            trace: createTraceEnvelope(trace, tsStart, tsEnd),
-            source: {
-              windowId: sourceWindow.id,
-              webContentsId: sourceWindow.webContents.id,
-            },
-            request: createPayloadPreview(request),
-            error: { name: 'TimeoutError', message: `Timeout after ${timeout}ms` },
-          })
-        }
-
-        reject(new Error(`Renderer invoke timeout after ${timeout}ms for channel '${channel}'`))
-      }, timeout)
-
-      // Setup cleanup handlers for window lifecycle
-      const sourceCleanup = () => {
-        const pending = this.pendingRequests.get(requestId)
-        if (pending) {
-          clearTimeout(pending.timeout)
-          this.pendingRequests.delete(requestId)
-          reject(new Error(`Source window closed before response for channel '${channel}'`))
-        }
+    await runRendererInvokeMiddleware(context, async (ctx) => {
+      // Find target window by role
+      const targetWindows = getWindowRegistry().getByRole(ctx.targetRole)
+      if (targetWindows.length === 0) {
+        throw new Error(`No window with role '${ctx.targetRole}' found`)
       }
 
-      const targetCleanup = () => {
-        const pending = this.pendingRequests.get(requestId)
-        if (pending) {
-          clearTimeout(pending.timeout)
-          this.pendingRequests.delete(requestId)
-          reject(new Error(`Target window closed before response for channel '${channel}'`))
+      const targetWindow = targetWindows[0].window
+      if (targetWindow.isDestroyed()) {
+        throw new Error(`Target window '${ctx.targetRole}' is destroyed`)
+      }
+
+      ctx.targetWindowId = targetWindow.id
+
+      // Emit trace for main-process routing
+      if (trace) {
+        emitTrace({
+          id: trace.spanId,
+          kind: 'invoke',
+          channel: ctx.channel,
+          direction: 'renderer→renderer',
+          status: 'ok',
+          tsStart,
+          trace: createTraceEnvelope(trace, tsStart),
+          source: {
+            windowId: sourceWindow.id,
+            webContentsId: sourceWindow.webContents.id,
+          },
+          request: createPayloadPreview(ctx.request),
+        })
+      }
+
+      // Create promise for response
+      const response = await new Promise<unknown>((resolve, reject) => {
+        const timeoutHandle = setTimeout(() => {
+          const pending = this.pendingRequests.get(requestId)
+          if (pending) {
+            pending.cleanupHandler?.()
+            this.pendingRequests.delete(requestId)
+          }
+
+          // Emit trace for timeout
+          if (trace) {
+            const tsEnd = Date.now()
+            emitTrace({
+              id: trace.spanId,
+              kind: 'invoke',
+              channel: ctx.channel,
+              direction: 'renderer→renderer',
+              status: 'timeout',
+              tsStart,
+              tsEnd,
+              durationMs: tsEnd - tsStart,
+              trace: createTraceEnvelope(trace, tsStart, tsEnd),
+              source: {
+                windowId: sourceWindow.id,
+                webContentsId: sourceWindow.webContents.id,
+              },
+              request: createPayloadPreview(ctx.request),
+              error: { name: 'TimeoutError', message: `Timeout after ${ctx.timeout}ms` },
+            })
+          }
+
+          reject(
+            new Error(`Renderer invoke timeout after ${ctx.timeout}ms for channel '${ctx.channel}'`)
+          )
+        }, ctx.timeout)
+
+        // Setup cleanup handlers for window lifecycle
+        const sourceCleanup = () => {
+          const pending = this.pendingRequests.get(requestId)
+          if (pending) {
+            clearTimeout(pending.timeout)
+            this.pendingRequests.delete(requestId)
+            reject(new Error(`Source window closed before response for channel '${ctx.channel}'`))
+          }
         }
-      }
 
-      const combinedCleanup = () => {
-        sourceWindow.webContents.off('destroyed', sourceCleanup)
-        targetWindow.webContents.off('destroyed', targetCleanup)
-      }
+        const targetCleanup = () => {
+          const pending = this.pendingRequests.get(requestId)
+          if (pending) {
+            clearTimeout(pending.timeout)
+            this.pendingRequests.delete(requestId)
+            reject(new Error(`Target window closed before response for channel '${ctx.channel}'`))
+          }
+        }
 
-      sourceWindow.webContents.once('destroyed', sourceCleanup)
-      targetWindow.webContents.once('destroyed', targetCleanup)
+        const combinedCleanup = () => {
+          sourceWindow.webContents.off('destroyed', sourceCleanup)
+          targetWindow.webContents.off('destroyed', targetCleanup)
+        }
 
-      this.pendingRequests.set(requestId, {
-        resolve,
-        reject,
-        timeout: timeoutHandle,
-        sourceWindowId: sourceWindow.id,
-        targetWindowId: targetWindow.id,
-        channel,
-        targetRole,
-        tsStart,
-        cleanupHandler: combinedCleanup,
+        sourceWindow.webContents.once('destroyed', sourceCleanup)
+        targetWindow.webContents.once('destroyed', targetCleanup)
+
+        this.pendingRequests.set(requestId, {
+          resolve,
+          reject,
+          timeout: timeoutHandle,
+          sourceWindowId: sourceWindow.id,
+          targetWindowId: targetWindow.id,
+          channel: ctx.channel,
+          targetRole: ctx.targetRole,
+          tsStart,
+          cleanupHandler: combinedCleanup,
+        })
+
+        // Get source role if available
+        const sourceMetadata = getWindowRegistry().getByWindowId(sourceWindow.id)
+
+        // Send request to target renderer (with trace)
+        targetWindow.webContents.send(`__RENDERER_HANDLER_${ctx.channel}__`, {
+          requestId,
+          request: wrapTracePayload(ctx.request, trace ?? undefined),
+          sourceWindowId: sourceWindow.id,
+          sourceRole: sourceMetadata?.role,
+        })
       })
 
-      // Get source role if available
-      const sourceMetadata = getWindowRegistry().getByWindowId(sourceWindow.id)
-
-      // Send request to target renderer (with trace)
-      targetWindow.webContents.send(`__RENDERER_HANDLER_${channel}__`, {
-        requestId,
-        request: wrapTracePayload(request, trace ?? undefined),
-        sourceWindowId: sourceWindow.id,
-        sourceRole: sourceMetadata?.role,
-      })
+      ctx.response = response
     })
+
+    return context.response
   }
 
   /**

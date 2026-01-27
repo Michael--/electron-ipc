@@ -44,8 +44,8 @@ import {
   unwrapTracePayload,
   wrapTracePayload,
 } from '../inspector/trace-propagation'
-import { runInvokeMiddleware } from '../middleware'
-import type { InvokeMiddlewareContext } from '../middleware'
+import { runInvokeMiddleware, runStreamInvokeMiddleware } from '../middleware'
+import type { InvokeMiddlewareContext, StreamInvokeMiddlewareContext } from '../middleware'
 import type {
   GenericInvokeContract,
   GenericStreamInvokeContract,
@@ -289,61 +289,74 @@ export abstract class AbstractRegisterStreamHandler {
     const activeReaders = new Map<string, ReadableStreamDefaultReader<unknown>>()
 
     for (const [channel, handler] of Object.entries(this.handlers)) {
-      ipcMain.handle(channel as string, async (event, args) => {
+      const channelName = String(channel)
+      ipcMain.handle(channelName, async (event, args) => {
         const { payload, trace } = unwrapTracePayload(args)
         return runWithTraceContext(trace, async () => {
-          const stream = handler(event, payload as AnyStreamInvokeRequest)
-
-          // Check if this is a Web Streams API ReadableStream (has getReader method)
-          if (typeof stream.getReader === 'function') {
-            // Web Streams API
-            const reader = stream.getReader()
-            const key = `${event.sender.id}:${channel}`
-            const existingReader = activeReaders.get(key)
-            if (existingReader) {
-              try {
-                await existingReader.cancel()
-              } catch {
-                // Ignore cancel errors
-              }
-            }
-            activeReaders.set(key, reader)
-            try {
-              while (true) {
-                const { done, value } = await reader.read()
-                if (done) break
-                event.sender.send(
-                  `${channel}-data`,
-                  wrapTracePayload(value, getCurrentTraceContext())
-                )
-              }
-              const trace = getCurrentTraceContext()
-              if (trace) {
-                event.sender.send(`${channel}-end`, wrapTracePayload(undefined, trace))
-              } else {
-                event.sender.send(`${channel}-end`)
-              }
-            } catch (err) {
-              event.sender.send(`${channel}-error`, wrapTracePayload(err, getCurrentTraceContext()))
-            } finally {
-              activeReaders.delete(key)
-              reader.releaseLock()
-            }
-          } else {
-            // Fallback: Not a Web Streams API stream
-            event.sender.send(
-              `${channel}-error`,
-              wrapTracePayload(
-                new Error('Handler must return a Web Streams API ReadableStream'),
-                getCurrentTraceContext()
-              )
-            )
+          const context: StreamInvokeMiddlewareContext = {
+            event,
+            channel: channelName,
+            request: payload as AnyStreamInvokeRequest,
           }
+
+          await runStreamInvokeMiddleware(context, async (ctx) => {
+            const stream = handler(ctx.event, ctx.request as AnyStreamInvokeRequest)
+            ctx.stream = stream as ReadableStream<unknown>
+
+            // Check if this is a Web Streams API ReadableStream (has getReader method)
+            if (typeof stream.getReader === 'function') {
+              // Web Streams API
+              const reader = stream.getReader()
+              const key = `${event.sender.id}:${channelName}`
+              const existingReader = activeReaders.get(key)
+              if (existingReader) {
+                try {
+                  await existingReader.cancel()
+                } catch {
+                  // Ignore cancel errors
+                }
+              }
+              activeReaders.set(key, reader)
+              try {
+                while (true) {
+                  const { done, value } = await reader.read()
+                  if (done) break
+                  event.sender.send(
+                    `${channelName}-data`,
+                    wrapTracePayload(value, getCurrentTraceContext())
+                  )
+                }
+                const trace = getCurrentTraceContext()
+                if (trace) {
+                  event.sender.send(`${channelName}-end`, wrapTracePayload(undefined, trace))
+                } else {
+                  event.sender.send(`${channelName}-end`)
+                }
+              } catch (err) {
+                event.sender.send(
+                  `${channelName}-error`,
+                  wrapTracePayload(err, getCurrentTraceContext())
+                )
+              } finally {
+                activeReaders.delete(key)
+                reader.releaseLock()
+              }
+            } else {
+              // Fallback: Not a Web Streams API stream
+              event.sender.send(
+                `${channelName}-error`,
+                wrapTracePayload(
+                  new Error('Handler must return a Web Streams API ReadableStream'),
+                  getCurrentTraceContext()
+                )
+              )
+            }
+          })
         })
       })
 
-      ipcMain.on(`${channel}-cancel`, async (event) => {
-        const key = `${event.sender.id}:${channel}`
+      ipcMain.on(`${channelName}-cancel`, async (event) => {
+        const key = `${event.sender.id}:${channelName}`
         const reader = activeReaders.get(key)
         if (!reader) return
         try {

@@ -37,6 +37,8 @@
 
 import { ipcMain, IpcMainInvokeEvent } from 'electron'
 import { runWithTraceContext, unwrapTracePayload } from '../inspector/trace-propagation'
+import { runEventMiddleware } from '../middleware'
+import type { EventMiddlewareContext } from '../middleware'
 import type { EventType, GenericRendererEventContract } from './types'
 
 /**
@@ -68,10 +70,20 @@ function on<T extends GenericRendererEventContract<T>, K extends keyof T>(
   channel: K,
   listener: (event: IpcMainInvokeEvent, args: EventType<T, K>) => void
 ): void {
-  ipcMain.removeHandler(channel as string)
-  ipcMain.on(channel as string, (event, args) => {
+  const channelName = String(channel)
+  ipcMain.removeHandler(channelName)
+  ipcMain.on(channelName, (event, args) => {
     const { payload, trace } = unwrapTracePayload(args)
-    runWithTraceContext(trace, () => listener(event, payload as EventType<T, K>))
+    runWithTraceContext(trace, () => {
+      const context: EventMiddlewareContext = {
+        event,
+        channel: channelName,
+        request: payload as EventType<T, K>,
+      }
+      return runEventMiddleware(context, async (ctx) => {
+        listener(ctx.event, ctx.request as EventType<T, K>)
+      })
+    })
   })
 }
 
