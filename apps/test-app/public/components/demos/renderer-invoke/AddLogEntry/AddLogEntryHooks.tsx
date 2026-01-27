@@ -22,9 +22,9 @@ export function AddLogEntryHooks() {
     setResult(null)
 
     try {
-      // Get current window info to identify source
-      const windowInfo = await window.api.invokeGetAppInfo()
-      const sourceWindow = `TestApp-${windowInfo.name}`
+      const params = new URLSearchParams(window.location.search)
+      const role = params.get('role') ?? 'main'
+      const sourceWindow = `TestApp-${role}`
 
       // Call renderer invoke to add log entry to logger window
       const response = await window.api.rendererInvokeAddLogEntry('logger', {
