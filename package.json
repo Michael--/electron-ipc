@@ -22,7 +22,8 @@
     "prepare": "husky",
     "pre-commit": "pnpm exec lint-staged",
     "pack-electron-ipc": "pnpm --filter electron-ipc pack",
-    "ci": "node ci.js"
+    "ci": "ci-runner --config cli.config.ts",
+    "ci-deprecated": "node ci.js"
   },
   "keywords": [
     "electron",
@@ -37,9 +38,10 @@
     "pnpm": ">=8.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
     "@commitlint/cli": "^20.3.1",
     "@commitlint/config-conventional": "^20.3.1",
+    "@eslint/js": "^9.39.2",
+    "@number10/ci-runner-cli": "^0.1.0",
     "@typescript-eslint/eslint-plugin": "^8.53.1",
     "@typescript-eslint/parser": "^8.53.1",
     "cspell": "^9.6.0",
