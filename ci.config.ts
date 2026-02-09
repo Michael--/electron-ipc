@@ -1,6 +1,5 @@
 import type { CiRunnerConfig } from '@number10/ci-runner-cli/types'
 
-/** CI runner configuration aligned with the legacy ci.js pipeline behavior. */
 const config = {
   continueOnError: true,
   cwd: '.',

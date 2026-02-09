@@ -22,7 +22,7 @@
     "prepare": "husky",
     "pre-commit": "pnpm exec lint-staged",
     "pack-electron-ipc": "pnpm --filter electron-ipc pack",
-    "ci": "ci-runner --config cli.config.ts"
+    "ci": "ci-runner"
   },
   "keywords": [
     "electron",
