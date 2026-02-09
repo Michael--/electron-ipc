@@ -11,6 +11,9 @@ const config = {
     format: 'pretty',
     verbose: false,
   },
+  watch: {
+    exclude: ['.temp', '.parcel-cache', '.husky', 'bin/**', '*.mjs'],
+  },
   steps: [
     {
       id: 'clean',
@@ -52,6 +55,18 @@ const config = {
       id: 'e2e-tests',
       name: 'E2E Tests',
       command: 'pnpm run test:e2e',
+    },
+  ],
+  targets: [
+    {
+      id: 'quick',
+      name: 'Quick Tests',
+      includeStepIds: ['typecheck', 'lint', 'unit-tests'],
+    },
+    {
+      id: 'build',
+      name: 'Build',
+      includeStepIds: ['build'],
     },
   ],
 } satisfies CiRunnerConfig

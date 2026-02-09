@@ -18,8 +18,8 @@ importers:
         specifier: ^9.39.2
         version: 9.39.2
       '@number10/ci-runner-cli':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.2.0
+        version: 0.2.0
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.53.1
         version: 8.53.1(@typescript-eslint/parser@8.53.1(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
@@ -1884,8 +1884,8 @@ packages:
     resolution: {integrity: sha512-/xGlezI6xfGO9NwuJlnwz/K14qD1kCSAGtacBHnGzeAIuJGazcp45KP5NuyARXoKb7cwulAGWVsbeSxdG/cb0Q==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
-  '@number10/ci-runner-cli@0.1.0':
-    resolution: {integrity: sha512-wIY9wyntfuAX6lhIufBZkmBcorU/9UlutYzU3UEdqankfidM6QMvTNk5+DWwD9af/HJnwVglkkL5qC7rB+fqNQ==}
+  '@number10/ci-runner-cli@0.2.0':
+    resolution: {integrity: sha512-5X7n0GedULSBIpPh19O0mmSn88/nEmAINiGyLanStzZkp2qTTrVcnkGUkUgygz53yjVYwgdqnSJv5E9dprHFHw==}
     engines: {node: '>=20.19.0', pnpm: '>=10.28.1'}
     hasBin: true
 
@@ -7754,7 +7754,7 @@ snapshots:
     dependencies:
       semver: 7.7.3
 
-  '@number10/ci-runner-cli@0.1.0':
+  '@number10/ci-runner-cli@0.2.0':
     dependencies:
       typescript: 5.9.3
 
