@@ -37,14 +37,14 @@ export function VideoStreamUI({
           disabled={isStreaming}
           data-testid="stream-video-select"
         >
-          <option value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4">
-            Big Buck Bunny (158MB)
+          <option value="https://www.w3schools.com/html/mov_bbb.mp4">
+            Big Buck Bunny (short clip)
           </option>
-          <option value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4">
-            Elephants Dream (76MB)
+          <option value="https://filesamples.com/samples/video/mp4/sample_640x360.mp4">
+            Sample Video (640x360)
           </option>
-          <option value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4">
-            For Bigger Blazes (6MB)
+          <option value="https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4">
+            Big Buck Bunny 720p (10s)
           </option>
         </select>
         <button onClick={onStartStream} disabled={isStreaming} data-testid="stream-video-start">

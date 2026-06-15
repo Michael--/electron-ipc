@@ -190,9 +190,7 @@ test.describe('UI Basic Tests', () => {
     // Select a smaller video for testing
     await window
       .locator('[data-testid="stream-video-select"]')
-      .selectOption(
-        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
-      )
+      .selectOption('https://www.w3schools.com/html/mov_bbb.mp4')
 
     // Click stream video button
     await window.locator('[data-testid="stream-video-start"]').click()

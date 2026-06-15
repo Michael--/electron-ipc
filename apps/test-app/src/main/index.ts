@@ -266,7 +266,12 @@ function initializeEventHandler() {
           return new globalThis.ReadableStream({
             async start(controller) {
               try {
-                const response = await fetch(url)
+                const response = await fetch(url, {
+                  headers: {
+                    'User-Agent':
+                      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                  },
+                })
                 if (!response.ok || !response.body) {
                   controller.error(
                     new Error(`Failed to fetch video: ${response.status} ${response.statusText}`)

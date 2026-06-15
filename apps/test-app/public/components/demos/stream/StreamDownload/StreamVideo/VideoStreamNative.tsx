@@ -11,7 +11,7 @@ export function VideoStreamNative() {
   const [progress, setProgress] = useState<string>('')
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [selectedVideo, setSelectedVideo] = useState<string>(
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
+    'https://www.w3schools.com/html/mov_bbb.mp4'
   )
   const stopRef = useRef<(() => void) | null>(null)
 
