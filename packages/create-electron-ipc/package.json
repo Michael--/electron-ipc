@@ -18,15 +18,32 @@
   "keywords": [
     "electron",
     "electron-ipc",
+    "ipc",
     "scaffold",
     "create",
     "cli",
     "template",
+    "code-generation",
+    "codegen",
+    "typescript",
     "vite",
-    "react"
+    "react",
+    "electron-forge"
   ],
   "author": "Michael Rieck (Michael--) <mr@number10.de>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Michael--/electron-ipc.git",
+    "directory": "packages/create-electron-ipc"
+  },
+  "bugs": {
+    "url": "https://github.com/Michael--/electron-ipc/issues"
+  },
+  "homepage": "https://electron-ipc.number10.de/",
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=18.0.0"
   }

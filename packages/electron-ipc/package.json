@@ -115,7 +115,7 @@
   "bugs": {
     "url": "https://github.com/Michael--/electron-ipc/issues"
   },
-  "homepage": "https://github.com/Michael--/electron-ipc#readme",
+  "homepage": "https://electron-ipc.number10.de/",
   "engines": {
     "node": ">=18.0.0"
   },

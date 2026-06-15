@@ -12,7 +12,7 @@ TypeScript code generator for type-safe Electron IPC communication with streamin
 [![electron version](https://img.shields.io/badge/electron-%3E%3D28-9FEAF9)](https://www.electronjs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Docs: **[Full Documentation](https://michael--.github.io/electron-ipc/)** | [npm](https://www.npmjs.com/package/@number10/electron-ipc) | [GitHub](https://github.com/Michael--/electron-ipc) | [Changelog](../../CHANGELOG.md)
+Docs: **[Full Documentation](https://electron-ipc.number10.de/)** | [npm](https://www.npmjs.com/package/@number10/electron-ipc) | [GitHub](https://github.com/Michael--/electron-ipc) | [Changelog](../../CHANGELOG.md)
 
 ## Why it helps
 
@@ -686,18 +686,18 @@ apis:
 
 For detailed documentation, architecture, and advanced usage, see:
 
-- [📚 Complete Documentation](https://michael--.github.io/electron-ipc/) - Full guides, examples, and API reference
-- [🏗️ Architecture Guide](https://michael--.github.io/electron-ipc/guide/architecture) - Technical details about the code generator design
-- [🪟 Window Manager](https://michael--.github.io/electron-ipc/guide/window-manager) - Multi-window support and broadcasts
-- [🔄 Renderer-to-Renderer IPC](https://michael--.github.io/electron-ipc/guide/renderer-to-renderer) - Type-safe communication between renderer processes
-- [🔍 IPC Inspector](https://michael--.github.io/electron-ipc/guide/inspector) - Dev-only IPC tracing and debugging
+- [📚 Complete Documentation](https://electron-ipc.number10.de/) - Full guides, examples, and API reference
+- [🏗️ Architecture Guide](https://electron-ipc.number10.de/guide/architecture) - Technical details about the code generator design
+- [🪟 Window Manager](https://electron-ipc.number10.de/guide/window-manager) - Multi-window support and broadcasts
+- [🔄 Renderer-to-Renderer IPC](https://electron-ipc.number10.de/guide/renderer-to-renderer) - Type-safe communication between renderer processes
+- [🔍 IPC Inspector](https://electron-ipc.number10.de/guide/inspector) - Dev-only IPC tracing and debugging
 
 ## Examples & Templates
 
-See the [documentation](https://michael--.github.io/electron-ipc/examples/electron-vite) for integration guides:
+See the [documentation](https://electron-ipc.number10.de/examples/electron-vite) for integration guides:
 
-- [Electron + Vite](https://michael--.github.io/electron-ipc/examples/electron-vite)
-- [Electron Forge](https://michael--.github.io/electron-ipc/examples/electron-forge)
+- [Electron + Vite](https://electron-ipc.number10.de/examples/electron-vite)
+- [Electron Forge](https://electron-ipc.number10.de/examples/electron-forge)
 - Working examples in repository: `apps/test-app`, `apps/multi-window`, `apps/*-minimal`
 
 ## Migration from v1.x

@@ -5,8 +5,40 @@ export default withMermaid(
   defineConfig({
     lang: 'en-US',
     title: 'Electron IPC',
-    description: 'Type-safe IPC generator for Electron',
+    description:
+      'TypeScript code generator for type-safe Electron IPC communication with streaming, validation, and multi-window support',
     base: '/',
+    head: [
+      ['meta', { name: 'robots', content: 'index, follow' }],
+      ['meta', { name: 'author', content: 'Michael Rieck (Michael--)' }],
+      ['meta', { property: 'og:type', content: 'website' }],
+      ['meta', { property: 'og:site_name', content: 'Electron IPC' }],
+      [
+        'meta',
+        { property: 'og:title', content: 'Electron IPC — Type-safe IPC Generator for Electron' },
+      ],
+      [
+        'meta',
+        {
+          property: 'og:description',
+          content:
+            'TypeScript code generator for type-safe Electron IPC communication with streaming, validation, and multi-window support',
+        },
+      ],
+      ['meta', { property: 'og:url', content: 'https://electron-ipc.number10.de/' }],
+      ['meta', { name: 'twitter:card', content: 'summary' }],
+      ['meta', { name: 'twitter:title', content: 'Electron IPC — Type-safe IPC Generator' }],
+      [
+        'meta',
+        {
+          name: 'twitter:description',
+          content: 'TypeScript code generator for type-safe Electron IPC communication',
+        },
+      ],
+    ],
+    sitemap: {
+      hostname: 'https://electron-ipc.number10.de',
+    },
     markdown: {
       // @ts-expect-error VitePress supports this, but TS picks wrong types
       mermaid: true,
