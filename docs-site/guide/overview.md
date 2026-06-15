@@ -1,10 +1,12 @@
 # Electron IPC Code Generator
 
-Type-safe IPC communication generator for Electron applications with streaming support.
+Generate type-safe Electron IPC APIs from TypeScript contracts.
 
 ## Overview
 
-This monorepo contains a TypeScript code generator that creates type-safe IPC (Inter-Process Communication) APIs for Electron applications. It eliminates boilerplate code and ensures type safety across main, preload, and renderer processes.
+`@number10/electron-ipc` is a publishable npm package for Electron applications. It includes a TypeScript code generator, contract helper types, generated preload API support, main-process handler helpers, and optional runtime modules for validation, streams, React hooks, multi-window routing, and IPC inspection.
+
+The package removes repetitive IPC wiring and keeps the boundary between main, preload, and renderer code type-safe.
 
 **Why a generator?** The generated APIs are still plain TypeScript, so you keep IDE support and refactoring safety while avoiding manual IPC boilerplate.
 
@@ -17,11 +19,21 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 
 **The Key Benefit:** When you change an IPC contract interface, TypeScript immediately shows compile errors everywhere the contract is used incorrectly - before you even run the code. No runtime surprises!
 
+## What Ships in the Package
+
+- **Generator CLI** - `electron-ipc-generate` reads your contract file and YAML config.
+- **Contract types** - helper types for invoke, events, broadcasts, renderer-to-renderer calls, and streams.
+- **Generated preload APIs** - typed methods exposed through Electron's `contextBridge`.
+- **Main helpers** - typed handler and event registration utilities.
+- **Optional modules** - validation adapters, middleware, window registry, renderer routing, React hooks, and IPC Inspector.
+
+The repository contains apps and templates for development and examples. They are not required to use the package.
+
 ## Architecture
 
 ### Communication Flow
 
-The following diagram shows how the four IPC contract types work together in an Electron application:
+The following diagram shows how the core IPC contract types work together in an Electron application:
 
 ```mermaid
 flowchart TD
@@ -44,17 +56,6 @@ flowchart TD
 
 - **`packages/electron-ipc`** - Main library with code generator and runtime helpers
 - **`packages/template-basic`** - Self-generating template demonstrating best practices
-
-### Example Applications
-
-The repository includes multiple example apps demonstrating different bundlers and use cases:
-
-- **`apps/test-app`** - Main test application with electron-vite (full feature showcase)
-- **`apps/multi-window`** - Multi-window IPC flows with window registry and role-based broadcasts
-- **`apps/high-volume-test`** - Inspector performance testing under high-volume IPC traffic
-- **`apps/esbuild-minimal`** - Minimal example with esbuild bundler
-- **`apps/webpack-minimal`** - Minimal example with webpack bundler
-- **`apps/parcel-minimal`** - Minimal example with Parcel 2.x bundler
 
 ### How It Works
 
@@ -742,7 +743,7 @@ apis:
 
 **Note:** At least one contract type must be specified per API. The `mainBroadcastOutput` is optional; if omitted, use the runtime `createBroadcast()` helper instead.
 
-## Examples & Templates
+## Integration References
 
 ### Guides & Documentation
 
@@ -751,7 +752,7 @@ apis:
 
 ### Working Example Apps
 
-All examples are in the repository and ready to run:
+These apps are repository references for maintainers and advanced users. You do not need them to install or use `@number10/electron-ipc` in your own Electron app.
 
 **Full-Featured Apps:**
 
@@ -773,7 +774,7 @@ Each example includes its own README with specific setup instructions.
 
 ## Benefits
 
-✅ **Four Communication Patterns** - Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Streams (large data/real-time)
+✅ **Five Communication Patterns** - Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Renderer-to-Renderer, Streams (large data/real-time)
 ✅ **Compile-Time Type Safety** - Change a contract interface → TypeScript shows errors immediately in all usages  
 ✅ **No Runtime Surprises** - Catch signature mismatches before running the app  
 ✅ **IntelliSense Everywhere** - Auto-completion in main, preload, and renderer processes  
@@ -820,7 +821,9 @@ The same applies to:
 
 No need to run the app to find these bugs! 🎯
 
-## Development Setup
+## Repository Development
+
+This section is only needed when you want to work on the `electron-ipc` repository itself.
 
 ### Prerequisites
 

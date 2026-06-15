@@ -6,33 +6,52 @@ export default withMermaid(
     lang: 'en-US',
     title: 'Electron IPC',
     description:
-      'TypeScript code generator for type-safe Electron IPC communication with streaming, validation, and multi-window support',
+      'Generate type-safe Electron IPC APIs from TypeScript contracts for main, preload, and renderer code.',
     base: '/',
     head: [
       ['meta', { name: 'robots', content: 'index, follow' }],
       ['meta', { name: 'author', content: 'Michael Rieck (Michael--)' }],
+      [
+        'meta',
+        {
+          name: 'keywords',
+          content:
+            'electron ipc, electron typescript, type-safe ipc, contextBridge, ipcMain, ipcRenderer, code generator',
+        },
+      ],
+      ['link', { rel: 'canonical', href: 'https://electron-ipc.number10.de/' }],
       ['meta', { property: 'og:type', content: 'website' }],
       ['meta', { property: 'og:site_name', content: 'Electron IPC' }],
       [
         'meta',
-        { property: 'og:title', content: 'Electron IPC — Type-safe IPC Generator for Electron' },
+        {
+          property: 'og:title',
+          content: '@number10/electron-ipc - Type-safe IPC Generator for Electron',
+        },
       ],
       [
         'meta',
         {
           property: 'og:description',
           content:
-            'TypeScript code generator for type-safe Electron IPC communication with streaming, validation, and multi-window support',
+            'Generate typed main, preload, and renderer IPC APIs from TypeScript contracts. Includes streams, validation helpers, React hooks, and multi-window support.',
         },
       ],
       ['meta', { property: 'og:url', content: 'https://electron-ipc.number10.de/' }],
       ['meta', { name: 'twitter:card', content: 'summary' }],
-      ['meta', { name: 'twitter:title', content: 'Electron IPC — Type-safe IPC Generator' }],
+      [
+        'meta',
+        {
+          name: 'twitter:title',
+          content: '@number10/electron-ipc - Type-safe IPC Generator',
+        },
+      ],
       [
         'meta',
         {
           name: 'twitter:description',
-          content: 'TypeScript code generator for type-safe Electron IPC communication',
+          content:
+            'Generate type-safe Electron IPC APIs from TypeScript contracts for main, preload, and renderer code.',
         },
       ],
     ],
@@ -54,7 +73,8 @@ export default withMermaid(
 
     themeConfig: {
       nav: [
-        { text: 'Guide', link: '/guide/overview' },
+        { text: 'Guide', link: '/guide/introduction' },
+        { text: 'Quick Start', link: '/guide/quick-start' },
         { text: 'Architecture', link: '/guide/architecture' },
         { text: 'Window Manager', link: '/guide/window-manager' },
         { text: 'Inspector', link: '/guide/inspector' },
@@ -65,7 +85,10 @@ export default withMermaid(
           {
             text: 'Getting Started',
             items: [
+              { text: 'Introduction', link: '/guide/introduction' },
               { text: 'Overview', link: '/guide/overview' },
+              { text: 'Installation', link: '/guide/installation' },
+              { text: 'Quick Start', link: '/guide/quick-start' },
               { text: 'Architecture', link: '/guide/architecture' },
             ],
           },

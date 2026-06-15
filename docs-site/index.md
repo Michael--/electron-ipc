@@ -3,42 +3,41 @@ layout: home
 title: Electron IPC
 hero:
   name: '@number10/electron-ipc'
-  text: Type-safe IPC generator for Electron
-  tagline: Contracts, generators, and runtime helpers for safer main/renderer boundaries.
+  text: Type-safe IPC APIs from TypeScript contracts
+  tagline: Install the package, define your Electron IPC contracts once, and generate typed main, preload, and renderer code.
   actions:
     - theme: brand
       text: Get Started
-      link: /guide/quick-start
+      link: /guide/introduction
     - theme: alt
-      text: Architecture
-      link: /guide/architecture
+      text: Quick Start
+      link: /guide/quick-start
 features:
-  - title: Contract-first IPC
-    details: Define contracts once and get fully typed renderer APIs and main handlers with compile-time safety.
-  - title: Five Communication Patterns
-    details: Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Renderer-to-Renderer (multi-window), and Streams (large data/real-time).
-  - title: Renderer-to-Renderer IPC
-    details: Type-safe request-response communication between renderer processes via main process routing with full tracing support.
-  - title: Streams + Inspector
-    details: Stream large data safely using Web Streams API and inspect IPC traffic in dev with payload previews.
-  - title: React Hooks
-    details: Automatic generation of type-safe React hooks with state management for all contract types.
-  - title: Multi-window tooling
-    details: Window registry and broadcast helpers for role-based multi-window apps with automatic lifecycle tracking.
-  - title: IPC Middleware
-    details: Koa-style middleware hooks for invoke, event, stream, renderer routing, and broadcast flows (auth/logging/metrics).
-  - title: Runtime Validation
-    details: Optional validation helpers for Zod/Valibot-style validators with stream chunk validation support.
+  - title: One npm package
+    details: '@number10/electron-ipc ships the generator CLI, TypeScript types, handler helpers, validation adapters, window tools, and inspector runtime.'
+  - title: Typed generated APIs
+    details: Contracts become strongly typed preload APIs, renderer calls, and main-process handler definitions.
+  - title: Compile-time feedback
+    details: Rename a contract or change a payload and TypeScript points to every call site that needs updating.
+  - title: Electron IPC patterns
+    details: Use invoke, events, broadcasts, renderer-to-renderer calls, and streams without hand-written channel strings.
+  - title: Production helpers
+    details: Add runtime validation, middleware, React hooks, multi-window routing, and dev-only IPC tracing when your app needs them.
+  - title: Framework-friendly
+    details: Works with existing Electron projects and includes setup guides for electron-vite and Electron Forge.
 ---
 
-## New here? Start fast
+## What You Get
 
-This project is built to be friendly for beginners and fast to adopt in real apps. You define IPC contracts once, run a generator, and get typed APIs for main, preload, and renderer with minimal boilerplate. It uses plain TypeScript types (no separate scripting language), and the docs are organized so you can either skim for a quick overview or dive into concrete setup steps and examples. For details, see [No Separate DSL](/guide/overview#no-separate-dsl).
+`@number10/electron-ipc` is for Electron developers who want IPC code that behaves like the rest of a strict TypeScript application. You define contracts as TypeScript types, run `electron-ipc-generate`, and use generated APIs instead of manually wiring `ipcMain`, `ipcRenderer`, and `contextBridge` channel strings.
 
-**Quick path (10–15 min):**
+The result is a small generated boundary between main, preload, and renderer code: typed method names, typed payloads, typed handler signatures, and compile-time errors when a contract changes.
 
-- Read the core flow and generator setup: [Overview](/guide/overview)
-- Pick a real integration example: [Electron + Vite](/examples/electron-vite) or [Electron Forge](/examples/electron-forge)
-- Check the IPC patterns and multi-window flow when needed: [Architecture](/guide/architecture) and [Renderer-to-Renderer](/guide/renderer-to-renderer)
+## Start Here
 
-If you want to go deeper, the guides cover streams, validation helpers, the inspector, and multi-window tooling with concrete code examples.
+- Read [Introduction](/guide/introduction) to understand the package in two minutes.
+- Follow [Quick Start](/guide/quick-start) to generate your first typed IPC call.
+- Use [Installation](/guide/installation) for dependencies, CLI setup, and the scaffold command.
+- Open [Overview](/guide/overview) when you want the full feature map.
+
+The repository contains example apps, but they are only references. The product documented here is the publishable `@number10/electron-ipc` package.
