@@ -5,7 +5,6 @@
     "composite": false,
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
-    "baseUrl": ".",
     "jsx": "react-jsx",
     "paths": {
       "@gen/*": ["./dist/*"]
