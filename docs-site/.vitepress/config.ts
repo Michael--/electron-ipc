@@ -6,7 +6,7 @@ export default withMermaid(
     lang: 'en-US',
     title: 'Electron IPC',
     description: 'Type-safe IPC generator for Electron',
-    base: '/electron-ipc/',
+    base: '/',
     markdown: {
       // @ts-expect-error VitePress supports this, but TS picks wrong types
       mermaid: true,
