@@ -14,7 +14,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "packageManager": "pnpm@9.15.3",
+  "packageManager": "pnpm@11.7.0",
   "bin": {
     "electron-ipc-generate": "bin/electron-ipc-generate.js"
   },
@@ -120,16 +120,16 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
-    "@types/node": "^25.0.9",
-    "@vitest/coverage-v8": "^4.0.17",
-    "@vitest/ui": "^4.0.17",
-    "jsdom": "^27.4.0",
-    "rimraf": "^6.1.2",
+    "@types/node": "^25.9.3",
+    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/ui": "^4.1.9",
+    "jsdom": "^29.1.1",
+    "rimraf": "^6.1.3",
     "shx": "^0.4.0",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1",
-    "vite-plugin-dts": "^4.5.4",
-    "vitest": "^4.0.17"
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16",
+    "vite-plugin-dts": "^5.0.2",
+    "vitest": "^4.1.9"
   },
   "peerDependencies": {
     "electron": ">=28.0.0"
@@ -147,7 +147,7 @@
   },
   "dependencies": {
     "picocolors": "^1.1.1",
-    "ts-morph": "^27.0.2",
-    "yaml": "^2.4.1"
+    "ts-morph": "^28.0.0",
+    "yaml": "^2.9.0"
   }
 }
