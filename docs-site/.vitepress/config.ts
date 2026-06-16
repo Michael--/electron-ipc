@@ -17,6 +17,13 @@ export default withMermaid(
       'Generate type-safe Electron IPC APIs from TypeScript contracts for main, preload, and renderer code.',
     base: '/',
     head: [
+      [
+        'meta',
+        {
+          name: 'google-site-verification',
+          content: 'TZwaz1pFYKmSmNj3FBsCZC-9JdSHvmp83ZBR1qthnrk',
+        },
+      ],
       ['meta', { name: 'author', content: 'Michael Rieck (Michael--)' }],
       [
         'meta',
