@@ -1,3 +1,7 @@
+---
+description: Code generator design and contract helper types for type-safe Electron IPC.
+---
+
 # Architecture
 
 ## Code Generator Design

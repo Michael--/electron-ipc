@@ -1,3 +1,7 @@
+---
+description: Patterns and best practices for building multi-window Electron applications with electron-ipc.
+---
+
 # Multi-Window Patterns
 
 Advanced patterns and best practices for building multi-window Electron applications with electron-ipc.

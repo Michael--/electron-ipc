@@ -1,3 +1,7 @@
+---
+description: TypeScript code generator and runtime helpers for type-safe, discoverable Electron IPC APIs.
+---
+
 # Introduction
 
 `@number10/electron-ipc` is a **TypeScript code generator and runtime helper package** for Electron applications. It turns plain TypeScript IPC contracts into generated APIs for the main process, preload script, and renderer.

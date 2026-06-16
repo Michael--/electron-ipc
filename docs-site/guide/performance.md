@@ -1,3 +1,7 @@
+---
+description: Optimize IPC performance in your Electron application with benchmarking and anti-pattern guidance.
+---
+
 # Performance Tuning Guide
 
 Optimize IPC performance in your Electron application with proven strategies and best practices.

@@ -1,3 +1,7 @@
+---
+description: Complete deployment checklist for shipping electron-ipc applications to production.
+---
+
 # Production Deployment Checklist
 
 Complete checklist for deploying electron-ipc applications to production.

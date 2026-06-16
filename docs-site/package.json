@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vitepress dev .",
     "build": "vitepress build .",
-    "preview": "vitepress preview ."
+    "preview": "vitepress preview .",
+    "check-seo": "node ../../check-seo.mjs ./.vitepress/dist --base-url https://electron-ipc.number10.de"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",

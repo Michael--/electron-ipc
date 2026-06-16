@@ -1,3 +1,7 @@
+---
+description: Dev-only IPC tracing for Electron applications with live updates and JSON export.
+---
+
 # IPC Inspector
 
 Dev-only IPC tracing for Electron applications. The Inspector collects trace events from

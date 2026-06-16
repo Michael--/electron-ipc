@@ -1,3 +1,7 @@
+---
+description: Install @number10/electron-ipc in your Electron project with npm, pnpm, or yarn.
+---
+
 # Installation
 
 ## Prerequisites

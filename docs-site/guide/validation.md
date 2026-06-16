@@ -1,3 +1,7 @@
+---
+description: Type-safe runtime validation for IPC contracts with Zod, Valibot, and custom validators.
+---
+
 # Runtime Validation
 
 The validation system provides type-safe runtime validation for IPC contracts with standardized error handling. It supports popular validation libraries (Zod, Valibot) and allows custom validators.

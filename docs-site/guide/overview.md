@@ -1,3 +1,7 @@
+---
+description: Generate type-safe Electron IPC APIs with validation, streams, React hooks, and multi-window support.
+---
+
 # Electron IPC Code Generator
 
 Generate type-safe Electron IPC APIs from TypeScript contracts.

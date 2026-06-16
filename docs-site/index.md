@@ -1,6 +1,9 @@
 ---
 layout: home
 title: Electron IPC
+description: |
+  Type-safe Electron IPC code generator. Define contracts once in TypeScript,
+  generate main, preload, and renderer APIs with full IDE support.
 hero:
   name: '@number10/electron-ipc'
   text: Type-safe IPC APIs from TypeScript contracts

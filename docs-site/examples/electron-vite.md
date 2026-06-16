@@ -1,3 +1,7 @@
+---
+description: Integrate electron-ipc with Electron + Vite using electron-vite for type-safe IPC code generation.
+---
+
 # Example: electron-vite
 
 This example mirrors the `apps/test-app` setup and keeps generation in a separate terminal.

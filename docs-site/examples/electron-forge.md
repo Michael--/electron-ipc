@@ -1,3 +1,7 @@
+---
+description: Wire electron-ipc generator output into an Electron Forge application with type-safe IPC.
+---
+
 # Example: electron-forge
 
 This example focuses on wiring generator output into a Forge app.

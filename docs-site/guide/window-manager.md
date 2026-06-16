@@ -1,3 +1,7 @@
+---
+description: Multi-window management for Electron with role-based registry and enhanced broadcast APIs.
+---
+
 # Window Management
 
 Multi-Window support for Electron applications with role-based organization and enhanced broadcast APIs.

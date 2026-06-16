@@ -1,3 +1,7 @@
+---
+description: Get your first type-safe IPC call running in under 5 minutes with @number10/electron-ipc.
+---
+
 # Quick Start
 
 Get your first type-safe IPC call running in **under 5 minutes**.

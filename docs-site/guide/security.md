@@ -1,3 +1,7 @@
+---
+description: Security best practices for Electron IPC with context isolation, CSP, and permission models.
+---
+
 # Security & Best Practices
 
 Production-ready guide for secure and maintainable Electron IPC applications.

@@ -1,3 +1,7 @@
+---
+description: Type-safe bidirectional request-response communication between Electron renderer processes.
+---
+
 # Renderer-to-Renderer IPC Communication
 
 ## Overview
