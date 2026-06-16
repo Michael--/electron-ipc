@@ -82,7 +82,11 @@ describe('inspector ui renderer stats', () => {
   })
 
   it('updates throughput statistics and panel refresh', () => {
-    state.statsStartTime = Date.now() - 1000
+    vi.useFakeTimers()
+    const now = Date.now()
+    vi.setSystemTime(now)
+
+    state.statsStartTime = now - 1000
     state.statsEventCount = 600
 
     updateStatistics()
@@ -95,6 +99,8 @@ describe('inspector ui renderer stats', () => {
     updateStatistics()
     // Panel should be updated with "No data" message since state.allEvents is empty
     expect(elements.statsContent.innerHTML).toContain('No data for current filters')
+
+    vi.useRealTimers()
   })
 
   it('renders stats panel content for empty and populated metrics', () => {
