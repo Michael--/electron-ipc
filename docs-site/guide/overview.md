@@ -831,8 +831,8 @@ This section is only needed when you want to work on the `electron-ipc` reposito
 
 ### Prerequisites
 
-- Node.js ≥18.0.0
-- pnpm ≥8.15.0
+- Node.js ≥20.19.0
+- pnpm ≥8.0.0
 - **Windows only:** Git Bash (for Git hooks)
 
 > **Note for Windows users:** This project uses Husky for Git hooks. Git Bash must be installed and available in your PATH for the pre-commit hooks to work properly.

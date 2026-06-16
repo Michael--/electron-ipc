@@ -1,5 +1,34 @@
 # Changelog
 
+## [2.6.0] - 2026-06-16
+
+### Added
+
+- **IPC Middleware**: Koa-style middleware hooks for cross-cutting IPC behavior
+  - Invoke middleware with request/response context and async `next()` chaining
+  - Event, stream invoke/upload/download, broadcast, and renderer-to-renderer routing hooks
+  - Support for logging, auth, metrics, short-circuiting, and error translation
+  - Test coverage for middleware execution order, mutation, and error handling
+- **Documentation Site**
+  - Introduction, installation, and quick-start guides for first-time users
+  - Package-focused docs home and overview that distinguish published packages from internal apps
+  - Per-page SEO metadata via VitePress `transformHead` and frontmatter
+
+### Changed
+
+- **@number10/electron-ipc**: Bumped to v2.6.0
+- **@number10/create-electron-ipc**: Bumped to v0.3.1
+  - New projects now target `@number10/electron-ipc` `^2.6.0`
+  - README updated for current Electron/Vite template versions and pack filename
+- **Documentation**: Switched public docs links and package homepage metadata to `https://electron-ipc.number10.de/`
+- **Dependencies**: Updated package, template, docs-site, and internal app toolchains
+- **README**: Refreshed public package versions and clarified that apps are internal monorepo examples
+
+### Fixed
+
+- **Docs Deployment**: Set VitePress base to `/` for the custom domain
+- **Docs SEO**: Added robots and sitemap configuration for the custom domain
+
 ## [2.5.0] - 2026-01-24
 
 ### Added

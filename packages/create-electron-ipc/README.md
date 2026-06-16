@@ -35,7 +35,7 @@ pnpm dlx @number10/create-electron-ipc
 
 ## What You Get
 
-- **Electron 35** + **Vite 5** + **React 19** starter
+- **Electron 40** + **Vite 7** + **React 19** starter
 - **Type-safe IPC contracts** (invoke, event, broadcast)
 - **TypeScript strict mode** with comprehensive configuration
 - **ESLint 9** (flat config) + **Prettier** pre-configured
@@ -95,7 +95,7 @@ my-app/
 
 ## Requirements
 
-- Node.js ≥20.0.0
+- Node.js ≥20.19.0
 - npm or pnpm
 
 ## Local Development
@@ -109,8 +109,9 @@ node packages/create-electron-ipc/bin/create-electron-ipc.js --dir ./tmp-app
 Or test the packed version:
 
 ```bash
+cd packages/create-electron-ipc
 pnpm pack
-npx -y --package ./number10-create-electron-ipc-0.1.0.tgz create-electron-ipc
+npx -y --package ./number10-create-electron-ipc-0.3.1.tgz create-electron-ipc
 ```
 
 ## Testing
@@ -135,7 +136,7 @@ Tests verify:
 
 ## Learn More
 
-- [electron-ipc Documentation](https://github.com/number10/electron-ipc)
+- [electron-ipc Documentation](https://electron-ipc.number10.de/)
 - [Electron Documentation](https://www.electronjs.org/docs/latest/)
 - [Vite Documentation](https://vitejs.dev/)
 

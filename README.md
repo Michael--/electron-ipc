@@ -14,7 +14,7 @@ This monorepo contains a TypeScript code generator that creates type-safe IPC (I
 
 ## 📦 Packages
 
-### `packages/electron-ipc` (v2.5.0)
+### `packages/electron-ipc` (v2.6.0)
 
 The main library - a TypeScript code generator that creates type-safe IPC communication code for Electron applications.
 
@@ -30,13 +30,14 @@ The main library - a TypeScript code generator that creates type-safe IPC commun
 - ✅ Generator watch/check workflow for CI
 - ✅ Templates + integration examples (electron-vite/forge)
 - ✅ YAML-based configuration
+- ✅ Koa-style IPC middleware for logging, auth, metrics, and error mapping
 - ✅ Window management registry + multi-window broadcast helpers
 - ✅ IPC Inspector for tracing and debugging (dev-only)
 - ✅ Full Windows/macOS/Linux support
 
 **Status:** Production ready
 
-### `packages/create-electron-ipc` (v0.1.0)
+### `packages/create-electron-ipc` (v0.3.1)
 
 Scaffold new Electron apps with type-safe IPC contracts pre-configured.
 
@@ -65,6 +66,7 @@ pnpm dlx @number10/create-electron-ipc
 - ✅ Optional validation (Zod/Valibot)
 - ✅ VS Code workspace settings
 - ✅ Works with npm and pnpm
+- ✅ npm metadata for public package discovery
 
 **Status:** Beta - ready for testing
 
@@ -76,8 +78,8 @@ A full Electron application that serves as a test environment and reference impl
 
 ### Prerequisites
 
-- Node.js ≥18.0.0
-- pnpm ≥8.15.0
+- Node.js ≥20.19.0
+- pnpm ≥8.0.0
 - **Windows only:** Git Bash (for Git hooks)
 
 > **Note for Windows users:** This project uses Husky for Git hooks. Git Bash must be installed and available in your PATH for the pre-commit hooks to work properly.
@@ -121,31 +123,22 @@ electron-ipc/
 │   │   │   ├── generator/   # Code generation logic
 │   │   │   ├── interfaces/  # TypeScript interfaces
 │   │   │   └── index.ts
-│   └── test-app/            # Electron test application (private)
-│       ├── src/
-│       │   ├── main/        # Main process code
-│       │   ├── preload/     # Preload scripts
-│       │   └── renderer/    # Renderer process (React)
-│       └── public/          # React components
-```
-
-│ │
-│ └── test-app/ # Electron test environment
-│ ├── src/
-│ │ ├── main/ # Main process
-│ │ ├── preload/ # Preload scripts
-│ │ └── renderer/ # React UI
-│ └── package.json
-│
-├── docs/ # Detailed documentation
-├── package.json # Workspace root
-└── tsconfig.json # Base TypeScript config
-
+│   ├── create-electron-ipc/ # Scaffold CLI (publishable)
+│   └── template-basic/      # Internal template package
+├── apps/
+│   ├── test-app/            # Full internal reference app
+│   ├── inspector-lab/       # Internal Inspector development app
+│   ├── multi-window/        # Internal multi-window reference app
+│   └── *-minimal/           # Internal bundler examples
+├── docs-site/               # Public VitePress documentation site
+├── docs/                    # Internal repository documentation
+├── package.json             # Workspace root
+└── tsconfig.json            # Base TypeScript config
 ```
 
 ## 🎯 Benefits
 
-✅ **Four Communication Patterns** - Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Streams (large data/real-time)
+✅ **Five Communication Patterns** - Invoke (request-response), Events (fire-and-forget), Broadcasts (main → renderer), Renderer-to-renderer, Streams (large data/real-time)
 ✅ **Compile-Time Type Safety** - Change a contract interface → TypeScript shows errors immediately in all usages
 ✅ **No Runtime Surprises** - Catch signature mismatches before running the app
 ✅ **IntelliSense Everywhere** - Auto-completion in main, preload, and renderer processes
@@ -156,10 +149,10 @@ electron-ipc/
 ## 📚 Documentation
 
 For detailed usage, API reference, and examples, see:
+
+- [Public documentation site](https://electron-ipc.number10.de/)
+- [`docs-site/`](docs-site/)
 - [`docs/README.md`](docs/README.md)
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- [`docs/window-manager.md`](docs/window-manager.md)
-- [`docs/inspector.md`](docs/inspector.md)
 - [`CHANGELOG.md`](CHANGELOG.md)
 
 ## 🛠 Technology Stack
@@ -190,4 +183,3 @@ For detailed usage, API reference, and examples, see:
 ## 📝 License
 
 MIT
-```
